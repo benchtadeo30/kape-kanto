@@ -1,0 +1,297 @@
+<%- include('partials/header') %>
+
+<style>
+.ot-page { padding: 2.5rem 5%; max-width: 800px; margin: 0 auto; }
+.ot-page-title {
+    font-size: 2rem; font-weight: 800;
+    color: var(--primary-dark);
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 0.5rem;
+}
+.ot-page-title i { color: var(--accent); }
+.ot-subtitle { font-size: 0.9rem; color: var(--text-light); margin-bottom: 2rem; }
+.ot-refresh {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 0.82rem; color: var(--text-light);
+    margin-bottom: 1.5rem;
+    justify-content: flex-end;
+}
+.ot-refresh i { animation: spin 1s linear infinite; display: none; }
+.ot-refresh.loading i { display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.ot-empty { text-align: center; padding: 5rem 1rem; }
+.ot-empty-icon { font-size: 4rem; color: #ddd; margin-bottom: 1rem; }
+.ot-empty h3 { color: var(--text-light); margin-bottom: 0.5rem; }
+
+/* Status pills */
+.ot-status-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 12px; border-radius: 50px;
+    font-size: 0.75rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.5px;
+}
+.pill-pending    { background:#fff3e0; color:#e65100; }
+.pill-preparing  { background:#fff8e1; color:#f57f17; }
+.pill-ready      { background:#e8f5e9; color:#2e7d32; }
+.pill-delivery   { background:#e3f2fd; color:#1565c0; }
+.pill-completed  { background:#e8f5e9; color:#1b5e20; }
+.pill-cancelled  { background:#ffebee; color:#b71c1c; }
+.pill-awaiting   { background:#fff3e0; color:#f57c00; border:1px solid #ffe0b2; }
+
+/* Pagination Styles */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.8rem;
+    margin-top: 3rem;
+    padding: 1.5rem;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+}
+.page-btn {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    border: 1px solid #eee;
+    background: white;
+    color: var(--text-light);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.page-btn:hover {
+    background: #fdf5e6;
+    color: var(--primary);
+    border-color: var(--primary);
+}
+.page-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    box-shadow: 0 4px 12px rgba(111, 78, 55, 0.25);
+}
+.page-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: #f9f9f9;
+}
+.nav-btn {
+    padding: 0 1.2rem;
+    width: auto;
+}
+.type-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 800;
+}
+.type-pickup .type-tag { background: #efebe9; color: #5d4037; }
+.type-delivery .type-tag { background: #e3f2fd; color: #1565c0; }
+.type-pickup .ot-list-icon { background: #efebe9; color: #5d4037; }
+.type-delivery .ot-list-icon { background: #e3f2fd; color: #1565c0; }
+</style>
+
+<div class="ot-page">
+    <h1 class="ot-page-title">
+        <i class="fa-solid fa-bag-shopping"></i> My Orders
+    </h1>
+    <p class="ot-subtitle">Click on any order to view tracking and full details.</p>
+
+    <div class="ot-refresh" id="refresh-bar">
+        <i class="fa-solid fa-circle-notch"></i>
+        <span id="refresh-text">Auto-refreshes every 30s</span>
+    </div>
+
+    <div id="orders-container">
+        <div class="ot-empty">
+            <div class="ot-empty-icon"><i class="fa-solid fa-bag-shopping"></i></div>
+            <h3>Loading orders…</h3>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <div id="pagination-container" class="pagination-controls" style="display: none;"></div>
+</div>
+
+<script>
+    const STATUS_PILL = {
+        pending:          ['pill-pending',   'fa-clock',          'Pending'],
+        preparing:        ['pill-preparing', 'fa-fire-burner',    'Preparing'],
+        ready:            ['pill-ready',     'fa-bell',           'Ready'],
+        out_for_delivery: ['pill-delivery',  'fa-motorcycle',     'On the Way'],
+        completed:        ['pill-completed', 'fa-circle-check',   'Delivered'],
+        cancelled:        ['pill-cancelled', 'fa-circle-xmark',   'Cancelled'],
+        awaiting_payment: ['pill-awaiting',  'fa-wallet',         'Awaiting Payment'],
+    };
+
+    const TYPE_ICON = { delivery: 'fa-motorcycle', pickup: 'fa-store' };
+    const TYPE_LABEL = { delivery: 'Delivery', pickup: 'Pickup' };
+
+    let allOrders = [];
+    let currentPage = 1;
+    const ordersPerPage = 5;
+
+    async function loadOrders(silent = false) {
+        const bar = document.getElementById('refresh-bar');
+        if (!silent) bar.classList.add('loading');
+
+        try {
+            const res = await fetch('/api/orders/my');
+            if (!res.ok) throw new Error();
+            allOrders = await res.json();
+            
+            if (silent) {
+                // If silent refresh, just update current page without resetting view
+                renderPaginatedOrders();
+            } else {
+                currentPage = 1;
+                renderPaginatedOrders();
+            }
+        } catch (e) {
+            console.error('Failed to load orders', e);
+        } finally {
+            bar.classList.remove('loading');
+            document.getElementById('refresh-text').textContent =
+                'Last updated: ' + new Date().toLocaleTimeString();
+        }
+    }
+
+    function renderPaginatedOrders() {
+        const container = document.getElementById('orders-container');
+        const pagination = document.getElementById('pagination-container');
+
+        if (!allOrders.length) {
+            container.innerHTML = `
+                <div class="ot-empty">
+                    <div class="ot-empty-icon"><i class="fa-solid fa-bag-shopping"></i></div>
+                    <h3>No orders yet</h3>
+                    <p style="color:var(--text-light);margin-bottom:1.5rem;">You haven't placed any orders yet.</p>
+                    <a href="/menu" class="btn btn-primary">Browse Menu</a>
+                </div>`;
+            pagination.style.display = 'none';
+            return;
+        }
+
+        const totalPages = Math.ceil(allOrders.length / ordersPerPage);
+        if (currentPage > totalPages) currentPage = totalPages;
+
+        const startIndex = (currentPage - 1) * ordersPerPage;
+        const pagedOrders = allOrders.slice(startIndex, startIndex + ordersPerPage);
+
+        container.innerHTML = pagedOrders.map(order => buildOrderRow(order)).join('');
+        renderPaginationControls(totalPages);
+    }
+
+    function renderPaginationControls(totalPages) {
+        const pagination = document.getElementById('pagination-container');
+        if (totalPages <= 1) {
+            pagination.style.display = 'none';
+            return;
+        }
+
+        pagination.style.display = 'flex';
+        const prevPage = currentPage === 1 ? totalPages : currentPage - 1;
+        const nextPage = currentPage === totalPages ? 1 : currentPage + 1;
+
+        let html = `
+            <button class="page-btn nav-btn" onclick="goToPage(${prevPage})">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+        `;
+
+        const limit = 10;
+        let startPage = Math.max(1, currentPage - Math.floor(limit / 2));
+        let endPage = Math.min(totalPages, startPage + limit - 1);
+        
+        if (endPage - startPage < limit - 1) {
+            startPage = Math.max(1, endPage - limit + 1);
+        }
+
+        if (startPage > 1) {
+            html += `<button class="page-btn" onclick="goToPage(1)">1</button>`;
+            if (startPage > 2) {
+                html += `<span style="cursor: pointer; padding: 0 10px; color: #999; display: flex; align-items: center;" onclick="goToPage(${Math.max(1, startPage - 1)})" title="Previous 10 pages">...</span>`;
+            }
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            html += `
+                <button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">
+                    ${i}
+                </button>
+            `;
+        }
+
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                html += `<span style="cursor: pointer; padding: 0 10px; color: #999; display: flex; align-items: center;" onclick="goToPage(${Math.min(totalPages, endPage + 1)})" title="Next 10 pages">...</span>`;
+            }
+            html += `<button class="page-btn" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+        }
+
+        html += `
+            <button class="page-btn nav-btn" onclick="goToPage(${nextPage})">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+        `;
+
+        pagination.innerHTML = html;
+    }
+
+    function changePage(delta) {
+        currentPage += delta;
+        renderPaginatedOrders();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function goToPage(page) {
+        currentPage = page;
+        renderPaginatedOrders();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function buildOrderRow(order) {
+        const [pillClass, pillIcon, pillLabel] = STATUS_PILL[order.status] || ['pill-pending','fa-clock','Unknown'];
+        const date = new Date(order.created_at).toLocaleDateString('en-PH', {
+            month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+        const typeIcon = TYPE_ICON[order.order_type] || 'fa-bag-shopping';
+        const typeLabel = TYPE_LABEL[order.order_type] || order.order_type;
+
+        return `
+        <a href="/order-tracking/${order.id}" class="ot-list-card ${order.order_type === 'pickup' ? 'type-pickup' : 'type-delivery'}" id="order-row-${order.id}">
+            <div class="ot-list-icon">
+                <i class="fa-solid ${typeIcon}"></i>
+            </div>
+            <div class="ot-list-info">
+                <div class="ot-list-id">Order #${order.id}</div>
+                <div class="ot-list-meta">
+                    <span class="type-tag"><i class="fa-solid ${typeIcon}"></i> ${typeLabel}</span>
+                    · ${date}
+                </div>
+            </div>
+            <div class="ot-list-right">
+                <span class="ot-status-pill ${pillClass}">
+                    <i class="fa-solid ${pillIcon}"></i> ${pillLabel}
+                </span>
+                <span class="ot-list-total">₱${order.total.toFixed(2)}</span>
+            </div>
+            <i class="fa-solid fa-chevron-right ot-list-arrow"></i>
+        </a>`;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadOrders(false);
+        setInterval(() => loadOrders(true), 30000);
+    });
+</script>
+
+<%- include('partials/footer') %>

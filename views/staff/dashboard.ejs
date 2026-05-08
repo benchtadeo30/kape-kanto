@@ -1,0 +1,206 @@
+<%- include('../partials/header') %>
+
+<style>
+    .staff-shell { display: grid; grid-template-columns: 260px 1fr; gap: 1.5rem; padding: 2rem 5%; max-width: 1500px; margin: 0 auto; }
+    .staff-sidebar { position: sticky; top: 96px; align-self: start; background: rgba(255,255,255,0.92); border: 1px solid rgba(111,78,55,0.08); border-radius: 18px; padding: 1.25rem; box-shadow: var(--shadow-soft); }
+    .staff-sidebar h3 { font-size: 1rem; margin-bottom: 1rem; color: var(--primary-dark); }
+    .staff-sidebar a { display: flex; align-items: center; gap: 10px; padding: 0.85rem 0.95rem; border-radius: 12px; color: var(--text-light); font-weight: 700; margin-bottom: 0.35rem; }
+    .staff-sidebar a:hover, .staff-sidebar a.active { background: var(--primary); color: white; transform: translateX(3px); }
+    .staff-hero { background: linear-gradient(135deg, #2c1a0e 0%, #6f4e37 68%, #a0785d 100%); border-radius: 22px; padding: 1.5rem; color: white; box-shadow: var(--shadow-medium); display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; }
+    .staff-hero h1 { color: white; margin: 0 0 0.3rem; font-size: 1.8rem; letter-spacing: 0; }
+    .staff-hero p { color: rgba(255,255,255,0.72); margin: 0; }
+    .live-pill { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 0.65rem 0.9rem; border-radius: 999px; font-weight: 800; font-size: 0.82rem; white-space: nowrap; }
+    .staff-panel { background: white; border: 1px solid rgba(111,78,55,0.08); border-radius: 18px; box-shadow: var(--shadow-soft); padding: 1.25rem; }
+    .staff-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+    .staff-panel-head h2 { margin: 0; font-size: 1.1rem; letter-spacing: 0; }
+    .order-stack { display: grid; gap: 1rem; }
+    .kitchen-card { border: 1px solid #eee2d8; border-radius: 16px; padding: 1rem; background: #fffdf9; display: grid; gap: 1rem; }
+    .kitchen-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; border-bottom: 1px solid #f1e8df; padding-bottom: 0.8rem; }
+    .kitchen-title { margin: 0; color: var(--primary-dark); font-size: 1rem; }
+    .kitchen-meta { margin-top: 0.25rem; color: var(--text-light); font-size: 0.82rem; }
+    .status-badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 0.35rem 0.7rem; font-size: 0.74rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.02em; }
+    .status-pending { background: #fff3e0; color: #b75d00; }
+    .status-preparing { background: #e8f2ff; color: #125a9c; }
+    .status-ready { background: #e8f5e9; color: #2e7d32; }
+    .status-out_for_delivery { background: #f2e8ff; color: #6c3ba2; }
+    .kitchen-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.85rem; }
+    .kitchen-label { margin: 0; color: var(--text-light); font-size: 0.74rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
+    .kitchen-value { margin: 0.15rem 0 0; font-weight: 800; color: var(--primary-dark); }
+    .note-box { border-left: 4px solid var(--danger); background: #fff4f1; color: #9f3a2a; padding: 0.75rem; border-radius: 10px; font-size: 0.88rem; }
+    .kitchen-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; border-top: 1px dashed #e9ded3; padding-top: 0.85rem; }
+    .staff-action { display: inline-flex; align-items: center; gap: 7px; border: 0; border-radius: 999px; padding: 0.65rem 0.95rem; font-family: var(--font-body); font-weight: 800; cursor: pointer; color: white; background: var(--primary); transition: transform 0.2s, box-shadow 0.2s; }
+    .staff-action:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(44,26,14,0.12); }
+    .staff-action.blue { background: #1565c0; }
+    .staff-action.green { background: var(--success); }
+    .staff-action.purple { background: #7b4bb1; }
+    .kitchen-page-controls { display: none; justify-content: center; gap: 8px; margin-top: 1.25rem; flex-wrap: wrap; align-items: center; }
+    .kitchen-page-btn { width: 38px; height: 38px; border-radius: 12px; border: 1px solid #e6d8cc; background: white; color: var(--primary-dark); font-weight: 800; cursor: pointer; }
+    .kitchen-page-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+    .kitchen-page-dots { cursor: pointer; padding: 0 8px; color: #999; display: flex; align-items: center; font-weight: 800; }
+    .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-light); }
+    .empty-state i { display: block; font-size: 2rem; color: var(--accent); margin-bottom: 0.75rem; }
+    @media (max-width: 900px) { .staff-shell { grid-template-columns: 1fr; padding: 1rem; } .staff-sidebar { position: static; } .staff-hero { align-items: flex-start; flex-direction: column; } .kitchen-grid { grid-template-columns: 1fr; } }
+</style>
+
+<div class="staff-shell">
+    <aside class="staff-sidebar">
+        <h3>Staff Panel</h3>
+        <a href="/staff/dashboard" class="active"><i class="fa-solid fa-fire-burner"></i> Kitchen Feed</a>
+        <a href="/staff/orders"><i class="fa-solid fa-list-check"></i> Manage Orders</a>
+        <a href="/staff/menu-stock"><i class="fa-solid fa-boxes-stacked"></i> Update Stock</a>
+    </aside>
+
+    <section>
+        <div class="staff-hero">
+            <div>
+                <h1>Live Kitchen Feed</h1>
+                <p>Active orders that need staff attention.</p>
+            </div>
+            <span class="live-pill"><i class="fa-solid fa-circle-play fa-fade"></i> Live Monitoring</span>
+        </div>
+
+        <div class="staff-panel">
+            <div class="staff-panel-head">
+                <h2><i class="fa-solid fa-bell" style="color: var(--danger);"></i> Action Required</h2>
+                <span id="live-count" class="status-badge status-pending">Loading</span>
+            </div>
+            <div id="live-orders-container" class="order-stack">
+                <div class="empty-state">Loading live orders...</div>
+            </div>
+            <div id="kitchen-pagination" class="kitchen-page-controls"></div>
+        </div>
+    </section>
+</div>
+
+<script>
+    const ACTIVE_STATUSES = ['pending', 'preparing', 'ready', 'out_for_delivery'];
+    const KITCHEN_PAGE_LIMIT = 6;
+    let activeOrders = [];
+    let kitchenPage = 1;
+
+    function statusLabel(status) {
+        return String(status || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    async function loadOrders() {
+        try {
+            const res = await fetch('/api/orders/all');
+            if (!res.ok) throw new Error('Request failed');
+            const orders = await res.json();
+            activeOrders = orders.filter(o => ACTIVE_STATUSES.includes(o.status));
+            renderOrders();
+        } catch (e) {
+            document.getElementById('live-count').textContent = 'Offline';
+            document.getElementById('live-orders-container').innerHTML = '<div class="empty-state"><i class="fa-solid fa-triangle-exclamation"></i> Could not load live orders.</div>';
+            document.getElementById('kitchen-pagination').style.display = 'none';
+        }
+    }
+
+    function renderOrders() {
+        const container = document.getElementById('live-orders-container');
+        const pagination = document.getElementById('kitchen-pagination');
+        const totalPages = Math.ceil(activeOrders.length / KITCHEN_PAGE_LIMIT);
+        kitchenPage = totalPages > 0 ? Math.min(Math.max(kitchenPage, 1), totalPages) : 1;
+        const start = (kitchenPage - 1) * KITCHEN_PAGE_LIMIT;
+        const pagedOrders = activeOrders.slice(start, start + KITCHEN_PAGE_LIMIT);
+
+        document.getElementById('live-count').textContent = `Showing ${pagedOrders.length} of ${activeOrders.length} active`;
+
+        if (!activeOrders.length) {
+            container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-mug-hot"></i> No active orders right now.</div>';
+            pagination.style.display = 'none';
+            return;
+        }
+
+        container.innerHTML = pagedOrders.map(o => {
+            const date = new Date(o.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            return `
+                <article class="kitchen-card">
+                    <div class="kitchen-top">
+                        <div>
+                            <h3 class="kitchen-title">Order #${o.id}</h3>
+                            <div class="kitchen-meta">${date} / ${String(o.order_type || '').toUpperCase()}</div>
+                        </div>
+                        <span class="status-badge status-${o.status}">${statusLabel(o.status)}</span>
+                    </div>
+                    <div class="kitchen-grid">
+                        <div>
+                            <p class="kitchen-label">Customer</p>
+                            <p class="kitchen-value">${o.username || 'Customer'}</p>
+                        </div>
+                        <div>
+                            <p class="kitchen-label">Total</p>
+                            <p class="kitchen-value">PHP ${Number(o.total || 0).toFixed(2)}</p>
+                        </div>
+                    </div>
+                    ${o.notes ? `<div class="note-box"><strong>Special notes:</strong> ${o.notes}</div>` : ''}
+                    <div class="kitchen-actions">
+                        <button class="staff-action" onclick="updateStatus(${o.id}, 'preparing')"><i class="fa-solid fa-fire"></i> Start Prep</button>
+                        <button class="staff-action blue" onclick="updateStatus(${o.id}, 'ready')"><i class="fa-solid fa-check-double"></i> Ready</button>
+                        ${o.order_type === 'delivery' ? `<button class="staff-action purple" onclick="updateStatus(${o.id}, 'out_for_delivery')"><i class="fa-solid fa-truck-fast"></i> Out</button>` : ''}
+                        <button class="staff-action green" style="margin-left:auto;" onclick="updateStatus(${o.id}, 'completed')"><i class="fa-solid fa-circle-check"></i> Done</button>
+                    </div>
+                </article>
+            `;
+        }).join('');
+
+        renderKitchenPagination(totalPages);
+    }
+
+    function renderKitchenPagination(totalPages) {
+        const container = document.getElementById('kitchen-pagination');
+        if (totalPages <= 1) {
+            container.style.display = 'none';
+            container.innerHTML = '';
+            return;
+        }
+
+        container.style.display = 'flex';
+        const prev = kitchenPage === 1 ? totalPages : kitchenPage - 1;
+        const next = kitchenPage === totalPages ? 1 : kitchenPage + 1;
+
+        let html = `<button class="kitchen-page-btn" onclick="goToKitchenPage(${prev})"><i class="fa-solid fa-chevron-left"></i></button>`;
+        const limit = 10;
+        let start = Math.max(1, kitchenPage - limit + 1);
+        let end = Math.min(totalPages, start + limit - 1);
+        if (end - start < limit - 1) start = Math.max(1, end - limit + 1);
+
+        if (start > 1) html += `<span class="kitchen-page-dots" onclick="goToKitchenPage(${start - 1})" title="Previous page range">...</span>`;
+        for (let i = start; i <= end; i++) {
+            html += `<button class="kitchen-page-btn ${i === kitchenPage ? 'active' : ''}" onclick="goToKitchenPage(${i})">${i}</button>`;
+        }
+        if (end < totalPages) html += `<span class="kitchen-page-dots" onclick="goToKitchenPage(${end + 1})" title="Next page range">...</span>`;
+        html += `<button class="kitchen-page-btn" onclick="goToKitchenPage(${next})"><i class="fa-solid fa-chevron-right"></i></button>`;
+
+        container.innerHTML = html;
+    }
+
+    function goToKitchenPage(page) {
+        kitchenPage = page;
+        renderOrders();
+        document.getElementById('live-orders-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    async function updateStatus(id, status) {
+        try {
+            const res = await fetch(`/api/orders/${id}/status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || 'Update failed');
+            KapeKanto.toast(`Order #${id} marked as ${statusLabel(status)}`, 'success');
+            loadOrders();
+        } catch (e) {
+            KapeKanto.toast(e.message || 'Error updating status', 'error');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadOrders();
+        setInterval(loadOrders, 10000);
+    });
+</script>
+
+<%- include('../partials/footer') %>

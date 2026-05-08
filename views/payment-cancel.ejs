@@ -1,0 +1,39 @@
+<%- include('partials/header') %>
+
+<div style="padding: 4rem 5%; max-width: 800px; margin: 0 auto; text-align: center;">
+    <div class="card" style="padding: 3rem; background: white; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
+        <div style="font-size: 5rem; margin-bottom: 1.5rem;">☕</div>
+        <h1 style="color: var(--primary); margin-bottom: 1rem;">Payment Cancelled</h1>
+        <p style="font-size: 1.2rem; margin-bottom: 2rem; color: var(--text-light);">
+            It seems you cancelled the payment process. Don't worry, your items are still in your cart!
+        </p>
+        
+        <div id="cart-recovery-section" style="margin-bottom: 2.5rem; padding: 1.5rem; background: #FFF8F0; border-radius: 16px; border: 1px dashed var(--secondary);">
+            <p style="font-weight: 600; margin-bottom: 1rem;">Would you like to try again?</p>
+            <div style="display: flex; gap: 1rem; justify-content: center;">
+                <a href="/cart" class="btn btn-primary" style="padding: 1rem 2rem;">Return to Cart</a>
+                <a href="/menu" class="btn btn-secondary" style="padding: 1rem 2rem;">Back to Menu</a>
+            </div>
+        </div>
+
+        <p style="color: var(--text-light); font-size: 0.9rem;">
+            Order Reference: <strong style="color: var(--primary-dark);"><%= typeof orderId !== 'undefined' ? orderId : 'N/A' %></strong>
+        </p>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Double check if cart exists in localStorage
+        const cart = localStorage.getItem('cafe_cart');
+        if (!cart || JSON.parse(cart).length === 0) {
+            console.warn("Cart is empty in localStorage. Attempting recovery...");
+            // If the cart is empty, it might be because the user is on a different device or cleared it.
+            // But since we didn't clear it on the server, it should still be here.
+        } else {
+            console.log("Cart is safe and preserved.");
+        }
+    });
+</script>
+
+<%- include('partials/footer') %>

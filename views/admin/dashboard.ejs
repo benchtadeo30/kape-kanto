@@ -1,0 +1,132 @@
+<%- include('../partials/header') %>
+
+<style>
+    .stat-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid #f0e6e0; overflow: hidden; position: relative; }
+    .stat-card:hover { transform: translateY(-5px); box-shadow: 0 12px 25px rgba(111, 78, 55, 0.1); border-color: var(--primary-light); }
+    .stat-icon { box-shadow: 0 8px 15px rgba(0,0,0,0.1); width: 54px; height: 54px; font-size: 1.3rem; }
+    .stat-info p { margin: 0; line-height: 1.2; }
+    .table-container { border: 1px solid #f0e6e0; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+    .badge { border-radius: 8px; padding: 6px 12px; font-size: 0.75rem; letter-spacing: 0.5px; }
+</style>
+
+<div class="dashboard-layout">
+    
+<%- include('../partials/admin-sidebar', { activePage: 'dashboard' }) %>
+
+    <!-- Main Content -->
+    <main>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h1 style="margin: 0;">Dashboard Overview</h1>
+            <div style="color: var(--text-light); font-weight: 500;">
+                <i class="fa-solid fa-calendar-day"></i> <%= new Date().toLocaleDateString() %>
+            </div>
+        </div>
+        
+        <div class="stat-grid">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white;">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Total Users</h3>
+                    <p id="stat-users">...</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, var(--success) 0%, #2e7d32 100%); color: white;">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Active Orders</h3>
+                    <p id="stat-orders">...</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, var(--warning) 0%, #f57f17 100%); color: white;">
+                    <i class="fa-solid fa-bolt"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Active Promos</h3>
+                    <p id="stat-promos">...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding: 0 0.5rem;">
+                <h3 style="margin: 0;">Recent Orders</h3>
+                <a href="/admin/orders" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">View All</a>
+            </div>
+            <div id="recent-orders-container">
+                <p style="padding: 2rem; text-align: center; color: var(--text-light);">Loading recent orders...</p>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    async function loadStats() {
+        try {
+            // Load Users
+            const usersRes = await fetch('/api/users');
+            if (usersRes.ok) {
+                const users = await usersRes.json();
+                document.getElementById('stat-users').innerText = users.length;
+            }
+
+            // Load Promos
+            const promosRes = await fetch('/api/promos/all');
+            if (promosRes.ok) {
+                const promos = await promosRes.json();
+                const active = promos.filter(p => p.is_active === 1).length;
+                document.getElementById('stat-promos').innerText = active;
+            }
+
+            // Load Orders
+            const ordersRes = await fetch('/api/orders/all?limit=5');
+            if (ordersRes.ok) {
+                const data = await ordersRes.json();
+                renderRecentOrders(data.items);
+                document.getElementById('stat-orders').innerText = data.total;
+            }
+        } catch (e) {
+            console.error('Failed to load stats', e);
+            document.getElementById('recent-orders-container').innerHTML = '<p style="color: var(--danger); text-align: center; padding: 2rem;">Error loading orders.</p>';
+        }
+    }
+
+    function renderRecentOrders(orders) {
+        const container = document.getElementById('recent-orders-container');
+        if (orders.length === 0) {
+            container.innerHTML = '<p style="padding: 2rem; text-align: center; color: var(--text-light);">No recent orders found.</p>';
+            return;
+        }
+
+        let html = '<table class="data-table">';
+        html += '<thead><tr><th>Order ID</th><th>Customer</th><th>Total</th><th>Status</th><th>Type</th></tr></thead>';
+        html += '<tbody>';
+        
+        orders.forEach(o => {
+            let statusColor = 'var(--primary)';
+            if (o.status === 'completed') statusColor = 'var(--success)';
+            if (o.status === 'cancelled') statusColor = 'var(--danger)';
+            if (o.status === 'pending') statusColor = 'var(--warning)';
+
+            html += `
+                <tr>
+                    <td><strong>#${o.id}</strong></td>
+                    <td>${o.username}</td>
+                    <td>₱${o.total.toFixed(2)}</td>
+                    <td><span class="badge" style="background: ${statusColor}; color: white;">${o.status.replace('_', ' ')}</span></td>
+                    <td>${o.order_type.charAt(0).toUpperCase() + o.order_type.slice(1)}</td>
+                </tr>
+            `;
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+
+    document.addEventListener('DOMContentLoaded', loadStats);
+</script>
+
+<%- include('../partials/footer') %>

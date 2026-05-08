@@ -1,0 +1,31 @@
+<%- include('partials/header') %>
+
+<div style="padding: 4rem 5%; max-width: 800px; margin: 0 auto; text-align: center;">
+    <div class="card" style="padding: 3rem;">
+        <div style="font-size: 4rem; margin-bottom: 1rem;">✅</div>
+        <h1 style="color: var(--success); margin-bottom: 1rem;">Payment Successful!</h1>
+        <p style="font-size: 1.2rem; margin-bottom: 2rem;">Thank you for your order. We have received your payment via PayRex.</p>
+        
+        <p style="color: var(--text-light); margin-bottom: 2rem;">
+            Order Reference ID: <strong style="color: var(--primary-dark);"><%= typeof orderId !== 'undefined' ? orderId : '' %></strong>
+        </p>
+
+        <div style="display: flex; gap: 1rem; justify-content: center;">
+            <a href="/order-tracking" class="btn btn-primary">Track My Order</a>
+            <a href="/menu" class="btn btn-secondary">Order More</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Clear the cart on successful payment
+    document.addEventListener('DOMContentLoaded', () => {
+        if (typeof KapeKanto !== 'undefined' && KapeKanto.clearCart) {
+            KapeKanto.clearCart();
+        } else if (typeof clearCart === 'function') {
+            clearCart();
+        }
+    });
+</script>
+
+<%- include('partials/footer') %>

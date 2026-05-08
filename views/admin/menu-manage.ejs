@@ -1,0 +1,1208 @@
+<%- include('../partials/header') %>
+
+<style>
+    :root {
+        --admin-primary: #6f4e37;
+        --admin-accent: #e8b86d;
+        --admin-bg: #fdfaf7;
+        --glass: rgba(255, 255, 255, 0.9);
+        --shadow: 0 10px 30px rgba(111, 78, 55, 0.1);
+    }
+
+    .dashboard-layout {
+        background: var(--admin-bg);
+        min-height: 100vh;
+    }
+
+    /* Modern Modal */
+    .admin-modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(44, 34, 28, 0.6);
+        backdrop-filter: blur(8px);
+        z-index: 2000;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        animation: modalFadeIn 0.3s ease;
+    }
+
+    @keyframes modalFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .modal-content {
+        background: white;
+        width: 100%;
+        max-width: 550px;
+        border-radius: 24px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        overflow: hidden;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        animation: modalSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes modalSlideUp {
+        from { transform: translateY(30px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+
+    .modal-header {
+        padding: 1.5rem 2rem;
+        background: var(--admin-bg);
+        border-bottom: 1px solid #f0e6e0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+        color: var(--admin-primary);
+        font-size: 1.4rem;
+        font-weight: 700;
+    }
+
+    .modal-body {
+        padding: 2rem;
+        max-height: 75vh;
+        overflow-y: auto;
+    }
+
+    .modal-footer {
+        padding: 1.5rem 2rem;
+        background: #fcfcfc;
+        border-top: 1px solid #eee;
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+    }
+
+    /* Custom File Upload */
+    .drop-zone {
+        border: 2px dashed #d7ccc8;
+        border-radius: 16px;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #fafafa;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .drop-zone:hover, .drop-zone.dragover {
+        border-color: var(--admin-primary);
+        background: #f7f2ef;
+    }
+
+    .drop-zone-icon {
+        font-size: 2.5rem;
+        color: var(--admin-accent);
+        margin-bottom: 1rem;
+        display: block;
+    }
+
+    .drop-zone-text {
+        color: var(--text-light);
+        font-size: 0.9rem;
+    }
+
+    .preview-container {
+        display: none;
+        margin-top: 1rem;
+        position: relative;
+    }
+
+    #image-preview {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        border-radius: 12px;
+        border: 1px solid #eee;
+    }
+
+    .remove-preview {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(255, 255, 255, 0.9);
+        border: none;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--danger);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    /* Form Improvements */
+    .form-group label {
+        font-weight: 600;
+        color: var(--admin-primary);
+        margin-bottom: 0.6rem;
+    }
+
+    .form-group input, .form-group textarea, .form-group select {
+        border: 1.5px solid #e8ddd4;
+        border-radius: 12px;
+        padding: 12px 1rem;
+        font-size: 0.95rem;
+        transition: all 0.3s;
+    }
+
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+        border-color: var(--admin-primary);
+        box-shadow: 0 0 0 4px rgba(111, 78, 55, 0.08);
+        outline: none;
+    }
+
+    .badge-admin {
+        padding: 0.4rem 1rem;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .option-builder {
+        margin-top: 2rem;
+        padding: 1.25rem;
+        border: 1px solid #f0e6e0;
+        border-radius: 18px;
+        background: #fdfaf7;
+    }
+
+    .option-builder-head,
+    .option-row-head,
+    .choice-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .option-builder-head,
+    .option-row-head {
+        justify-content: space-between;
+    }
+
+    .option-row {
+        margin-top: 1rem;
+        padding: 1rem;
+        border: 1px solid #eadfd7;
+        border-radius: 14px;
+        background: white;
+    }
+
+    .choice-row {
+        margin-top: 0.75rem;
+    }
+
+    .choice-row input {
+        min-width: 0;
+    }
+
+    .icon-action {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        border: 1px solid #eadfd7;
+        background: #fff;
+        color: var(--admin-primary);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    @keyframes dropdownIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Custom Scrollbar for Dropdown */
+    #cat-filter-menu::-webkit-scrollbar {
+        width: 6px;
+    }
+    #cat-filter-menu::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    #cat-filter-menu::-webkit-scrollbar-thumb {
+        background: #e8ddd4;
+        border-radius: 10px;
+    }
+    #cat-filter-menu::-webkit-scrollbar-thumb:hover {
+        background: #bca08d;
+    }
+</style>
+
+<div class="dashboard-layout">
+    <%- include('../partials/admin-sidebar', { activePage: 'menu' }) %>
+
+    <!-- Main Content -->
+    <main>
+        <!-- Header Section -->
+        <div style="margin-bottom: 2.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem;">
+                <div>
+                    <h1 style="margin: 0; font-size: 2.4rem; color: var(--admin-primary); font-weight: 800; letter-spacing: -0.5px;">Manage Menu Items</h1>
+                    <div style="height: 5px; width: 50px; background: #bca08d; border-radius: 10px; margin-top: 10px; opacity: 0.6;"></div>
+                </div>
+                <button class="btn btn-primary" onclick="openModal()" style="padding: 12px 1.8rem; border-radius: 16px; font-weight: 700; box-shadow: 0 10px 20px rgba(111, 78, 55, 0.15);">
+                    <i class="fa-solid fa-plus" style="margin-right: 8px;"></i>
+                    Add New Product
+                </button>
+            </div>
+
+            <!-- Enhanced Control Bar -->
+            <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                <div style="position: relative; flex: 1; min-width: 300px;">
+                    <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 1.2rem; top: 50%; transform: translateY(-50%); color: #bca08d; font-size: 1.1rem;"></i>
+                    <input type="text" id="menu-search" placeholder="Search by product name..." 
+                           oninput="debounceMenuSearch()"
+                           style="width: 100%; padding: 16px 1rem 16px 3.2rem; border-radius: 18px; border: 1px solid #f0e6e0; background: #fff; outline: none; transition: 0.3s; font-size: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.03); font-weight: 500;">
+                </div>
+
+                <div style="position: relative; width: 240px;">
+                    <div id="cat-filter-trigger" onclick="toggleCatDropdown()" 
+                         style="width: 100%; padding: 16px 1rem 16px 3.2rem; border-radius: 18px; border: 1px solid #f0e6e0; background: #fff; cursor: pointer; font-weight: 700; color: var(--admin-primary); transition: 0.3s; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(0,0,0,0.03); display: flex; align-items: center; justify-content: space-between;">
+                        <i class="fa-solid fa-filter" style="position: absolute; left: 1.2rem; top: 50%; transform: translateY(-50%); color: #bca08d; font-size: 1.1rem;"></i>
+                        <span id="current-cat-filter">All Categories</span>
+                        <i class="fa-solid fa-chevron-down" style="font-size: 0.8rem; color: #bca08d;"></i>
+                    </div>
+                    
+                    <div id="cat-filter-menu" style="display: none; position: absolute; top: calc(100% + 10px); left: 0; right: 0; background: #fff; border-radius: 18px; border: 1px solid #f0e6e0; box-shadow: 0 15px 35px rgba(0,0,0,0.1); z-index: 1000; overflow-y: auto; max-height: 320px; animation: dropdownIn 0.25s ease-out;">
+                        <!-- Options will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 2rem;">
+            <div id="menu-list" style="display: grid; gap: 1rem; margin-bottom: 1.5rem;">
+                <p>Loading...</p>
+            </div>
+            <div id="menu-pagination" style="display: flex; justify-content: center; gap: 1rem; align-items: center; padding-top: 1rem; border-top: 1px solid #eee;"></div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h1 class="section-title" style="margin: 0; text-align: left;">Manage Categories</h1>
+            <button class="btn btn-primary" onclick="openCatModal()">+ Add Category</button>
+        </div>
+
+        <div class="card">
+            <div id="category-list" style="display: grid; gap: 1rem; margin-bottom: 1.5rem;">
+                <p>Loading...</p>
+            </div>
+            <div id="category-pagination" style="display: flex; justify-content: center; gap: 1rem; align-items: center; padding-top: 1rem; border-top: 1px solid #eee;"></div>
+        </div>
+    </main>
+</div>
+
+<!-- Menu Modal -->
+<div id="menu-modal" class="admin-modal">
+    <div class="modal-content" style="max-width: 700px; height: auto; max-height: 90vh;">
+        <div class="modal-header" style="background: linear-gradient(135deg, #fdfaf7 0%, #fff 100%); padding: 1.5rem 2.5rem; border-bottom: 1px solid #f0e6e0;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 40px; height: 40px; background: #f7f2ef; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--admin-primary);">
+                    <i class="fa-solid fa-mug-hot" style="font-size: 1.2rem;"></i>
+                </div>
+                <div>
+                    <h3 id="modal-title" style="font-size: 1.25rem; font-weight: 800; margin: 0;">Product Details</h3>
+                    <p style="font-size: 0.8rem; color: #999; margin: 0;">Configure your menu item's appearance and settings.</p>
+                </div>
+            </div>
+            <button onclick="closeModal()" style="background: #f5f5f5; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #666; transition: 0.2s;">&times;</button>
+        </div>
+        <form id="menu-form" style="display: flex; flex-direction: column; height: 100%; overflow: hidden;">
+            <div class="modal-body" style="padding: 2.5rem; background: #fff; flex: 1; overflow-y: auto;">
+                <input type="hidden" id="item-id">
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                    <!-- LEFT COLUMN: Basic Info -->
+                    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                        <div class="form-group">
+                            <label style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: #8b7355; margin-bottom: 8px; display: block;">Item Name</label>
+                            <input type="text" id="item-name" name="name" placeholder="e.g. Spanish Latte" required style="width: 100%; padding: 14px; border-radius: 14px; border: 1.5px solid #eee; font-weight: 600;">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: #8b7355; margin-bottom: 8px; display: block;">Category</label>
+                            <div id="category-selector-trigger" onclick="openCategorySelector()" 
+                                 style="display: flex; justify-content: space-between; align-items: center; padding: 14px; border: 1.5px solid #eee; border-radius: 14px; background: #fcfcfc; cursor: pointer; transition: all 0.3s;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <i class="fa-solid fa-tags" style="color: #ccc; font-size: 0.9rem;"></i>
+                                    <span id="selected-category-text" style="color: #666; font-weight: 500;">Select...</span>
+                                </div>
+                                <i class="fa-solid fa-chevron-down" style="font-size: 0.75rem; opacity: 0.4;"></i>
+                            </div>
+                            <input type="hidden" id="item-category" name="category_id" required>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div class="form-group">
+                                <label style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: #8b7355; margin-bottom: 8px; display: block;">Price (₱)</label>
+                                <input type="number" id="item-price" name="price" step="0.01" placeholder="0.00" required style="width: 100%; padding: 14px; border-radius: 14px; border: 1.5px solid #eee; font-weight: 700; color: var(--admin-primary);">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: #8b7355; margin-bottom: 8px; display: block;">Stock</label>
+                                <input type="number" id="item-stock" name="stock" placeholder="0" required style="width: 100%; padding: 14px; border-radius: 14px; border: 1.5px solid #eee; font-weight: 600;">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: #8b7355; margin-bottom: 8px; display: block;">Description</label>
+                            <textarea id="item-desc" name="description" rows="4" placeholder="Brief details about the item..." style="width: 100%; padding: 14px; border-radius: 14px; border: 1.5px solid #eee; resize: none; font-size: 0.9rem; line-height: 1.5;"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT COLUMN: Media & Status -->
+                    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                        <div class="form-group">
+                            <label style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: #8b7355; margin-bottom: 8px; display: block;">Product Media</label>
+                            <div id="drop-zone" class="drop-zone" style="height: 200px; border-radius: 20px; display: flex; flex-direction: column; justify-content: center; background: #fdfaf8;">
+                                <i class="fa-solid fa-camera-retro" style="font-size: 2.5rem; color: #d7ccc8; margin-bottom: 15px;"></i>
+                                <div class="drop-zone-text" style="font-size: 0.85rem; color: #8b7355;">
+                                    <strong>Click to upload</strong><br>or drag & drop image
+                                </div>
+                                <input type="file" id="item-image" name="image" accept="image/*" style="display: none;">
+                            </div>
+                            
+                            <div id="preview-container" class="preview-container" style="margin-top: 15px; border-radius: 16px; overflow: hidden; border: 1px solid #eee; height: 180px;">
+                                <img id="image-preview" src="#" alt="Preview" style="width: 100%; height: 100%; object-fit: cover;">
+                                <button type="button" class="remove-preview" onclick="removeImage()" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.5); color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div style="padding: 1.2rem; border-radius: 18px; background: #fdfaf7; border: 1px solid #f0e6e0;">
+                            <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; margin: 0;">
+                                <div style="position: relative;">
+                                    <input type="checkbox" id="item-available" name="is_available" checked style="width: 22px; height: 22px; cursor: pointer; accent-color: var(--admin-primary);">
+                                </div>
+                                <div>
+                                    <span style="display: block; font-weight: 700; color: var(--admin-primary); font-size: 0.9rem;">Availability Status</span>
+                                    <span style="display: block; font-size: 0.7rem; color: #8b7355;">Toggle to show/hide on menu</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="option-builder">
+                    <div class="option-builder-head">
+                        <div>
+                            <h4 style="margin: 0; color: var(--admin-primary); font-size: 1rem;">Selection Choices</h4>
+                            <p style="margin: 4px 0 0; color: #8b7355; font-size: 0.78rem;">These appear in the item detail page before adding to cart.</p>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
+                            <button type="button" class="btn btn-secondary" onclick="addPresetOptions()" style="padding: 8px 12px; border-radius: 10px; font-size: 0.8rem;">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> Common choices
+                            </button>
+                            <button type="button" class="btn btn-primary" onclick="addOptionGroup()" style="padding: 8px 12px; border-radius: 10px; font-size: 0.8rem;">
+                                <i class="fa-solid fa-plus"></i> Add selection
+                            </button>
+                        </div>
+                    </div>
+                    <div id="options-builder-list"></div>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 1.5rem 2.5rem; background: #fcfcfc; border-top: 1px solid #f0e6e0;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal()" style="background: #bca08d; border: none; color: white; font-weight: 600;">Discard</button>
+                <button type="submit" class="btn btn-primary" style="padding: 12px 2.5rem; border-radius: 12px; font-weight: 700; box-shadow: 0 10px 20px rgba(111, 78, 55, 0.15);">Save Product</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Category Modal -->
+<div id="cat-modal" class="admin-modal">
+    <div class="modal-content" style="max-width: 480px; border-radius: 28px; display: flex; flex-direction: column;">
+        <div class="modal-header" style="background: #fdfaf7; padding: 2rem;">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div style="width: 45px; height: 45px; background: #fff; border-radius: 14px; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.05); color: var(--admin-primary);">
+                    <i class="fa-solid fa-layer-group" style="font-size: 1.2rem;"></i>
+                </div>
+                <div>
+                    <h3 id="cat-modal-title" style="margin: 0; font-size: 1.3rem; font-weight: 800;">Category</h3>
+                    <p style="margin: 0; font-size: 0.8rem; color: #999;">Organize your menu items efficiently.</p>
+                </div>
+            </div>
+            <button onclick="closeCatModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #ccc; transition: 0.2s;">&times;</button>
+        </div>
+        <form id="cat-form" onsubmit="handleCatSubmit(event)" style="display: flex; flex-direction: column;">
+            <div class="modal-body" style="padding: 2.5rem;">
+                <input type="hidden" id="cat-id">
+                <div class="form-group">
+                    <label style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1.5px; color: #8b7355; margin-bottom: 12px; display: block; font-weight: 700;">Name of Category</label>
+                    <input type="text" id="cat-name" placeholder="e.g. Espresso Series" required style="width: 100%; padding: 16px; border-radius: 16px; border: 2px solid #f7f2ef; background: #fdfaf7; font-size: 1rem; font-weight: 600; outline: none; transition: 0.3s;">
+                </div>
+                <div style="margin-top: 2rem; padding: 1.2rem; background: #fcfcfc; border-radius: 16px; border: 1px dashed #eee; display: flex; align-items: center; gap: 12px;">
+                    <i class="fa-solid fa-circle-info" style="color: #bca08d;"></i>
+                    <p style="margin: 0; font-size: 0.8rem; color: #8b7355; line-height: 1.4;">New categories will appear immediately in the public menu filters.</p>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 1.5rem 2.5rem; background: #fff; border-top: none;">
+                <button type="button" class="btn btn-secondary" onclick="closeCatModal()" style="background: #bca08d; border: none; color: white; font-weight: 600;">Cancel</button>
+                <button type="submit" class="btn btn-primary" style="padding: 14px 2rem; border-radius: 14px; font-weight: 800;">Securely Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Category Selector Modal (Paginated) -->
+<div id="cat-selector-modal" class="admin-modal">
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3>Select Category</h3>
+            <button onclick="closeCategorySelector()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #999;">&times;</button>
+        </div>
+        <div class="modal-body" style="padding: 1.5rem;">
+            <div style="position: relative; margin-bottom: 1.5rem;">
+                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #999;"></i>
+                <input type="text" id="cat-selector-search" placeholder="Search categories..." 
+                       oninput="debounceCatSelectorSearch()"
+                       style="width: 100%; padding: 10px 1rem 10px 2.5rem; border-radius: 10px; border: 1px solid #eee;">
+            </div>
+            <div id="cat-selector-list" style="display: grid; gap: 8px; max-height: 300px; overflow-y: auto;">
+                <!-- Loaded via JS -->
+            </div>
+            <div id="cat-selector-pagination" style="display: flex; justify-content: center; gap: 8px; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #eee;">
+                <!-- Pagination -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let categories = [];
+    let menuPage = 1;
+    let categoryPage = 1;
+    let selectorPage = 1;
+    let selectorSearch = '';
+    let menuOptionDrafts = [];
+    const PAGE_LIMIT = 10;
+
+    function escapeAdminHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function defaultOptionDrafts() {
+        return [
+            {
+                name: 'Size',
+                choices: [
+                    { name: 'Regular', price_adjustment: 0 },
+                    { name: 'Large', price_adjustment: 25 }
+                ]
+            },
+            {
+                name: 'Sugar Level',
+                choices: [
+                    { name: 'No Sugar', price_adjustment: 0 },
+                    { name: 'Less Sweet', price_adjustment: 0 },
+                    { name: 'Regular', price_adjustment: 0 },
+                    { name: 'Extra Sweet', price_adjustment: 0 }
+                ]
+            }
+        ];
+    }
+
+    function renderOptionsBuilder() {
+        const list = document.getElementById('options-builder-list');
+        if (!list) return;
+
+        if (menuOptionDrafts.length === 0) {
+            list.innerHTML = `
+                <div style="margin-top: 1rem; padding: 1rem; border: 1px dashed #d7ccc8; border-radius: 14px; color: #8b7355; text-align: center; font-size: 0.85rem; font-weight: 600;">
+                    No selections yet. Add choices if this product needs size, sugar, milk, add-ons, or similar options.
+                </div>
+            `;
+            return;
+        }
+
+        list.innerHTML = menuOptionDrafts.map((option, optionIndex) => `
+            <div class="option-row">
+                <div class="option-row-head">
+                    <input type="text" value="${escapeAdminHtml(option.name)}" placeholder="Selection name, e.g. Size"
+                        oninput="updateOptionName(${optionIndex}, this.value)"
+                        style="flex: 1; padding: 12px; border-radius: 12px; border: 1.5px solid #eee; font-weight: 700;">
+                    <button type="button" class="icon-action" onclick="removeOptionGroup(${optionIndex})" title="Remove selection">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+                <div>
+                    ${option.choices.map((choice, choiceIndex) => `
+                        <div class="choice-row">
+                            <input type="text" value="${escapeAdminHtml(choice.name)}" placeholder="Choice name"
+                                oninput="updateChoiceName(${optionIndex}, ${choiceIndex}, this.value)"
+                                style="flex: 1; padding: 10px 12px; border-radius: 10px; border: 1.5px solid #eee;">
+                            <input type="number" value="${Number(choice.price_adjustment) || 0}" step="0.01" placeholder="0"
+                                oninput="updateChoicePrice(${optionIndex}, ${choiceIndex}, this.value)"
+                                style="width: 120px; padding: 10px 12px; border-radius: 10px; border: 1.5px solid #eee;">
+                            <button type="button" class="icon-action" onclick="removeChoice(${optionIndex}, ${choiceIndex})" title="Remove choice">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                    `).join('')}
+                </div>
+                <button type="button" class="btn btn-secondary" onclick="addChoice(${optionIndex})" style="margin-top: 0.85rem; padding: 8px 12px; border-radius: 10px; font-size: 0.8rem;">
+                    <i class="fa-solid fa-plus"></i> Add choice
+                </button>
+            </div>
+        `).join('');
+    }
+
+    function addOptionGroup(option = { name: '', choices: [{ name: '', price_adjustment: 0 }] }) {
+        menuOptionDrafts.push({
+            name: option.name || '',
+            choices: Array.isArray(option.choices) && option.choices.length ? option.choices : [{ name: '', price_adjustment: 0 }]
+        });
+        renderOptionsBuilder();
+    }
+
+    function addPresetOptions() {
+        menuOptionDrafts = defaultOptionDrafts();
+        renderOptionsBuilder();
+    }
+
+    function removeOptionGroup(optionIndex) {
+        menuOptionDrafts.splice(optionIndex, 1);
+        renderOptionsBuilder();
+    }
+
+    function updateOptionName(optionIndex, value) {
+        if (menuOptionDrafts[optionIndex]) menuOptionDrafts[optionIndex].name = value;
+    }
+
+    function addChoice(optionIndex) {
+        if (!menuOptionDrafts[optionIndex]) return;
+        menuOptionDrafts[optionIndex].choices.push({ name: '', price_adjustment: 0 });
+        renderOptionsBuilder();
+    }
+
+    function removeChoice(optionIndex, choiceIndex) {
+        if (!menuOptionDrafts[optionIndex]) return;
+        menuOptionDrafts[optionIndex].choices.splice(choiceIndex, 1);
+        if (menuOptionDrafts[optionIndex].choices.length === 0) {
+            menuOptionDrafts[optionIndex].choices.push({ name: '', price_adjustment: 0 });
+        }
+        renderOptionsBuilder();
+    }
+
+    function updateChoiceName(optionIndex, choiceIndex, value) {
+        if (menuOptionDrafts[optionIndex]?.choices[choiceIndex]) {
+            menuOptionDrafts[optionIndex].choices[choiceIndex].name = value;
+        }
+    }
+
+    function updateChoicePrice(optionIndex, choiceIndex, value) {
+        if (menuOptionDrafts[optionIndex]?.choices[choiceIndex]) {
+            menuOptionDrafts[optionIndex].choices[choiceIndex].price_adjustment = Number.parseFloat(value) || 0;
+        }
+    }
+
+    function collectMenuOptions() {
+        return menuOptionDrafts.map(option => ({
+            name: String(option.name || '').trim(),
+            choices: option.choices.map(choice => ({
+                name: String(choice.name || '').trim(),
+                price_adjustment: Number.parseFloat(choice.price_adjustment) || 0
+            })).filter(choice => choice.name)
+        })).filter(option => option.name && option.choices.length);
+    }
+
+    async function loadData() {
+        try {
+            await Promise.all([
+                loadMenuItems(),
+                loadCategories(),
+                syncFilterCategories()
+            ]);
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    let currentFilterCat = 'all';
+
+    function toggleCatDropdown() {
+        const menu = document.getElementById('cat-filter-menu');
+        const isOpen = menu.style.display === 'block';
+        menu.style.display = isOpen ? 'none' : 'block';
+        document.getElementById('cat-filter-trigger').style.borderColor = isOpen ? '#f0e6e0' : 'var(--admin-primary)';
+    }
+
+    // Close dropdown on click outside
+    window.addEventListener('click', (e) => {
+        if (!e.target.closest('#cat-filter-trigger') && !e.target.closest('#cat-filter-menu')) {
+            document.getElementById('cat-filter-menu').style.display = 'none';
+            document.getElementById('cat-filter-trigger').style.borderColor = '#f0e6e0';
+        }
+    });
+
+    async function syncFilterCategories() {
+        try {
+            const res = await fetch('/api/categories');
+            if (res.ok) {
+                const allCats = await res.json();
+                const menu = document.getElementById('cat-filter-menu');
+                
+                let html = `
+                    <div onclick="selectFilterCat('all', 'All Categories')" 
+                         style="padding: 12px 1.2rem; cursor: pointer; transition: 0.2s; font-weight: 600; color: #8b7355; display: flex; align-items: center; gap: 10px; background: ${currentFilterCat === 'all' ? '#fdfaf7' : 'transparent'}">
+                        <i class="fa-solid fa-layer-group" style="opacity: 0.5; width: 20px;"></i> All Categories
+                    </div>`;
+                
+                allCats.forEach(cat => {
+                    html += `
+                        <div onclick="selectFilterCat('${cat.id}', '${cat.name.replace(/'/g, "\\'")}')" 
+                             style="padding: 12px 1.2rem; cursor: pointer; transition: 0.2s; font-weight: 600; color: #8b7355; display: flex; align-items: center; gap: 10px; background: ${currentFilterCat == cat.id ? '#fdfaf7' : 'transparent'}">
+                            <i class="fa-solid fa-tag" style="opacity: 0.5; width: 20px;"></i> ${cat.name}
+                        </div>`;
+                });
+                
+                menu.innerHTML = html;
+
+                // Add hover effects
+                menu.querySelectorAll('div').forEach(item => {
+                    item.onmouseover = () => { if (item.style.background !== 'rgb(253, 250, 247)') item.style.background = '#fafafa'; };
+                    item.onmouseout = () => { if (item.style.background !== 'rgb(253, 250, 247)') item.style.background = 'transparent'; };
+                });
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    function selectFilterCat(id, name) {
+        currentFilterCat = id;
+        document.getElementById('current-cat-filter').innerText = name;
+        document.getElementById('cat-filter-menu').style.display = 'none';
+        document.getElementById('cat-filter-trigger').style.borderColor = '#f0e6e0';
+        menuPage = 1;
+        loadMenuItems();
+        syncFilterCategories(); // Refresh to update active state background
+    }
+
+    let menuSearchTimeout = null;
+    function debounceMenuSearch() {
+        clearTimeout(menuSearchTimeout);
+        menuSearchTimeout = setTimeout(() => {
+            menuPage = 1;
+            loadMenuItems();
+        }, 400);
+    }
+
+    async function loadMenuItems() {
+        try {
+            const search = document.getElementById('menu-search').value.trim();
+            const offset = (menuPage - 1) * PAGE_LIMIT;
+            
+            const res = await fetch(`/api/menu?limit=${PAGE_LIMIT}&offset=${offset}&search=${encodeURIComponent(search)}&category_id=${currentFilterCat}`);
+            if (res.ok) {
+                const data = await res.json();
+                renderMenu(data.items);
+                renderPagination('menu-pagination', menuPage, data.total, (p) => {
+                    menuPage = p;
+                    loadMenuItems();
+                });
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    async function loadCategories() {
+        try {
+            const offset = (categoryPage - 1) * PAGE_LIMIT;
+            const res = await fetch(`/api/categories?limit=${PAGE_LIMIT}&offset=${offset}`);
+            if (res.ok) {
+                const data = await res.json();
+                renderCategories(data.items);
+                renderPagination('category-pagination', categoryPage, data.total, (p) => {
+                    categoryPage = p;
+                    loadCategories();
+                });
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    // --- CATEGORY SELECTOR LOGIC ---
+    let selectorTimeout = null;
+    function debounceCatSelectorSearch() {
+        clearTimeout(selectorTimeout);
+        selectorTimeout = setTimeout(() => {
+            selectorPage = 1;
+            loadSelectorCategories();
+        }, 300);
+    }
+
+    async function openCategorySelector() {
+        document.getElementById('cat-selector-modal').style.display = 'flex';
+        loadSelectorCategories();
+    }
+
+    function closeCategorySelector() {
+        document.getElementById('cat-selector-modal').style.display = 'none';
+    }
+
+    async function loadSelectorCategories() {
+        try {
+            const search = document.getElementById('cat-selector-search').value.trim();
+            const offset = (selectorPage - 1) * PAGE_LIMIT;
+            const res = await fetch(`/api/menu/categories?limit=${PAGE_LIMIT}&offset=${offset}&search=${encodeURIComponent(search)}`);
+            const data = await res.json();
+            
+            const list = document.getElementById('cat-selector-list');
+            if (data.items.length === 0) {
+                list.innerHTML = '<p style="text-align:center; color:#999; padding: 1rem;">No categories found.</p>';
+            } else {
+                list.innerHTML = data.items.map(c => `
+                    <div class="selector-item" onclick="selectCategoryInModal(${c.id}, '${c.name.replace(/'/g, "\\'")}')" 
+                         style="padding: 12px 1rem; border-radius: 10px; cursor: pointer; transition: 0.2s; border: 1px solid #fcfcfc;">
+                        <i class="fa-solid fa-folder-tree" style="margin-right: 10px; opacity: 0.5;"></i>
+                        <span style="font-weight: 600;">${c.name}</span>
+                    </div>
+                `).join('');
+                
+                // Add hover style
+                const items = list.querySelectorAll('.selector-item');
+                items.forEach(it => {
+                    it.onmouseover = () => { it.style.background = '#f7f2ef'; it.style.borderColor = '#e8ddd4'; };
+                    it.onmouseout = () => { it.style.background = 'transparent'; it.style.borderColor = '#fcfcfc'; };
+                });
+            }
+
+            renderSelectorPagination(data.total);
+        } catch (e) { console.error(e); }
+    }
+
+    function renderSelectorPagination(total) {
+        const container = document.getElementById('cat-selector-pagination');
+        const totalPages = Math.ceil(total / PAGE_LIMIT);
+        if (totalPages <= 1) { container.innerHTML = ''; return; }
+
+        const prev = selectorPage === 1 ? totalPages : selectorPage - 1;
+        const next = selectorPage === totalPages ? 1 : selectorPage + 1;
+
+        let html = `
+            <button class="btn btn-secondary" style="width: 32px; height: 32px; padding: 0; border-radius: 8px;" onclick="changeSelectorPage(${prev})">
+                <i class="fa-solid fa-chevron-left" style="font-size: 0.7rem;"></i>
+            </button>`;
+
+        const limit = 5; // Smaller limit for modal
+        let start = Math.max(1, selectorPage - 2);
+        let end = Math.min(totalPages, start + limit - 1);
+        if (end - start < limit - 1) start = Math.max(1, end - limit + 1);
+
+        for (let i = start; i <= end; i++) {
+            html += `<button class="btn ${i === selectorPage ? 'btn-primary' : 'btn-outline'}" 
+                             onclick="changeSelectorPage(${i})" 
+                             style="width: 32px; height: 32px; padding: 0; border-radius: 8px; font-size: 0.75rem;">${i}</button>`;
+        }
+
+        html += `
+            <button class="btn btn-secondary" style="width: 32px; height: 32px; padding: 0; border-radius: 8px;" onclick="changeSelectorPage(${next})">
+                <i class="fa-solid fa-chevron-right" style="font-size: 0.7rem;"></i>
+            </button>`;
+        
+        container.innerHTML = html;
+    }
+
+    window.changeSelectorPage = (p) => {
+        selectorPage = p;
+        loadSelectorCategories();
+    };
+
+    function selectCategoryInModal(id, name) {
+        document.getElementById('item-category').value = id;
+        document.getElementById('selected-category-text').innerText = name;
+        document.getElementById('selected-category-text').style.color = 'var(--admin-primary)';
+        document.getElementById('category-selector-trigger').style.borderColor = 'var(--admin-primary)';
+        closeCategorySelector();
+    }
+
+    function renderPagination(containerId, current, total, onPageChange) {
+        const container = document.getElementById(containerId);
+        const totalPages = Math.ceil(total / PAGE_LIMIT);
+        
+        if (totalPages <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+
+        // Store callback in a way that the global handler can find it
+        if (!window.onP_callbacks) window.onP_callbacks = {};
+        window.onP_callbacks[containerId] = onPageChange;
+
+        const prev = current === 1 ? totalPages : current - 1;
+        const next = current === totalPages ? 1 : current + 1;
+
+        let html = `
+            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
+                <button class="btn btn-secondary" style="width: 38px; height: 38px; padding: 0; border-radius: 10px; display: flex; align-items: center; justify-content: center;" onclick="window.onP_dispatch('${containerId}', ${prev})">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>`;
+
+        const limit = 10;
+        let startPage = Math.max(1, current - Math.floor(limit / 2));
+        let endPage = Math.min(totalPages, startPage + limit - 1);
+        
+        if (endPage - startPage < limit - 1) {
+            startPage = Math.max(1, endPage - limit + 1);
+        }
+
+        if (startPage > 1) {
+            html += `<button class="btn btn-outline" onclick="window.onP_dispatch('${containerId}', 1)" style="width: 36px; height: 36px; padding: 0; border-radius: 10px;">1</button>`;
+            if (startPage > 2) {
+                html += `<span style="cursor: pointer; padding: 0 5px; color: #999; display: flex; align-items: center;" onclick="window.onP_dispatch('${containerId}', ${Math.max(1, startPage - 1)})" title="Previous 10 pages">...</span>`;
+            }
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            html += `<button class="btn ${i === current ? 'btn-primary' : 'btn-outline'}" 
+                             onclick="window.onP_dispatch('${containerId}', ${i})" 
+                             style="width: 36px; height: 36px; padding: 0; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700;">${i}</button>`;
+        }
+
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                html += `<span style="cursor: pointer; padding: 0 5px; color: #999; display: flex; align-items: center;" onclick="window.onP_dispatch('${containerId}', ${Math.min(totalPages, endPage + 1)})" title="Next 10 pages">...</span>`;
+            }
+            html += `<button class="btn btn-outline" onclick="window.onP_dispatch('${containerId}', ${totalPages})" style="width: 36px; height: 36px; padding: 0; border-radius: 10px;">${totalPages}</button>`;
+        }
+
+        html += `
+                <button class="btn btn-secondary" style="width: 38px; height: 38px; padding: 0; border-radius: 10px; display: flex; align-items: center; justify-content: center;" onclick="window.onP_dispatch('${containerId}', ${next})">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+        `;
+        
+        container.innerHTML = html;
+        
+        // Expose global dispatcher
+        window.onP_dispatch = (cid, p) => {
+            if (window.onP_callbacks && window.onP_callbacks[cid]) {
+                window.onP_callbacks[cid](p);
+            }
+        };
+    }
+
+    function renderCategories(cats) {
+        const container = document.getElementById('category-list');
+        if(cats.length === 0) {
+            container.innerHTML = '<p style="text-align:center; padding: 2rem; color: #999;">No categories found.</p>';
+            return;
+        }
+        let html = '';
+        cats.forEach(c => {
+            html += `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.2rem; background: #fff; border: 1px solid #f0e6e0; border-radius: 16px; transition: all 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div style="width: 40px; height: 40px; background: var(--admin-primary); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 10px rgba(111, 78, 55, 0.2);">
+                            <i class="fa-solid fa-folder-tree"></i>
+                        </div>
+                        <h4 style="margin: 0; font-size: 1.1rem; color: var(--admin-primary);">${c.name}</h4>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-secondary" style="padding: 0.5rem 1rem; border-radius: 10px;" onclick='editCategory(${JSON.stringify(c).replace(/'/g, "&#39;")})'>
+                            <i class="fa-solid fa-pen-to-square"></i> Edit
+                        </button>
+                        <button class="btn btn-danger" style="padding: 0.5rem 1rem; border-radius: 10px; background: #fff5f5; color: var(--danger); border: 1px solid #ffebee;" onclick="deleteCategory(${c.id})">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function renderMenu(items) {
+        const container = document.getElementById('menu-list');
+        if(items.length === 0) {
+            container.innerHTML = '<p style="text-align:center; padding: 2rem; color: #999;">No products found.</p>';
+            return;
+        }
+
+        let html = '';
+        items.forEach(item => {
+            const imgUrl = item.image ? item.image : 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=200';
+            html += `
+                <div style="display: flex; align-items: center; gap: 1.5rem; padding: 1.2rem; background: #fff; border: 1px solid #f0e6e0; border-radius: 20px; transition: all 0.3s; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                    <div style="position: relative;">
+                        <img src="${escapeAdminHtml(imgUrl)}" alt="${escapeAdminHtml(item.name)}" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=200';" style="width: 100px; height: 100px; object-fit: cover; border-radius: 16px; border: 1px solid #f0e6e0;">
+                        ${!item.is_available ? '<div style="position: absolute; inset: 0; background: rgba(0,0,0,0.4); border-radius: 16px; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.7rem; font-weight: bold; text-transform: uppercase;">Hidden</div>' : ''}
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 0.4rem;">
+                            <h4 style="margin: 0; font-size: 1.2rem; color: var(--admin-primary);">${item.name}</h4>
+                            <span style="font-size: 0.7rem; padding: 2px 8px; border-radius: 6px; background: #f0f0f0; color: #666; font-weight: 600;">${item.category_name}</span>
+                        </div>
+                        <p style="margin: 0 0 0.5rem 0; color: var(--text-light); font-size: 0.95rem; font-weight: 700; color: var(--admin-primary);">₱${item.price.toFixed(2)}</p>
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <span style="font-size: 0.85rem; color: #666; display: flex; align-items: center; gap: 8px; background: #fdfaf7; padding: 4px 12px; border-radius: 50px; border: 1px solid #f0e6e0;">
+                                <i class="fa-solid fa-boxes-stacked" style="color: var(--admin-primary);"></i> Stock: <strong>${item.stock}</strong>
+                            </span>
+                            <span style="font-size: 0.85rem; color: ${item.is_available ? '#2e7d32' : '#c62828'}; font-weight: 700; background: ${item.is_available ? '#e8f5e9' : '#ffebee'}; padding: 4px 12px; border-radius: 50px; border: 1px solid ${item.is_available ? '#c8e6c9' : '#ffcdd2'};">
+                                <i class="fa-solid fa-eye${item.is_available ? '' : '-slash'}" style="font-size: 0.8rem;"></i> ${item.is_available ? 'Visible' : 'Hidden'}
+                            </span>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 0.6rem;">
+                        <button class="btn btn-secondary" style="padding: 0.6rem 1.2rem; border-radius: 12px;" onclick='editItem(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
+                            <i class="fa-solid fa-pen"></i> Edit
+                        </button>
+                        <button class="btn btn-danger" style="padding: 0.6rem 1rem; border-radius: 12px; background: #fff5f5; color: var(--danger); border: 1px solid #ffebee;" onclick="deleteItem(${item.id})">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function openModal() {
+        document.getElementById('menu-form').reset();
+        document.getElementById('item-id').value = '';
+        document.getElementById('item-category').value = '';
+        document.getElementById('selected-category-text').innerText = 'Select a category...';
+        document.getElementById('selected-category-text').style.color = '#999';
+        document.getElementById('category-selector-trigger').style.borderColor = '#e8ddd4';
+        document.getElementById('modal-title').innerText = 'Add Menu Item';
+        menuOptionDrafts = defaultOptionDrafts();
+        renderOptionsBuilder();
+        document.getElementById('menu-modal').style.display = 'flex';
+        removeImage();
+    }
+
+    function closeModal() {
+        document.getElementById('menu-modal').style.display = 'none';
+    }
+
+    async function editItem(item) {
+        document.getElementById('item-id').value = item.id;
+        document.getElementById('item-name').value = item.name;
+        document.getElementById('item-desc').value = item.description || '';
+        document.getElementById('item-price').value = item.price;
+        document.getElementById('item-stock').value = item.stock;
+        
+        // Category Selection
+        document.getElementById('item-category').value = item.category_id;
+        document.getElementById('selected-category-text').innerText = item.category_name;
+        document.getElementById('selected-category-text').style.color = 'var(--admin-primary)';
+        document.getElementById('category-selector-trigger').style.borderColor = 'var(--admin-primary)';
+        
+        document.getElementById('item-available').checked = item.is_available === 1;
+        
+        if (item.image) {
+            const preview = document.getElementById('image-preview');
+            const container = document.getElementById('preview-container');
+            const dropZone = document.getElementById('drop-zone');
+            
+            preview.src = item.image;
+            container.style.display = 'block';
+            dropZone.style.display = 'none';
+        } else {
+            removeImage();
+        }
+
+        document.getElementById('modal-title').innerText = 'Edit Menu Item';
+        menuOptionDrafts = [];
+        renderOptionsBuilder();
+        document.getElementById('menu-modal').style.display = 'flex';
+
+        try {
+            const res = await fetch(`/api/menu/${item.id}/options`);
+            if (res.ok) {
+                const options = await res.json();
+                menuOptionDrafts = options.map(option => ({
+                    name: option.name,
+                    choices: (option.choices || []).map(choice => ({
+                        name: choice.name,
+                        price_adjustment: choice.price_adjustment || 0
+                    }))
+                }));
+                renderOptionsBuilder();
+            }
+        } catch (e) {
+            console.error('Failed to load item choices', e);
+        }
+    }
+
+    // Custom File Logic
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('item-image');
+    const previewContainer = document.getElementById('preview-container');
+    const previewImg = document.getElementById('image-preview');
+
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+    });
+
+    ['dragleave', 'dragend'].forEach(type => {
+        dropZone.addEventListener(type, () => {
+            dropZone.classList.remove('dragover');
+        });
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        if (e.dataTransfer.files.length) {
+            fileInput.files = e.dataTransfer.files;
+            handleFile(e.dataTransfer.files[0]);
+        }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length) handleFile(e.target.files[0]);
+    });
+
+    function handleFile(file) {
+        if (!file.type.startsWith('image/')) {
+            showToast('Please upload an image file.', 'error');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            previewImg.src = e.target.result;
+            previewContainer.style.display = 'block';
+            dropZone.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function removeImage() {
+        fileInput.value = '';
+        previewContainer.style.display = 'none';
+        dropZone.style.display = 'block';
+        previewImg.src = '#';
+    }
+
+    document.getElementById('menu-form').addEventListener('submit', async function handleMenuSubmit(e) {
+        e.preventDefault();
+        const id = document.getElementById('item-id').value;
+        const formData = new FormData(e.target);
+        
+        // Manual sync for custom fields if needed
+        formData.set('is_available', document.getElementById('item-available').checked ? 1 : 0);
+        formData.set('category_id', document.getElementById('item-category').value);
+        formData.set('options', JSON.stringify(collectMenuOptions()));
+
+        try {
+            const method = id ? 'PUT' : 'POST';
+            const url = id ? `/api/menu/${id}` : '/api/menu';
+            
+            const res = await fetch(url, { method, body: formData });
+            const data = await res.json();
+            
+            if (res.ok) {
+                showToast(data.message || (id ? 'Product updated!' : 'Product created!'), 'success');
+                closeModal();
+                loadData();
+            } else {
+                showToast(data.error || 'Failed to save product', 'error');
+            }
+        } catch (error) {
+            showToast('An error occurred.', 'error');
+        }
+    });
+
+    async function deleteItem(id) {
+        showConfirm('Delete this menu item? This cannot be undone.', async () => {
+            try {
+                const res = await fetch(`/api/menu/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    showToast('Item deleted', 'success');
+                    loadData();
+                } else {
+                    const data = await res.json();
+                    showToast(data.error, 'error');
+                }
+            } catch (e) {
+                showToast('An error occurred.', 'error');
+            }
+        }, { title: 'Delete Menu Item', confirmText: 'Delete', type: 'danger' });
+    }
+
+    // Category CRUD logic
+    function openCatModal() {
+        document.getElementById('cat-form').reset();
+        document.getElementById('cat-id').value = '';
+        document.getElementById('cat-modal-title').innerText = 'Add Category';
+        document.getElementById('cat-modal').style.display = 'flex';
+    }
+
+    function closeCatModal() {
+        document.getElementById('cat-modal').style.display = 'none';
+    }
+
+    function editCategory(c) {
+        document.getElementById('cat-id').value = c.id;
+        document.getElementById('cat-name').value = c.name;
+        document.getElementById('cat-modal-title').innerText = 'Edit Category';
+        document.getElementById('cat-modal').style.display = 'flex';
+    }
+
+    async function handleCatSubmit(e) {
+        e.preventDefault();
+        const id = document.getElementById('cat-id').value;
+        const name = document.getElementById('cat-name').value;
+
+        try {
+            const url = id ? `/api/categories/${id}` : '/api/categories';
+            const method = id ? 'PUT' : 'POST';
+            
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name })
+            });
+            const data = await res.json();
+            
+            if (res.ok) {
+                closeCatModal();
+                loadData();
+                showToast(id ? 'Category updated!' : 'Category created!', 'success');
+            } else {
+                showToast(data.error || 'Failed to save category', 'error');
+            }
+        } catch (e) { showToast('Error', 'error'); }
+    }
+
+    async function deleteCategory(id) {
+        showConfirm('Delete this category? (Will fail if items are attached)', async () => {
+            try {
+                const res = await fetch(`/api/categories/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    showToast('Category deleted', 'success');
+                    loadData();
+                } else {
+                    const data = await res.json();
+                    showToast(data.error, 'error');
+                }
+            } catch (e) { showToast('Error', 'error'); }
+        }, { title: 'Delete Category', confirmText: 'Delete', type: 'danger' });
+    }
+
+    document.addEventListener('DOMContentLoaded', loadData);
+</script>
+
+<%- include('../partials/footer') %>

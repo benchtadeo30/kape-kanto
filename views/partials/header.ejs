@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= typeof title !== 'undefined' ? title : 'Kape Kanto Hub' %></title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+    
+    <!-- Scripts -->
+    <script src="/js/main.js" defer></script>
+    <script>
+        window.KapeKantoUser = {
+            isVerified: <%= user ? user.is_verified : 'false' %>,
+            role: '<%= user ? user.role : "guest" %>'
+        };
+    </script>
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <a href="/" class="brand">☕ Kape Kanto Hub</a>
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="/menu">Menu</a></li>
+                <li><a href="/help">Help Center</a></li>
+                
+                <% if (user) { %>
+                    <% if (user.role === 'admin') { %>
+                        <li><a href="/admin/dashboard">Admin Dashboard</a></li>
+                    <% } else if (user.role === 'staff') { %>
+                        <li><a href="/staff/dashboard">Staff Dashboard</a></li>
+                    <% } %>
+                    
+                    <li class="nav-profile-dropdown">
+                        <div class="nav-avatar-btn">
+                            <% if (user.profile_image) { %>
+                                <img src="/uploads/profiles/<%= user.profile_image %>" alt="Profile">
+                            <% } else { %>
+                                <i class="fa-solid fa-user-tie"></i>
+                            <% } %>
+                        </div>
+                        <div class="dropdown-content">
+                            <div class="dropdown-header">
+                                <% if (user.profile_image) { %>
+                                    <img src="/uploads/profiles/<%= user.profile_image %>" alt="Profile">
+                                <% } else { %>
+                                    <div class="header-avatar" style="background: var(--primary); display: flex; align-items: center; justify-content: center; color: white; font-weight: 800;">
+                                        <%= user.username.charAt(0).toUpperCase() %>
+                                    </div>
+                                <% } %>
+                                <div class="header-user-info">
+                                    <p><%= user.username %></p>
+                                    <span><%= user.email %></span>
+                                </div>
+                            </div>
+                            
+                            <a href="/profile#account" class="dropdown-item">
+                                <i class="fa-regular fa-user"></i>
+                                Your Profile
+                            </a>
+                            
+                            <% if (user.role === 'customer') { %>
+                                <a href="/order-tracking" class="dropdown-item">
+                                    <i class="fa-solid fa-box-archive"></i>
+                                    Your Orders
+                                </a>
+                                <a href="/profile#loyalty" class="dropdown-item">
+                                    <i class="fa-solid fa-award"></i>
+                                    Loyalty Program
+                                </a>
+                            <% } %>
+
+                            <div class="dropdown-divider"></div>
+                            
+                            <a href="/profile#verification" class="dropdown-item">
+                                <i class="fa-solid fa-id-card-clip"></i>
+                                ID & Verification
+                            </a>
+                            
+                            <div class="dropdown-divider"></div>
+                            
+                            <a href="#" onclick="KapeKanto.logout()" class="dropdown-item logout">
+                                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                                Sign out
+                            </a>
+                        </div>
+                    </li>
+                <% } else { %>
+                    <li><a href="/login">Login</a></li>
+                    <li><a href="/register">Register</a></li>
+                <% } %>
+                
+                <% if (!user || user.role === 'customer') { %>
+                    <li>
+                                <a href="/cart" class="cart-link" style="position: relative; font-size: 1.4rem; color: var(--primary);">
+                        <i class="fa-solid fa-cart-shopping"></i>
+                        <span id="cart-badge" class="cart-badge" style="position: absolute; top: -8px; right: -12px; background: var(--danger); color: white; border-radius: 50%; padding: 2px 7px; font-size: 0.7rem; font-weight: 700; display: none; border: 2px solid white;">0</span>
+                    </a>
+                    </li>
+                <% } %>
+            </ul>
+        </nav>
+    </header>
+    <main>

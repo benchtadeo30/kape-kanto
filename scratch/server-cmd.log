@@ -1,0 +1,10 @@
+PRAGMA foreign_keys = ON
+◇ injected env (7) from .env // tip: ⌘ enable debugging { debug: true }
+☕ Kape Kanto Hub Server is running on http://localhost:3000
+SELECT * FROM categories
+
+            SELECT m.*, c.name as category_name 
+            FROM menu_items m
+            LEFT JOIN categories c ON m.category_id = c.id
+         ORDER BY m.created_at DESC LIMIT 1.0 OFFSET 0.0
+SELECT COUNT(*) as total FROM menu_items m

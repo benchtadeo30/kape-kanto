@@ -1,0 +1,292 @@
+<%- include('partials/header') %>
+
+    <style>
+        .reg-card {
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            padding: 3rem;
+            border-radius: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+            animation: cardEntrance 0.6s ease-out;
+        }
+        @keyframes cardEntrance {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .avatar-selector {
+            position: relative;
+            width: 140px;
+            height: 140px;
+            margin: 0 auto 2.5rem;
+            cursor: pointer;
+        }
+        .avatar-preview-container {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: #f8f1eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 4px solid white;
+            box-shadow: 0 8px 20px rgba(111, 78, 55, 0.15);
+            transition: all 0.3s;
+        }
+        .avatar-selector:hover .avatar-preview-container {
+            transform: scale(1.05);
+            box-shadow: 0 12px 25px rgba(111, 78, 55, 0.2);
+        }
+        .avatar-preview-container i {
+            font-size: 3rem;
+            color: #d7ccc8;
+        }
+        .avatar-preview-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .avatar-badge {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .upload-options {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: -1.5rem;
+            margin-bottom: 2rem;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.3s;
+        }
+        .avatar-selector:hover + .upload-options,
+        .upload-options:hover {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .opt-btn {
+            background: white;
+            border: 1px solid #eee;
+            padding: 8px 15px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-main);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+        }
+        .opt-btn:hover {
+            background: #fdf5e6;
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        /* Camera Modal */
+        .camera-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .camera-box {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        #video-preview {
+            width: 100%;
+            border-radius: 15px;
+            background: black;
+            transform: scaleX(-1);
+        }
+    </style>
+
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 90vh; padding: 4rem 5%; background: #fffcf9;">
+        <div class="reg-card">
+            <h2 style="text-align: center; margin-bottom: 0.5rem; font-family: 'Inter', sans-serif; font-weight: 800; color: #4A3423;">Create Your Account</h2>
+            <p style="text-align: center; color: #8D6E63; margin-bottom: 2.5rem; font-size: 0.95rem;">Sign up to order your favorites and earn loyalty rewards.</p>
+            
+            <form id="register-form">
+                <!-- Avatar Selection -->
+                <div style="position: relative;">
+                    <div class="avatar-selector" onclick="document.getElementById('profile_image').click()">
+                        <div class="avatar-preview-container" id="avatar-preview">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <div class="avatar-badge">
+                            <i class="fa-solid fa-camera"></i>
+                        </div>
+                    </div>
+                    <div class="upload-options">
+                        <button type="button" class="opt-btn" onclick="document.getElementById('profile_image').click()">
+                            <i class="fa-solid fa-upload"></i> Upload
+                        </button>
+                        <button type="button" class="opt-btn" onclick="openCamera()">
+                            <i class="fa-solid fa-face-smile"></i> Selfie
+                        </button>
+                    </div>
+                    <input type="file" id="profile_image" name="profile_image" hidden accept="image/*" onchange="previewImage(this)">
+                </div>
+
+                <div class="form-group">
+                    <label for="username" style="font-weight: 700; font-size: 0.85rem; color: #5D4037; text-transform: uppercase; letter-spacing: 1px;">Username</label>
+                    <input type="text" id="username" required placeholder="Choose your display name" style="padding: 14px 20px; border-radius: 14px; border: 2px solid #f0f0f0; background: #fafafa;">
+                </div>
+                
+                <div class="form-group">
+                    <label for="email" style="font-weight: 700; font-size: 0.85rem; color: #5D4037; text-transform: uppercase; letter-spacing: 1px;">Email Address</label>
+                    <input type="email" id="email" required placeholder="name@gmail.com" style="padding: 14px 20px; border-radius: 14px; border: 2px solid #f0f0f0; background: #fafafa;">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password" style="font-weight: 700; font-size: 0.85rem; color: #5D4037; text-transform: uppercase; letter-spacing: 1px;">Security Password</label>
+                    <input type="password" id="password" required placeholder="••••••••" style="padding: 14px 20px; border-radius: 14px; border: 2px solid #f0f0f0; background: #fafafa;">
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 16px; border-radius: 14px; font-weight: 700; font-size: 1rem; box-shadow: 0 10px 20px rgba(111, 78, 55, 0.2);">Create Account</button>
+            </form>
+            
+            <p style="text-align: center; margin-top: 2rem; font-size: 0.95rem; color: #8D6E63;">
+                Already part of the hub? <a href="/login" style="color: var(--primary); font-weight: 700; text-decoration: none;">Login here</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Camera Modal -->
+    <div id="camera-modal" class="camera-modal">
+        <div class="camera-box">
+            <h3 style="margin-bottom: 15px;">Capture Selfie</h3>
+            <video id="video-preview" autoplay playsinline></video>
+            <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: center;">
+                <button type="button" class="btn btn-outline" onclick="closeCamera()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="captureSelfie()">Take Photo</button>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="selfie-canvas" style="display:none;"></canvas>
+
+<script>
+    let stream = null;
+    let selfieBlob = null;
+
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            selfieBlob = null; // Clear any selfie
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('avatar-preview').innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    async function openCamera() {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            document.getElementById('video-preview').srcObject = stream;
+            document.getElementById('camera-modal').style.display = 'flex';
+        } catch (err) {
+            KapeKanto.toast('Could not access camera. Please check permissions.', 'error');
+        }
+    }
+
+    function closeCamera() {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+        document.getElementById('camera-modal').style.display = 'none';
+    }
+
+    function captureSelfie() {
+        const video = document.getElementById('video-preview');
+        const canvas = document.getElementById('selfie-canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, 0, 0);
+        
+        canvas.toBlob((blob) => {
+            selfieBlob = blob;
+            document.getElementById('profile_image').value = ''; // Clear file input
+            const url = URL.createObjectURL(blob);
+            document.getElementById('avatar-preview').innerHTML = `<img src="${url}" alt="Selfie">`;
+            closeCamera();
+        }, 'image/jpeg', 0.9);
+    }
+
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const username = document.getElementById('username').value;
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const fileInput = document.getElementById('profile_image');
+        const btn = e.target.querySelector('button');
+        
+        btn.disabled = true;
+        btn.innerText = 'Creating account...';
+
+        const formData = new FormData();
+        formData.append('username', username);
+        formData.append('email', email);
+        formData.append('password', password);
+
+        if (selfieBlob) {
+            formData.append('profile_image', selfieBlob, 'selfie.jpg');
+        } else if (fileInput.files[0]) {
+            formData.append('profile_image', fileInput.files[0]);
+        }
+
+        try {
+            const regRes = await fetch('/api/auth/register', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const regData = await regRes.json();
+            
+            if (!regRes.ok) {
+                KapeKanto.toast(regData.error || 'Registration failed', 'error');
+                btn.disabled = false;
+                btn.innerText = 'Register';
+                return;
+            }
+
+            window.location.href = `/verify-email?email=${encodeURIComponent(email)}`;
+
+        } catch (error) {
+            console.error(error);
+            KapeKanto.toast('An error occurred during registration.', 'error');
+            btn.disabled = false;
+            btn.innerText = 'Register';
+        }
+    });
+</script>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,185 @@
+<!-- Item Details Modal -->
+<div id="itemModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-close" onclick="closeModal()">&times;</div>
+        <div class="modal-left">
+            <img id="modalImage" src="" alt="Item Image">
+        </div>
+        <div class="modal-right">
+            <h2 id="modalTitle" class="modal-title"></h2>
+            <p id="modalPrice" class="modal-price"></p>
+            <p id="modalDescription" class="modal-description"></p>
+            
+            <div id="modalOptions" class="options-container">
+                <!-- Options loaded dynamically -->
+            </div>
+
+            <div style="margin-top: auto;">
+                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+                    <span style="font-weight: 600;">Quantity:</span>
+                    <div style="display: flex; align-items: center; border: 1px solid #ddd; border-radius: 50px; overflow: hidden;">
+                        <button onclick="changeQty(-1)" class="btn" style="padding: 5px 15px; border-radius: 0; background: #eee;">-</button>
+                        <input type="number" id="modalQty" value="1" min="1" style="width: 50px; text-align: center; border: none; padding: 5px; font-weight: 600;">
+                        <button onclick="changeQty(1)" class="btn" style="padding: 5px 15px; border-radius: 0; background: #eee;">+</button>
+                    </div>
+                </div>
+                <button id="modalAddBtn" class="btn btn-primary" style="width: 100%; font-size: 1.1rem; padding: 15px;">Add to Cart</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentItem = null;
+
+    async function openModal(id) {
+        // Fetch item details first to be sure we have the latest data
+        try {
+            const res = await fetch('/api/menu');
+            if (res.ok) {
+                const items = await res.json();
+                currentItem = items.find(i => i.id === id);
+            }
+        } catch (e) { console.error(e); }
+
+        if (!currentItem) return;
+
+        const modal = document.getElementById('itemModal');
+        const img = document.getElementById('modalImage');
+        const title = document.getElementById('modalTitle');
+        const price = document.getElementById('modalPrice');
+        const desc = document.getElementById('modalDescription');
+        const optionsBox = document.getElementById('modalOptions');
+        const addBtn = document.getElementById('modalAddBtn');
+        const qtyInput = document.getElementById('modalQty');
+
+        img.src = currentItem.image ? (currentItem.image.startsWith('http') ? currentItem.image : `/uploads/menu/${currentItem.image}`) : 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=600';
+        title.innerText = currentItem.name;
+        price.innerText = `₱${currentItem.price.toFixed(2)}`;
+        desc.innerText = currentItem.description || 'No description available.';
+        qtyInput.value = 1;
+
+        optionsBox.innerHTML = '<p style="color: var(--text-light); font-size: 0.9rem;">Loading options...</p>';
+        
+        const isAvailable = currentItem.is_available === 1 && currentItem.stock > 0;
+        addBtn.disabled = !isAvailable;
+        addBtn.innerText = isAvailable ? 'Add to Cart' : 'Out of Stock';
+
+        modal.style.display = 'flex';
+
+        try {
+            const res = await fetch(`/api/menu/${id}/options`);
+            if (res.ok) {
+                const options = await res.json();
+                renderModalOptions(options);
+            } else {
+                optionsBox.innerHTML = '';
+            }
+        } catch (e) {
+            console.error('Failed to load options', e);
+            optionsBox.innerHTML = '';
+        }
+    }
+
+    function renderModalOptions(options) {
+        const container = document.getElementById('modalOptions');
+        container.innerHTML = '';
+
+        if (options.length === 0) {
+            container.innerHTML = '';
+            return;
+        }
+
+        options.forEach(opt => {
+            let choicesHtml = '';
+            opt.choices.forEach((choice, idx) => {
+                choicesHtml += `
+                    <div class="choice-item">
+                        <input type="radio" id="choice_${choice.id}" name="opt_${opt.id}" value="${choice.name}" 
+                            data-adj="${choice.price_adjustment || 0}" ${idx === 0 ? 'checked' : ''}>
+                        <label for="choice_${choice.id}" class="choice-label">${choice.name}</label>
+                    </div>
+                `;
+            });
+
+            container.innerHTML += `
+                <div class="option-group">
+                    <span class="option-title">${opt.name}</span>
+                    <div class="choices-list">
+                        ${choicesHtml}
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    function closeModal() {
+        document.getElementById('itemModal').style.display = 'none';
+    }
+
+    function changeQty(amt) {
+        const input = document.getElementById('modalQty');
+        let val = parseInt(input.value) + amt;
+        if (val < 1) val = 1;
+        input.value = val;
+    }
+
+    document.getElementById('modalAddBtn').addEventListener('click', () => {
+        if (!currentItem) return;
+
+        const qty = parseInt(document.getElementById('modalQty').value);
+        const customizations = {};
+        
+        document.querySelectorAll('#modalOptions .option-group').forEach(group => {
+            const title = group.querySelector('.option-title').innerText;
+            const checked = group.querySelector('input:checked');
+            if (checked) {
+                customizations[title] = checked.value;
+            }
+        });
+
+        let imgUrl = currentItem.image ? (currentItem.image.startsWith('http') ? currentItem.image : `/uploads/menu/${currentItem.image}`) : 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=600';
+
+        // Calculate final unit price including adjustments
+        let finalUnitPrice = currentItem.price;
+        document.querySelectorAll('#modalOptions .option-group').forEach(group => {
+            const checked = group.querySelector('input:checked');
+            if (checked && checked.dataset.adj) {
+                finalUnitPrice += parseFloat(checked.dataset.adj);
+            }
+        });
+
+        // Add to cart
+        const cart = KapeKanto.getCart();
+        const existing = cart.find(item => 
+            item.id === currentItem.id && 
+            JSON.stringify(item.customizations) === JSON.stringify(customizations)
+        );
+
+        if (existing) {
+            existing.quantity += qty;
+        } else {
+            cart.push({
+                id: currentItem.id,
+                category_id: currentItem.category_id,
+                name: currentItem.name,
+                price: finalUnitPrice,
+                image: imgUrl,
+                quantity: qty,
+                customizations: customizations
+            });
+        }
+
+        KapeKanto.saveCart(cart);
+        KapeKanto.toast(`${currentItem.name} added to cart!`);
+        closeModal();
+    });
+
+    // Close on outside click
+    window.onclick = function(event) {
+        const modal = document.getElementById('itemModal');
+        if (event.target == modal) {
+            closeModal();
+        }
+    }
+</script>

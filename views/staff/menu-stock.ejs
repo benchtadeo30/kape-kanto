@@ -1,0 +1,210 @@
+<%- include('../partials/header') %>
+
+<style>
+    .staff-shell { display: grid; grid-template-columns: 260px 1fr; gap: 1.5rem; padding: 2rem 5%; max-width: 1500px; margin: 0 auto; }
+    .staff-sidebar { position: sticky; top: 96px; align-self: start; background: rgba(255,255,255,0.92); border: 1px solid rgba(111,78,55,0.08); border-radius: 18px; padding: 1.25rem; box-shadow: var(--shadow-soft); }
+    .staff-sidebar h3 { font-size: 1rem; margin-bottom: 1rem; color: var(--primary-dark); }
+    .staff-sidebar a { display: flex; align-items: center; gap: 10px; padding: 0.85rem 0.95rem; border-radius: 12px; color: var(--text-light); font-weight: 700; margin-bottom: 0.35rem; }
+    .staff-sidebar a:hover, .staff-sidebar a.active { background: var(--primary); color: white; transform: translateX(3px); }
+    .staff-hero { background: linear-gradient(135deg, #2c1a0e 0%, #6f4e37 68%, #a0785d 100%); border-radius: 22px; padding: 1.5rem; color: white; box-shadow: var(--shadow-medium); margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .staff-hero h1 { color: white; margin: 0 0 0.3rem; font-size: 1.8rem; letter-spacing: 0; }
+    .staff-hero p { color: rgba(255,255,255,0.72); margin: 0; }
+    .staff-panel { background: white; border: 1px solid rgba(111,78,55,0.08); border-radius: 18px; box-shadow: var(--shadow-soft); padding: 1.25rem; overflow: hidden; }
+    .stock-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .stock-count { color: var(--text-light); font-weight: 700; font-size: 0.88rem; }
+    .stock-search { max-width: 360px; border-radius: 999px !important; padding: 0.75rem 1rem !important; }
+    .stock-list { display: grid; gap: 0.8rem; }
+    .stock-row { display: grid; grid-template-columns: 64px minmax(180px, 1fr) 140px 130px 110px; align-items: center; gap: 1rem; padding: 0.85rem; border: 1px solid #f0e5dc; border-radius: 14px; background: #fffdf9; }
+    .stock-img { width: 56px; height: 56px; border-radius: 12px; object-fit: cover; background: var(--bg-main); }
+    .stock-name { font-weight: 800; color: var(--primary-dark); }
+    .stock-category { color: var(--text-light); font-size: 0.84rem; }
+    .stock-status { display: inline-flex; width: fit-content; border-radius: 999px; padding: 0.32rem 0.65rem; font-size: 0.74rem; font-weight: 800; text-transform: uppercase; }
+    .stock-ok { background: #e8f5e9; color: #2e7d32; }
+    .stock-low { background: #fff8e1; color: #b26a00; }
+    .stock-out { background: #ffebee; color: #b71c1c; }
+    .stock-input { max-width: 110px; border-radius: 12px !important; font-weight: 800; text-align: center; }
+    .staff-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 0; border-radius: 999px; padding: 0.65rem 0.95rem; font-family: var(--font-body); font-weight: 800; cursor: pointer; color: white; background: var(--primary); transition: transform 0.2s, box-shadow 0.2s; }
+    .staff-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(44,26,14,0.12); }
+    .page-btn { width: 38px; height: 38px; padding: 0; border-radius: 12px; border: 1px solid #e6d8cc; background: white; color: var(--primary-dark); font-weight: 800; cursor: pointer; }
+    .page-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+    .page-dots { cursor: pointer; padding: 0 8px; color: #999; display: flex; align-items: center; font-weight: 800; }
+    .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-light); }
+    @media (max-width: 1000px) { .staff-shell { grid-template-columns: 1fr; padding: 1rem; } .staff-sidebar { position: static; } .stock-row { grid-template-columns: 56px 1fr; } .stock-row > *:nth-child(n+3) { grid-column: 2; } }
+</style>
+
+<div class="staff-shell">
+    <aside class="staff-sidebar">
+        <h3>Staff Panel</h3>
+        <a href="/staff/dashboard"><i class="fa-solid fa-fire-burner"></i> Kitchen Feed</a>
+        <a href="/staff/orders"><i class="fa-solid fa-list-check"></i> Manage Orders</a>
+        <a href="/staff/menu-stock" class="active"><i class="fa-solid fa-boxes-stacked"></i> Update Stock</a>
+    </aside>
+
+    <section>
+        <div class="staff-hero">
+            <div>
+                <h1>Stock Control</h1>
+                <p>Quickly adjust item inventory before orders are accepted.</p>
+            </div>
+            <button class="staff-btn" onclick="loadMenu()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+        </div>
+
+        <div class="staff-panel">
+            <div class="stock-toolbar">
+                <h2 style="margin:0;font-size:1.1rem;"><i class="fa-solid fa-boxes-stacked" style="color:var(--accent);"></i> Menu Inventory</h2>
+                <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+                    <input class="stock-search" id="stock-search" type="text" placeholder="Search item, category, stock..." oninput="setStockSearch(this.value)">
+                    <span class="stock-count" id="stock-count">Loading items...</span>
+                </div>
+            </div>
+            <div id="stock-list" class="stock-list">
+                <div class="empty-state">Loading inventory...</div>
+            </div>
+            <div id="pagination-container" style="display:flex;justify-content:center;gap:8px;margin-top:1.5rem;padding-bottom:0.5rem;flex-wrap:wrap;"></div>
+        </div>
+    </section>
+</div>
+
+<script>
+    let allMenuItems = [];
+    let currentPage = 1;
+    let stockSearchTerm = '';
+    const PAGE_LIMIT = 10;
+
+    function stockState(stock) {
+        if (stock <= 0) return { cls: 'stock-out', label: 'Out' };
+        if (stock <= 5) return { cls: 'stock-low', label: 'Low' };
+        return { cls: 'stock-ok', label: 'In stock' };
+    }
+
+    function setStockSearch(value) {
+        stockSearchTerm = value.trim().toLowerCase();
+        currentPage = 1;
+        renderStock();
+    }
+
+    async function loadMenu() {
+        try {
+            const res = await fetch('/api/menu');
+            if (!res.ok) throw new Error('Request failed');
+            allMenuItems = await res.json();
+            renderStock();
+        } catch (e) {
+            document.getElementById('stock-list').innerHTML = '<div class="empty-state">Could not load menu items.</div>';
+            KapeKanto.toast('Failed to load inventory.', 'error');
+        }
+    }
+
+    function renderStock() {
+        const items = allMenuItems.filter(item => {
+            if (!stockSearchTerm) return true;
+            const state = stockState(Number(item.stock || 0));
+            const haystack = [
+                item.name,
+                item.category_name,
+                item.stock,
+                state.label
+            ].join(' ').toLowerCase();
+            return haystack.includes(stockSearchTerm);
+        });
+        const container = document.getElementById('stock-list');
+        const pagination = document.getElementById('pagination-container');
+
+        if (!items.length) {
+            document.getElementById('stock-count').textContent = `Showing 0 of ${allMenuItems.length} item${allMenuItems.length === 1 ? '' : 's'}`;
+            container.innerHTML = '<div class="empty-state">No menu items found.</div>';
+            pagination.innerHTML = '';
+            return;
+        }
+
+        const totalPages = Math.ceil(items.length / PAGE_LIMIT);
+        currentPage = Math.min(Math.max(currentPage, 1), totalPages);
+
+        const startIndex = (currentPage - 1) * PAGE_LIMIT;
+        const pagedItems = items.slice(startIndex, startIndex + PAGE_LIMIT);
+        document.getElementById('stock-count').textContent = `Showing ${pagedItems.length} of ${items.length} item${items.length === 1 ? '' : 's'}`;
+
+        container.innerHTML = pagedItems.map(item => {
+            const imgUrl = item.image
+                ? (item.image.startsWith('http') || item.image.startsWith('/') ? item.image : `/uploads/menu/${item.image}`)
+                : 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=200';
+            const state = stockState(Number(item.stock || 0));
+            return `
+                <div class="stock-row">
+                    <img class="stock-img" src="${imgUrl}" alt="${item.name}">
+                    <div>
+                        <div class="stock-name">${item.name}</div>
+                        <div class="stock-category">${item.category_name || 'Uncategorized'}</div>
+                    </div>
+                    <span class="stock-status ${state.cls}">${state.label}</span>
+                    <input class="stock-input" type="number" min="0" id="stock-${item.id}" value="${item.stock || 0}">
+                    <button class="staff-btn" onclick="updateStock(${item.id})"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+                </div>
+            `;
+        }).join('');
+
+        renderPagination(currentPage, totalPages);
+    }
+
+    function renderPagination(current, totalPages) {
+        const container = document.getElementById('pagination-container');
+        if (totalPages <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+
+        const prev = current === 1 ? totalPages : current - 1;
+        const next = current === totalPages ? 1 : current + 1;
+        let html = `<button class="page-btn" onclick="changePage(${prev})"><i class="fa-solid fa-chevron-left"></i></button>`;
+
+        const limit = 10;
+        let start = Math.max(1, current - limit + 1);
+        let end = Math.min(totalPages, start + limit - 1);
+        if (end - start < limit - 1) start = Math.max(1, end - limit + 1);
+
+        if (start > 1) html += `<span class="page-dots" onclick="changePage(${start - 1})" title="Previous page range">...</span>`;
+        for (let i = start; i <= end; i++) {
+            html += `<button class="page-btn ${i === current ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+        }
+        if (end < totalPages) html += `<span class="page-dots" onclick="changePage(${end + 1})" title="Next page range">...</span>`;
+
+        html += `<button class="page-btn" onclick="changePage(${next})"><i class="fa-solid fa-chevron-right"></i></button>`;
+        container.innerHTML = html;
+    }
+
+    function changePage(page) {
+        currentPage = page;
+        renderStock();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function updateStock(id) {
+        const input = document.getElementById(`stock-${id}`);
+        const stock = Number(input.value);
+        if (!Number.isInteger(stock) || stock < 0) {
+            KapeKanto.toast('Stock must be a whole number of 0 or higher.', 'warning');
+            input.focus();
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/menu/${id}/stock`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ stock })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || 'Update failed');
+            const item = allMenuItems.find(i => i.id === id);
+            if (item) item.stock = stock;
+            renderStock();
+            KapeKanto.toast('Stock updated successfully.', 'success');
+        } catch (e) {
+            KapeKanto.toast(e.message || 'Failed to update stock.', 'error');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadMenu);
+</script>
+
+<%- include('../partials/footer') %>

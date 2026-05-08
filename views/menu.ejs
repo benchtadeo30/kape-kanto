@@ -1,0 +1,873 @@
+<%- include('partials/header') %>
+
+    <div class="menu-page-wrapper">
+
+        <!-- ===== MENU GRID VIEW ===== -->
+        <div id="menu-grid-view">
+            <div class="menu-hero">
+                <div class="menu-hero-content">
+                    <h1 class="menu-hero-title">Our Menu</h1>
+                    <p class="menu-hero-sub">Crafted with love, brewed to perfection ☕</p>
+                </div>
+            </div>
+
+            <div class="menu-page-inner">
+                <!-- Filter Bar: Combined Category & Search -->
+                <div class="menu-filter-bar" style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2.5rem; max-width: 800px; margin-left: auto; margin-right: auto; position: relative;">
+                    
+                    <!-- Custom Category Picker -->
+                    <div class="category-picker-container" style="flex: 1; min-width: 180px; position: relative;">
+                        <button type="button" id="categoryPickerBtn" onclick="toggleCategoryPicker()" 
+                                style="width: 100%; padding: 12px 1rem 12px 3.2rem; border-radius: 12px; border: 1.5px solid #e8ddd4; background: #fff; font-size: 0.95rem; font-weight: 600; color: var(--primary-dark); cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 12px rgba(0,0,0,0.03); display: flex; align-items: center; justify-content: space-between; text-align: left;">
+                            <i class="fa-solid fa-layer-group" style="position: absolute; left: 1.2rem; top: 50%; transform: translateY(-50%); color: var(--primary); font-size: 1rem;"></i>
+                            <span id="selectedCategoryLabel">All Categories</span>
+                            <i class="fa-solid fa-chevron-down" style="font-size: 0.8rem; opacity: 0.5;"></i>
+                        </button>
+
+                        <!-- Floating Picker Menu -->
+                        <div id="categoryPickerMenu" class="picker-menu" style="display: none; position: absolute; top: calc(100% + 10px); left: 0; right: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-radius: 16px; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 20px 40px rgba(0,0,0,0.1); z-index: 1000; padding: 10px; animation: pickerSlide 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
+                            <div style="position:relative;margin-bottom:8px;">
+                                <i class="fa-solid fa-magnifying-glass" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-light);font-size:0.78rem;"></i>
+                                <input type="text" id="categorySearchInput" placeholder="Search categories..."
+                                    oninput="handleCategorySearch(this.value)"
+                                    style="width:100%;padding:10px 12px 10px 34px;border-radius:10px;border:1px solid #e8ddd4;font-size:0.88rem;">
+                            </div>
+                            <label style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;border:1px solid #e8ddd4;background:#fff;margin-bottom:8px;color:var(--primary-dark);font-weight:800;cursor:pointer;font-size:0.84rem;">
+                                <input type="checkbox" id="categorySelectAllInput" onchange="toggleAllMatchingCategories()" style="width:16px;height:16px;accent-color:var(--primary);">
+                                <span>Select all categories</span>
+                            </label>
+                            <div id="categorySelectionSummary" style="margin-bottom:8px;color:var(--text-light);font-size:0.78rem;font-weight:700;text-align:center;"></div>
+                            <div id="categoryPickerItems"></div>
+                            <div id="categoryPickerPagination" style="display:none;align-items:center;justify-content:center;gap:6px;border-top:1px solid #f1e7de;margin-top:8px;padding-top:8px;flex-wrap:wrap;"></div>
+                            <div style="display:flex;gap:8px;border-top:1px solid #f1e7de;margin-top:8px;padding-top:8px;">
+                                <button type="button" onclick="clearCategorySelection()" style="flex:0 0 92px;padding:10px;border-radius:10px;border:1px solid #e8ddd4;background:white;color:var(--text-light);font-weight:800;cursor:pointer;">
+                                    Clear
+                                </button>
+                                <button type="button" onclick="applyCategorySelection()" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--primary);color:white;font-weight:900;cursor:pointer;">
+                                    Apply Filter
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Search Bar -->
+                    <div class="menu-search-wrap" style="position: relative; flex: 2; min-width: 260px;">
+                        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 1.25rem; top: 50%; transform: translateY(-50%); color: var(--text-light); z-index: 2; pointer-events: none; font-size: 0.85rem; opacity: 0.6;"></i>
+                        <input type="text" id="menu-search" class="menu-search-input"
+                            placeholder="Search menu..." oninput="handleSearch(this.value)"
+                            style="width: 100%; padding: 12px 1rem 12px 3.2rem; border-radius: 12px; border: 1.5px solid #e8ddd4; font-size: 0.95rem; background: #fff; transition: all 0.3s; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+                    </div>
+
+                    <style>
+                        .picker-item:hover { background: rgba(111, 78, 55, 0.05); }
+                        .picker-item.active { background: var(--primary); color: #fff !important; }
+                        
+                        @keyframes pickerSlide {
+                            from { opacity: 0; transform: translateY(10px); }
+                            to { opacity: 1; transform: translateY(0); }
+                        }
+
+                        #categoryPickerBtn:focus, .menu-search-input:focus {
+                            outline: none;
+                            border-color: var(--primary);
+                            box-shadow: 0 0 0 4px rgba(111, 78, 55, 0.1);
+                        }
+                        @media (max-width: 600px) {
+                            .menu-filter-bar { flex-direction: column; align-items: stretch; }
+                        }
+                    </style>
+                </div>
+
+                <!-- Menu Grid -->
+                <div class="menu-grid" id="menu-grid">
+                    <!-- Loaded via JS -->
+                </div>
+
+                <!-- Page Navigation -->
+                <div id="menu-pagination" style="display: flex; justify-content: center; gap: 10px; align-items: center; margin-top: 3rem; padding-bottom: 2rem;"></div>
+
+                <div id="menu-empty" style="display:none;" class="menu-empty-state">
+                    <i class="fa-solid fa-mug-hot"></i>
+                    <p>No items found.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== ITEM DETAIL VIEW ===== -->
+        <div id="item-detail-view" style="display:none;">
+            <!-- Back Header -->
+            <div class="detail-top-bar">
+                <button class="detail-back-btn" onclick="closeDetailView()">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Back to Menu</span>
+                </button>
+                <span class="detail-breadcrumb">Product Details</span>
+            </div>
+
+            <div class="detail-layout">
+                <!-- LEFT: Image Panel -->
+                <div class="detail-image-panel">
+                    <div class="detail-image-wrap">
+                        <img id="detailImg" src="" alt="Item" class="detail-main-img">
+                        <div class="detail-img-badge" id="detailBadge"></div>
+                    </div>
+                    <div class="detail-image-info">
+                        <h1 id="detailName" class="detail-item-name"></h1>
+                        <p id="detailDesc" class="detail-item-desc"></p>
+                    </div>
+                </div>
+
+                <!-- RIGHT: Options Panel -->
+                <div class="detail-options-panel">
+                    <!-- Price Header -->
+                    <div class="detail-price-bar">
+                        <div>
+                            <span class="detail-label-tag">Base Price</span>
+                            <span class="detail-base-price" id="detailBasePrice"></span>
+                        </div>
+                        <div class="detail-total-wrap">
+                            <span class="detail-label-tag">Total</span>
+                            <span class="detail-total-price" id="detailTotalPrice">₱0.00</span>
+                        </div>
+                    </div>
+
+                    <!-- Required Choices -->
+                    <div id="detailChoices" class="detail-choices-area">
+                        <div class="choices-loading">
+                            <div class="spinner"></div>
+                            <p>Loading options...</p>
+                        </div>
+                    </div>
+
+                    <!-- No Options Message -->
+                    <div id="detailNoOptions" style="display:none;" class="no-options-msg">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <p>No customizations needed — ready to order!</p>
+                    </div>
+
+                    <!-- Add to Cart Footer -->
+                    <div class="detail-cart-footer">
+                        <div class="detail-qty-control">
+                            <button class="qty-btn" onclick="changeDetailQty(-1)">
+                                <i class="fa-solid fa-minus"></i>
+                            </button>
+                            <input type="number" id="detailQty" value="1" min="1" readonly class="qty-input">
+                            <button class="qty-btn" onclick="changeDetailQty(1)">
+                                <i class="fa-solid fa-plus"></i>
+                            </button>
+                        </div>
+
+                        <button id="detailAddBtn" class="detail-add-btn" onclick="handleAddToCart()">
+                            <i class="fa-solid fa-cart-plus"></i>
+                            <span id="detailAddBtnText">Add to Cart</span>
+                        </button>
+                    </div>
+
+                    <!-- Validation hint -->
+                    <p id="detailValidationHint" class="validation-hint" style="display:none;">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        Please select all required options before adding to cart.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const userIsVerified = window.KapeKantoUser && window.KapeKantoUser.isVerified === 1;
+        const userIsLoggedIn = window.KapeKantoUser && window.KapeKantoUser.role !== 'guest';
+        let allMenuItems = [];
+        let currentDetailItem = null;
+        let currentOptions = [];
+        let searchQuery = '';
+        let menuPage = 1;
+        const PAGE_LIMIT = 10;
+        let searchTimeout = null;
+        const CATEGORY_PAGE_LIMIT = 5;
+        let menuCategories = [];
+        let categoryTotal = 0;
+        let categoryPage = 1;
+        let categorySearchQuery = '';
+        let categorySearchTimeout = null;
+        let pendingCategorySelection = new Map();
+        let appliedCategorySelection = new Map();
+        let matchingCategoryIds = [];
+
+        // --- Custom Category Picker Logic ---
+        async function toggleCategoryPicker() {
+            const menu = document.getElementById('categoryPickerMenu');
+            const isVisible = menu.style.display === 'block';
+            if (!isVisible) {
+                pendingCategorySelection = new Map(appliedCategorySelection);
+                categoryPage = 1;
+                await fetchCategoryPage(categoryPage);
+            }
+            menu.style.display = isVisible ? 'none' : 'block';
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function handleCategorySearch(value) {
+            clearTimeout(categorySearchTimeout);
+            categorySearchTimeout = setTimeout(() => {
+                categorySearchQuery = value.trim();
+                categoryPage = 1;
+                fetchCategoryPage(categoryPage);
+            }, 250);
+        }
+
+        async function fetchCategoryPage(page) {
+            const totalPages = Math.max(1, Math.ceil(categoryTotal / CATEGORY_PAGE_LIMIT));
+            categoryPage = Math.min(Math.max(page, 1), totalPages);
+
+            try {
+                const offset = (categoryPage - 1) * CATEGORY_PAGE_LIMIT;
+                const params = new URLSearchParams({
+                    limit: CATEGORY_PAGE_LIMIT,
+                    offset,
+                    search: categorySearchQuery
+                });
+                const res = await fetch(`/api/menu/categories?${params.toString()}`);
+                if (!res.ok) throw new Error('Failed to load categories');
+                const data = await res.json();
+                menuCategories = data.items || [];
+                categoryTotal = data.total || menuCategories.length;
+                matchingCategoryIds = data.ids || menuCategories.map(cat => Number(cat.id));
+                const refreshedTotalPages = Math.max(1, Math.ceil(categoryTotal / CATEGORY_PAGE_LIMIT));
+                if (categoryPage > refreshedTotalPages) {
+                    categoryPage = refreshedTotalPages;
+                    return fetchCategoryPage(categoryPage);
+                }
+                renderCategoryPicker();
+            } catch (e) {
+                console.error('Failed to load categories', e);
+            }
+        }
+
+        function renderCategoryPicker() {
+            const list = document.getElementById('categoryPickerItems');
+            const controls = document.getElementById('categoryPickerPagination');
+            const summary = document.getElementById('categorySelectionSummary');
+            const selectAllInput = document.getElementById('categorySelectAllInput');
+            const totalPages = Math.ceil(categoryTotal / CATEGORY_PAGE_LIMIT);
+            categoryPage = totalPages > 0 ? Math.min(Math.max(categoryPage, 1), totalPages) : 1;
+            const selectedMatchingCount = matchingCategoryIds.filter(id => pendingCategorySelection.has(Number(id))).length;
+            summary.textContent = pendingCategorySelection.size
+                ? `${pendingCategorySelection.size} selected`
+                : `Showing ${menuCategories.length} of ${categoryTotal} categories`;
+            selectAllInput.checked = categoryTotal > 0 && selectedMatchingCount === categoryTotal;
+            selectAllInput.indeterminate = selectedMatchingCount > 0 && selectedMatchingCount < categoryTotal;
+
+            list.innerHTML = menuCategories.length ? menuCategories.map(cat => {
+                const checked = pendingCategorySelection.has(Number(cat.id));
+                return `
+                    <label class="picker-item ${checked ? 'active' : ''}"
+                        style="padding: 11px 12px; border-radius: 10px; cursor: pointer; transition: 0.2s; font-weight: 700; color: var(--primary-dark); display:flex; align-items:center; gap:10px;">
+                        <input type="checkbox"
+                            ${checked ? 'checked' : ''}
+                            data-name="${escapeHtml(cat.name)}"
+                            onchange="toggleCategorySelection(${cat.id}, this.dataset.name, this.checked)"
+                            style="width:16px;height:16px;accent-color:var(--primary);">
+                        <span>${escapeHtml(cat.name)}</span>
+                    </label>
+                `;
+            }).join('') : `
+                <div style="padding:12px;text-align:center;color:var(--text-light);font-weight:700;">
+                    No categories found
+                </div>
+            `;
+
+            controls.style.display = totalPages > 1 ? 'flex' : 'none';
+            controls.innerHTML = totalPages > 1 ? renderCategoryPageButtons(totalPages) : '';
+        }
+
+        function renderCategoryPageButtons(totalPages) {
+            const prev = categoryPage === 1 ? totalPages : categoryPage - 1;
+            const next = categoryPage === totalPages ? 1 : categoryPage + 1;
+            const windowSize = 3;
+            let start = Math.max(1, categoryPage - 1);
+            let end = Math.min(totalPages, start + windowSize - 1);
+
+            if (end - start + 1 < windowSize) {
+                start = Math.max(1, end - windowSize + 1);
+            }
+
+            let html = pageMiniButton(prev, '<i class="fa-solid fa-chevron-left"></i>', false, 'Previous page');
+
+            if (start > 1) {
+                html += pageMiniButton(start - 1, '...', false, 'Previous pages');
+            }
+
+            for (let i = start; i <= end; i++) {
+                html += pageMiniButton(i, i, i === categoryPage);
+            }
+
+            if (end < totalPages) {
+                html += pageMiniButton(end + 1, '...', false, 'Next pages');
+            }
+
+            html += pageMiniButton(next, '<i class="fa-solid fa-chevron-right"></i>', false, 'Next page');
+            return html;
+        }
+
+        function pageMiniButton(page, label, active = false, title = '') {
+            return `
+                <button type="button" onclick="goToCategoryPage(${page})" title="${title}"
+                    style="min-width:34px;height:34px;border-radius:999px;border:1px solid ${active ? 'var(--primary)' : '#e8ddd4'};background:${active ? 'var(--primary)' : '#fff'};color:${active ? '#fff' : 'var(--primary-dark)'};font-weight:800;cursor:pointer;">
+                    ${label}
+                </button>
+            `;
+        }
+
+        async function goToCategoryPage(page) {
+            const totalPages = Math.ceil(categoryTotal / CATEGORY_PAGE_LIMIT);
+            if (totalPages <= 1) return;
+            categoryPage = page;
+            if (categoryPage > totalPages) categoryPage = 1;
+            if (categoryPage < 1) categoryPage = totalPages;
+            await fetchCategoryPage(categoryPage);
+        }
+
+        function toggleCategorySelection(id, name, checked) {
+            const categoryId = Number(id);
+            if (checked) {
+                pendingCategorySelection.set(categoryId, name);
+            } else {
+                pendingCategorySelection.delete(categoryId);
+            }
+            renderCategoryPicker();
+        }
+
+        async function toggleAllMatchingCategories() {
+            try {
+                const params = new URLSearchParams();
+                if (categorySearchQuery) params.set('search', categorySearchQuery);
+                const res = await fetch(`/api/menu/categories?${params.toString()}`);
+                if (!res.ok) throw new Error('Failed to select categories');
+                const data = await res.json();
+                const categories = Array.isArray(data) ? data : (data.items || []);
+                const everyMatchingSelected = categories.length > 0
+                    && categories.every(cat => pendingCategorySelection.has(Number(cat.id)));
+
+                categories.forEach(cat => {
+                    const categoryId = Number(cat.id);
+                    if (everyMatchingSelected) {
+                        pendingCategorySelection.delete(categoryId);
+                    } else {
+                        pendingCategorySelection.set(categoryId, cat.name);
+                    }
+                });
+                renderCategoryPicker();
+            } catch (e) {
+                console.error('Failed to update category selection', e);
+            }
+        }
+
+        function clearCategorySelection() {
+            pendingCategorySelection.clear();
+            renderCategoryPicker();
+        }
+
+        function applyCategorySelection() {
+            appliedCategorySelection = new Map(pendingCategorySelection);
+            updateCategoryLabel();
+            menuPage = 1;
+            loadMenu();
+            document.getElementById('categoryPickerMenu').style.display = 'none';
+        }
+
+        function updateCategoryLabel() {
+            const label = document.getElementById('selectedCategoryLabel');
+            const selectedCount = appliedCategorySelection.size;
+
+            if (selectedCount === 0) {
+                label.innerText = 'All Categories';
+            } else if (selectedCount === 1) {
+                label.innerText = [...appliedCategorySelection.values()][0];
+            } else {
+                label.innerText = `${selectedCount} Categories`;
+            }
+        }
+
+        // Close picker when clicking outside
+        window.addEventListener('click', (e) => {
+            if (!e.target.closest('.category-picker-container')) {
+                document.getElementById('categoryPickerMenu').style.display = 'none';
+            }
+        });
+
+        // ── Category-specific fallback images ───────────────────
+        const CATEGORY_IMAGES = {
+            'hot coffee':  '/uploads/menu/1777958220554-54856874.jpg',
+            'iced coffee': '/uploads/menu/1778176198834-94406819.jpg',
+            'frappe':      '/uploads/menu/1778176214739-88534653.jpg',
+            'pastries':    '/uploads/menu/1778176198834-94406819.jpg',
+            'meals':       '/uploads/menu/1778176214739-88534653.jpg',
+            'milkshakes':  '/uploads/menu/1778176214739-88534653.jpg',
+        };
+        const DEFAULT_IMG = '/uploads/menu/1777958220554-54856874.jpg';
+
+        function getCategoryFallbackImage(item) {
+            const cat = (item.category_name || '').toLowerCase();
+            return CATEGORY_IMAGES[cat] || DEFAULT_IMG;
+        }
+
+        function getItemImage(item) {
+            if (item.image) {
+                if (item.image.startsWith('http')) return item.image;
+                // Fix: avoid double-prepending the path
+                if (item.image.startsWith('/uploads/')) return item.image;
+                return `/uploads/menu/${item.image}`;
+            }
+            return getCategoryFallbackImage(item);
+        }
+
+        // ── LOAD MENU ─────────────────────────────────────────
+        async function loadMenu() {
+            try {
+                const offset = (menuPage - 1) * PAGE_LIMIT;
+                const selectedCategoryIds = [...appliedCategorySelection.keys()];
+                const categoryParam = selectedCategoryIds.length ? selectedCategoryIds.join(',') : 'all';
+                const url = `/api/menu?limit=${PAGE_LIMIT}&offset=${offset}&search=${encodeURIComponent(searchQuery)}&category_id=${encodeURIComponent(categoryParam)}&available_only=true`;
+                const res = await fetch(url);
+                if (res.ok) {
+                    const data = await res.json();
+                    allMenuItems = data.items;
+                    renderMenu(allMenuItems);
+                    renderPagination(menuPage, data.total);
+                }
+            } catch (e) {
+                console.error('Failed to load menu', e);
+            }
+        }
+
+        function handleSearch(val) {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                searchQuery = val.trim().toLowerCase();
+                menuPage = 1;
+                loadMenu();
+            }, 400);
+        }
+
+        function filterMenu(categoryId, btn) {
+            appliedCategorySelection.clear();
+            if (categoryId && categoryId !== 'all') {
+                const categoryName = btn?.textContent?.trim() || 'Selected Category';
+                appliedCategorySelection.set(Number(categoryId), categoryName);
+            }
+            updateCategoryLabel();
+            menuPage = 1;
+            document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            loadMenu();
+        }
+
+        function renderPagination(current, total) {
+            const container = document.getElementById('menu-pagination');
+            const totalPages = Math.ceil(total / PAGE_LIMIT);
+            
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+
+            const prev = current === 1 ? totalPages : current - 1;
+            const next = current === totalPages ? 1 : current + 1;
+
+            let html = `
+                <button class="nav-btn" onclick="changePage(${prev})" style="width: 42px; height: 42px; border-radius: 50%; border: 1px solid #e8ddd4; background: white; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.3s;">
+                    <i class="fa-solid fa-chevron-left" style="font-size: 0.9rem; color: var(--primary);"></i>
+                </button>`;
+
+            const visiblePageLimit = 3;
+            let start = Math.max(1, current - 1);
+            let end = Math.min(totalPages, start + visiblePageLimit - 1);
+
+            if (end - start + 1 < visiblePageLimit) {
+                start = Math.max(1, end - visiblePageLimit + 1);
+            }
+
+            if (start > 1) {
+                html += `<span style="cursor: pointer; padding: 0 10px; color: #999; display: flex; align-items: center;" onclick="changePage(${Math.max(1, start - 1)})" title="Previous pages">...</span>`;
+            }
+
+            for (let i = start; i <= end; i++) {
+                html += `
+                    <button onclick="changePage(${i})" 
+                            style="width: 42px; height: 42px; border-radius: 50%; border: 1px solid ${i === current ? 'var(--primary)' : '#e8ddd4'}; background: ${i === current ? 'var(--primary)' : 'white'}; color: ${i === current ? 'white' : 'var(--primary-dark)'}; cursor: pointer; font-weight: 700; transition: 0.3s; box-shadow: ${i === current ? '0 8px 15px rgba(111, 78, 55, 0.2)' : 'none'};">
+                        ${i}
+                    </button>`;
+            }
+
+            if (end < totalPages) {
+                html += `<span style="cursor: pointer; padding: 0 10px; color: #999; display: flex; align-items: center;" onclick="changePage(${Math.min(totalPages, end + 1)})" title="Next pages">...</span>`;
+            }
+
+            html += `
+                <button class="nav-btn" onclick="changePage(${next})" style="width: 42px; height: 42px; border-radius: 50%; border: 1px solid #e8ddd4; background: white; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.3s;">
+                    <i class="fa-solid fa-chevron-right" style="font-size: 0.9rem; color: var(--primary);"></i>
+                </button>`;
+
+            container.innerHTML = html;
+        }
+
+        window.changePage = (p) => {
+            menuPage = p;
+            loadMenu();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        function renderMenu(items) {
+            const grid = document.getElementById('menu-grid');
+            const empty = document.getElementById('menu-empty');
+            grid.innerHTML = '';
+
+            if (items.length === 0) {
+                grid.style.display = 'none';
+                empty.style.display = 'flex';
+                return;
+            }
+            grid.style.display = 'grid';
+            empty.style.display = 'none';
+
+            items.forEach((item, idx) => {
+                const imgUrl = getItemImage(item);
+                const fallbackImg = getCategoryFallbackImage(item);
+                const isAvailable = item.is_available === 1 && item.stock > 0;
+                let stockHtml = '';
+                if (item.stock <= 0) {
+                    stockHtml = `<span class="stock-badge stock-status-out"><i class="fa-solid fa-circle-xmark"></i> Out of Stock</span>`;
+                } else if (item.stock <= 5) {
+                    stockHtml = `<span class="stock-badge stock-status-low"><i class="fa-solid fa-triangle-exclamation"></i> Only ${item.stock} left</span>`;
+                } else {
+                    stockHtml = `<span class="stock-badge stock-status-in"><i class="fa-solid fa-circle-check"></i> In Stock (${item.stock})</span>`;
+                }
+
+                const card = document.createElement('div');
+                card.className = `menu-item-card${!isAvailable ? ' unavailable' : ''}`;
+                card.style.animationDelay = `${idx * 0.05}s`;
+                card.onclick = () => isAvailable && openDetailView(item.id);
+                card.innerHTML = `
+                <div class="mic-image-wrap">
+                    <img src="${escapeHtml(imgUrl)}" alt="${escapeHtml(item.name)}" class="mic-image" loading="lazy" onerror="this.onerror=null;this.src='${escapeHtml(fallbackImg)}'">
+                    ${!isAvailable ? '<div class="mic-oos-overlay"><span>Out of Stock</span></div>' : ''}
+                </div>
+                <div class="mic-body">
+                    <h3 class="mic-name">${escapeHtml(item.name)}</h3>
+                    <p class="mic-price">₱${item.price.toFixed(2)}</p>
+                    ${stockHtml}
+                </div>
+            `;
+                grid.appendChild(card);
+            });
+        }
+
+        // ── DETAIL VIEW ────────────────────────────────────────
+        async function openDetailView(id) {
+            currentDetailItem = allMenuItems.find(i => i.id === id);
+            if (!currentDetailItem) return;
+
+            // Animate transition
+            const gridView = document.getElementById('menu-grid-view');
+            gridView.style.opacity = '0';
+            gridView.style.transform = 'translateX(-20px)';
+            gridView.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+
+            setTimeout(() => {
+                gridView.style.display = 'none';
+                const detailView = document.getElementById('item-detail-view');
+                detailView.style.display = 'block';
+                detailView.style.opacity = '0';
+                detailView.style.transform = 'translateX(20px)';
+                detailView.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                requestAnimationFrame(() => {
+                    detailView.style.opacity = '1';
+                    detailView.style.transform = 'translateX(0)';
+                });
+            }, 200);
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            const imgUrl = getItemImage(currentDetailItem);
+            const detailImg = document.getElementById('detailImg');
+            detailImg.onerror = () => {
+                detailImg.onerror = null;
+                detailImg.src = getCategoryFallbackImage(currentDetailItem);
+            };
+            detailImg.src = imgUrl;
+            document.getElementById('detailName').textContent = currentDetailItem.name;
+            document.getElementById('detailDesc').textContent = currentDetailItem.description || 'Crafted with premium ingredients for an unforgettable experience.';
+            document.getElementById('detailBasePrice').textContent = `₱${currentDetailItem.price.toFixed(2)}`;
+
+            const badge = document.getElementById('detailBadge');
+            const isAvailable = currentDetailItem.is_available === 1 && currentDetailItem.stock > 0;
+            
+            let badgeHtml = '';
+            if (currentDetailItem.stock <= 0) {
+                badgeHtml = '<i class="fa-solid fa-circle-xmark"></i> Out of Stock';
+                badge.className = 'detail-img-badge badge-oos';
+            } else if (currentDetailItem.stock <= 5) {
+                badgeHtml = `<i class="fa-solid fa-triangle-exclamation"></i> Only ${currentDetailItem.stock} left`;
+                badge.className = 'detail-img-badge badge-low'; // Need to add badge-low style
+            } else {
+                badgeHtml = `<i class="fa-solid fa-circle-check"></i> In Stock (${currentDetailItem.stock})`;
+                badge.className = 'detail-img-badge badge-avail';
+            }
+            badge.innerHTML = badgeHtml;
+
+            document.getElementById('detailQty').value = 1;
+            document.getElementById('detailValidationHint').style.display = 'none';
+
+            const choicesArea = document.getElementById('detailChoices');
+            const noOpts = document.getElementById('detailNoOptions');
+            choicesArea.innerHTML = `
+            <div class="choices-loading">
+                <div class="spinner"></div>
+                <p>Loading options...</p>
+            </div>`;
+            choicesArea.style.display = 'block';
+            noOpts.style.display = 'none';
+
+            try {
+                const res = await fetch(`/api/menu/${id}/options`);
+                if (res.ok) {
+                    currentOptions = await res.json();
+                    if (currentOptions.length > 0) {
+                        renderChoices(currentOptions);
+                    } else {
+                        choicesArea.style.display = 'none';
+                        noOpts.style.display = 'flex';
+                    }
+                } else {
+                    currentOptions = [];
+                    choicesArea.style.display = 'none';
+                    noOpts.style.display = 'flex';
+                }
+            } catch (e) {
+                currentOptions = [];
+                choicesArea.style.display = 'none';
+                noOpts.style.display = 'flex';
+            }
+
+            updateAddBtn();
+        }
+
+        function closeDetailView() {
+            const detailView = document.getElementById('item-detail-view');
+            detailView.style.opacity = '0';
+            detailView.style.transform = 'translateX(20px)';
+            setTimeout(() => {
+                detailView.style.display = 'none';
+                const gridView = document.getElementById('menu-grid-view');
+                gridView.style.display = 'block';
+                gridView.style.opacity = '0';
+                gridView.style.transform = 'translateX(-20px)';
+                requestAnimationFrame(() => {
+                    gridView.style.opacity = '1';
+                    gridView.style.transform = 'translateX(0)';
+                });
+            }, 200);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ── RENDER CHOICES ─────────────────────────────────────
+        const CHOICE_LABELS = ['A', 'B', 'C', 'D', 'E'];
+
+        function renderChoices(options) {
+            const container = document.getElementById('detailChoices');
+            container.innerHTML = '';
+
+            options.forEach((opt, idx) => {
+                const label = CHOICE_LABELS[idx] || `${idx + 1}`;
+                const choiceDiv = document.createElement('div');
+                choiceDiv.className = 'choice-group';
+                choiceDiv.innerHTML = `
+                <div class="choice-group-header">
+                    <div class="choice-badge">Choice ${label}</div>
+                    <div class="choice-group-title">
+                        <span class="choice-name">${opt.name}</span>
+                        <span class="choice-required">Required · Select 1</span>
+                    </div>
+                </div>
+                <div class="choice-options" id="choiceOpts_${opt.id}">
+                    ${opt.choices.map((choice, cidx) => {
+                    const adj = parseFloat(choice.price_adjustment) || 0;
+                    const priceTag = adj > 0
+                        ? `<span class="choice-extra">+₱${adj.toFixed(2)}</span>`
+                        : adj < 0
+                            ? `<span class="choice-extra neg">-₱${Math.abs(adj).toFixed(2)}</span>`
+                            : `<span class="choice-extra free">Free</span>`;
+                    return `
+                            <label class="choice-option-label" for="co_${choice.id}">
+                                <input
+                                    type="radio"
+                                    id="co_${choice.id}"
+                                    name="choice_${opt.id}"
+                                    value="${choice.id}"
+                                    data-name="${choice.name}"
+                                    data-price="${adj}"
+                                    onchange="onChoiceChange()"
+                                    ${(!userIsLoggedIn || !userIsVerified) ? 'disabled' : ''}
+                                >
+                                <span class="choice-radio-custom" style="${(!userIsLoggedIn || !userIsVerified) ? 'opacity: 0.5; cursor: not-allowed;' : ''}"></span>
+                                <span class="choice-option-name">${choice.name}</span>
+                                ${priceTag}
+                            </label>
+                        `;
+                }).join('')}
+                </div>
+            `;
+                container.appendChild(choiceDiv);
+            });
+
+            updateAddBtn();
+        }
+
+        // ── VALIDATION & PRICE ─────────────────────────────────
+        function onChoiceChange() {
+            document.getElementById('detailValidationHint').style.display = 'none';
+            updateAddBtn();
+        }
+
+        function allChoicesSelected() {
+            if (currentOptions.length === 0) return true;
+            return currentOptions.every(opt => {
+                const checked = document.querySelector(`input[name="choice_${opt.id}"]:checked`);
+                return !!checked;
+            });
+        }
+
+        function calcTotal() {
+            if (!currentDetailItem) return 0;
+            let extra = 0;
+            document.querySelectorAll('#detailChoices input[type="radio"]:checked').forEach(r => {
+                extra += parseFloat(r.dataset.price || 0);
+            });
+            const qty = parseInt(document.getElementById('detailQty').value) || 1;
+            return (currentDetailItem.price + extra) * qty;
+        }
+
+        function updateAddBtn() {
+            const total = calcTotal();
+            const allSelected = allChoicesSelected();
+            const btn = document.getElementById('detailAddBtn');
+            const btnText = document.getElementById('detailAddBtnText');
+            const isAvailable = currentDetailItem && currentDetailItem.is_available === 1 && currentDetailItem.stock > 0;
+
+            document.getElementById('detailTotalPrice').textContent = `₱${total.toFixed(2)}`;
+            btnText.textContent = `Add to Cart`;
+
+            if (!userIsLoggedIn) {
+                btn.disabled = true;
+                btn.classList.add('btn-disabled');
+                btnText.textContent = 'Login Required';
+                const hint = document.getElementById('detailValidationHint');
+                hint.innerHTML = '<i class="fa-solid fa-lock"></i> Please log in to place orders.';
+                hint.style.display = 'flex';
+            } else if (!userIsVerified) {
+                btn.disabled = true;
+                btn.classList.add('btn-disabled');
+                btnText.textContent = 'Verification Required';
+                const hint = document.getElementById('detailValidationHint');
+                hint.innerHTML = '<i class="fa-solid fa-envelope-circle-check"></i> Please verify your email in your Profile to place orders.';
+                hint.style.display = 'flex';
+            } else if (!isAvailable) {
+                btn.disabled = true;
+                btn.classList.add('btn-disabled');
+                btnText.textContent = 'Out of Stock';
+            } else if (!allSelected) {
+                btn.disabled = true;
+                btn.classList.add('btn-disabled');
+            } else {
+                btn.disabled = false;
+                btn.classList.remove('btn-disabled');
+            }
+        }
+
+        function changeDetailQty(amt) {
+            const input = document.getElementById('detailQty');
+            let val = parseInt(input.value) + amt;
+            if (val < 1) val = 1;
+            input.value = val;
+            updateAddBtn();
+        }
+
+        // ── ADD TO CART ────────────────────────────────────────
+        function handleAddToCart() {
+            if (!currentDetailItem) return;
+
+            if (!allChoicesSelected()) {
+                document.getElementById('detailValidationHint').style.display = 'flex';
+                const hint = document.getElementById('detailValidationHint');
+                hint.classList.add('shake');
+                setTimeout(() => hint.classList.remove('shake'), 400);
+
+                currentOptions.forEach(opt => {
+                    const checked = document.querySelector(`input[name="choice_${opt.id}"]:checked`);
+                    const group = document.querySelector(`#choiceOpts_${opt.id}`)?.closest('.choice-group');
+                    if (!checked && group) {
+                        group.classList.add('choice-error');
+                        setTimeout(() => group.classList.remove('choice-error'), 1500);
+                    }
+                });
+                return;
+            }
+
+            const qty = parseInt(document.getElementById('detailQty').value);
+            const customizations = {};
+            let extraPriceTotal = 0;
+
+            currentOptions.forEach(opt => {
+                const checked = document.querySelector(`input[name="choice_${opt.id}"]:checked`);
+                if (checked) {
+                    customizations[opt.name] = checked.dataset.name;
+                    extraPriceTotal += parseFloat(checked.dataset.price || 0);
+                }
+            });
+
+            const imgUrl = getItemImage(currentDetailItem);
+
+            const cart = KapeKanto.getCart();
+            const existing = cart.find(item =>
+                item.id === currentDetailItem.id &&
+                JSON.stringify(item.customizations) === JSON.stringify(customizations)
+            );
+
+            if (existing) {
+                existing.quantity += qty;
+            } else {
+                cart.push({
+                    id: currentDetailItem.id,
+                    name: currentDetailItem.name,
+                    price: currentDetailItem.price + extraPriceTotal,
+                    image: imgUrl,
+                    quantity: qty,
+                    category_id: currentDetailItem.category_id,
+                    customizations: customizations
+                });
+            }
+
+            KapeKanto.saveCart(cart);
+
+            const btn = document.getElementById('detailAddBtn');
+            btn.classList.add('btn-success-flash');
+            setTimeout(() => btn.classList.remove('btn-success-flash'), 600);
+
+            KapeKanto.toast(`${currentDetailItem.name} added to cart!`, 'success');
+            setTimeout(() => closeDetailView(), 700);
+        }
+
+        // ── INIT ───────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', loadMenu);
+    </script>
+
+    <%- include('partials/footer') %>

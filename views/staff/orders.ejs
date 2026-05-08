@@ -1,0 +1,484 @@
+<%- include('../partials/header') %>
+
+<style>
+    .staff-shell { display: grid; grid-template-columns: 260px 1fr; gap: 1.5rem; padding: 2rem 5%; max-width: 1500px; margin: 0 auto; }
+    .staff-sidebar { position: sticky; top: 96px; align-self: start; background: rgba(255,255,255,0.92); border: 1px solid rgba(111,78,55,0.08); border-radius: 18px; padding: 1.25rem; box-shadow: var(--shadow-soft); }
+    .staff-sidebar h3 { font-size: 1rem; margin-bottom: 1rem; color: var(--primary-dark); }
+    .staff-sidebar a { display: flex; align-items: center; gap: 10px; padding: 0.85rem 0.95rem; border-radius: 12px; color: var(--text-light); font-weight: 700; margin-bottom: 0.35rem; }
+    .staff-sidebar a:hover, .staff-sidebar a.active { background: var(--primary); color: white; transform: translateX(3px); }
+    .staff-hero { background: linear-gradient(135deg, #2c1a0e 0%, #6f4e37 68%, #a0785d 100%); border-radius: 22px; padding: 1.5rem; color: white; box-shadow: var(--shadow-medium); margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .staff-hero h1 { color: white; margin: 0 0 0.3rem; font-size: 1.8rem; letter-spacing: 0; }
+    .staff-hero p { color: rgba(255,255,255,0.72); margin: 0; }
+    .staff-panel { background: white; border: 1px solid rgba(111,78,55,0.08); border-radius: 18px; box-shadow: var(--shadow-soft); padding: 1.25rem; }
+    .so-tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .so-tab { display: inline-flex; align-items: center; gap: 7px; padding: 0.62rem 0.85rem; border-radius: 999px; border: 1px solid #eaded3; background: white; color: var(--text-light); font-family: var(--font-body); font-weight: 800; font-size: 0.82rem; cursor: pointer; }
+    .so-tab.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 8px 18px rgba(111,78,55,0.16); }
+    .so-count { color: var(--text-light); font-weight: 700; font-size: 0.88rem; margin-bottom: 1rem; }
+    .so-list { display: grid; gap: 0.85rem; }
+    .so-card { background: #fffdf9; border: 1px solid #f0e5dc; border-radius: 16px; padding: 1rem; display: grid; grid-template-columns: minmax(170px, 1.1fr) 110px 150px 140px 110px minmax(210px, auto); gap: 1rem; align-items: center; }
+    .so-card.select-mode { grid-template-columns: 34px minmax(170px, 1.1fr) 110px 150px 140px 110px minmax(210px, auto); }
+    .so-check { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }
+    .so-id { font-weight: 900; font-size: 1rem; color: var(--primary-dark); }
+    .so-customer { color: var(--text-light); font-size: 0.82rem; margin-top: 0.2rem; }
+    .so-type-chip, .so-badge { display: inline-flex; align-items: center; gap: 6px; width: fit-content; border-radius: 999px; padding: 0.36rem 0.7rem; font-size: 0.74rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.02em; }
+    .so-type-chip { background: var(--bg-main); color: var(--primary); border: 1px solid #ecdccc; }
+    .badge-pending { background:#fff3e0; color:#b75d00; }
+    .badge-preparing { background:#e8f2ff; color:#125a9c; }
+    .badge-ready { background:#e8f5e9; color:#2e7d32; }
+    .badge-delivery { background:#f2e8ff; color:#6c3ba2; }
+    .badge-completed { background:#e8f5e9; color:#1b5e20; }
+    .badge-cancelled { background:#ffebee; color:#b71c1c; }
+    .badge-awaiting { background:#f5f5f5; color:#616161; }
+    .so-total { font-weight: 900; color: var(--primary); font-size: 1rem; }
+    .so-status-select { width: 100%; min-width: 130px; border-radius: 999px !important; padding: 0.55rem 0.75rem !important; font-size: 0.78rem; font-weight: 800; border: 1px solid #e6d8cc !important; color: var(--primary-dark); background: white; }
+    .so-actions { display: flex; justify-content: flex-end; gap: 0.45rem; flex-wrap: wrap; }
+    .so-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0.55rem 0.78rem; border-radius: 999px; border: 0; font-family: var(--font-body); font-size: 0.78rem; font-weight: 900; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+    .so-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(44,26,14,0.12); }
+    .so-btn-primary { background: var(--primary); color: white; }
+    .so-btn-success { background: var(--success); color: white; }
+    .so-btn-blue { background: #1565c0; color: white; }
+    .so-btn-danger { background: var(--danger); color: white; }
+    .so-btn-dark { background: #34302c; color: white; }
+    .so-btn-outline { background: white; border: 1px solid #e6d8cc; color: var(--primary-dark); }
+    .page-btn { width: 38px; height: 38px; padding: 0; border-radius: 12px; border: 1px solid #e6d8cc; background: white; color: var(--primary-dark); font-weight: 800; cursor: pointer; }
+    .page-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+    .page-dots { cursor: pointer; padding: 0 8px; color: #999; display: flex; align-items: center; font-weight: 800; }
+    .so-tools { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .so-search { max-width: 360px; border-radius: 999px !important; padding: 0.75rem 1rem !important; }
+    .so-bulk { display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap; }
+    .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-light); }
+    .empty-state i { display: block; font-size: 2rem; color: var(--accent); margin-bottom: 0.75rem; }
+    #rider-modal { display:none; position:fixed; inset:0; background:rgba(44,26,14,0.48); z-index:9999; align-items:center; justify-content:center; padding:1rem; }
+    #rider-modal.open { display:flex; }
+    .rider-modal-box { background:white; border-radius:20px; padding:1.4rem; width:100%; max-width:430px; box-shadow:0 24px 70px rgba(0,0,0,0.22); }
+    @media (max-width: 1100px) { .staff-shell { grid-template-columns: 1fr; padding: 1rem; } .staff-sidebar { position: static; } .so-card { grid-template-columns: 1fr; align-items: start; } .so-actions { justify-content: flex-start; } .staff-hero { flex-direction: column; align-items: flex-start; } }
+</style>
+
+<div class="staff-shell">
+    <aside class="staff-sidebar">
+        <h3>Staff Panel</h3>
+        <a href="/staff/dashboard"><i class="fa-solid fa-fire-burner"></i> Kitchen Feed</a>
+        <a href="/staff/orders" class="active"><i class="fa-solid fa-list-check"></i> Manage Orders</a>
+        <a href="/staff/menu-stock"><i class="fa-solid fa-boxes-stacked"></i> Update Stock</a>
+    </aside>
+
+    <section>
+        <div class="staff-hero">
+            <div>
+                <h1>Order Management</h1>
+                <p>Move orders through prep, dispatch, completion, cancellation, and record cleanup.</p>
+            </div>
+            <button class="so-btn so-btn-outline" onclick="loadOrders()" style="background:rgba(255,255,255,0.16);color:white;border-color:rgba(255,255,255,0.24);">
+                <i class="fa-solid fa-rotate"></i> Refresh
+            </button>
+        </div>
+
+        <div class="staff-panel">
+            <div class="so-tabs">
+                <button class="so-tab active" onclick="filterOrders('all', this)"><i class="fa-solid fa-layer-group"></i> All</button>
+                <button class="so-tab" onclick="filterOrders('pending', this)"><i class="fa-regular fa-clock"></i> Pending</button>
+                <button class="so-tab" onclick="filterOrders('preparing', this)"><i class="fa-solid fa-fire"></i> Preparing</button>
+                <button class="so-tab" onclick="filterOrders('ready', this)"><i class="fa-solid fa-check-double"></i> Ready</button>
+                <button class="so-tab" onclick="filterOrders('out_for_delivery', this)"><i class="fa-solid fa-truck-fast"></i> Out for Delivery</button>
+                <button class="so-tab" onclick="filterOrders('completed', this)"><i class="fa-solid fa-flag-checkered"></i> Completed</button>
+                <button class="so-tab" onclick="filterOrders('cancelled', this)"><i class="fa-solid fa-ban"></i> Cancelled</button>
+            </div>
+
+            <div class="so-tools">
+                <input class="so-search" id="order-search" type="text" placeholder="Search orders, customer, status..." oninput="setOrderSearch(this.value)">
+                <div class="so-bulk">
+                    <button class="so-btn so-btn-outline" id="bulk-mode-btn" onclick="toggleBulkMode()"><i class="fa-regular fa-square-check"></i> Select Orders</button>
+                    <label id="select-all-wrap" style="display:none;align-items:center;gap:8px;margin:0;color:var(--text-light);font-size:0.86rem;font-weight:800;">
+                        <input class="so-check" id="select-all-orders" type="checkbox" onchange="toggleSelectAllOrders(this.checked)">
+                        Select all results
+                    </label>
+                    <button class="so-btn so-btn-danger" id="delete-selected-btn" style="display:none;" onclick="deleteSelectedOrders()"><i class="fa-solid fa-trash-can"></i> Delete Selected</button>
+                </div>
+            </div>
+            <div class="so-count" id="order-count">Loading orders...</div>
+            <div id="orders-container" class="so-list"></div>
+            <div id="pagination-container" style="display:flex;justify-content:center;gap:8px;margin-top:1.5rem;padding-bottom:0.5rem;flex-wrap:wrap;"></div>
+        </div>
+    </section>
+</div>
+
+<div id="rider-modal">
+    <div class="rider-modal-box">
+        <h3 style="margin-bottom:0.4rem;"><i class="fa-solid fa-motorcycle" style="color:#1565c0"></i> Assign Rider</h3>
+        <p style="color:var(--text-light);font-size:0.88rem;margin-bottom:1.25rem;">Enter rider details for Order <strong id="rider-order-id"></strong>.</p>
+        <div class="form-group" style="margin-bottom:1rem;">
+            <label style="font-weight:700;font-size:0.9rem;">Rider Name <span style="color:var(--text-light);font-weight:500;">(optional)</span></label>
+            <input type="text" id="rider-name" placeholder="e.g. Juan dela Cruz">
+        </div>
+        <div class="form-group" style="margin-bottom:1.5rem;">
+            <label style="font-weight:700;font-size:0.9rem;">Rider Contact <span style="color:var(--text-light);font-weight:500;">(optional)</span></label>
+            <input type="text" id="rider-contact" placeholder="e.g. 09XX XXX XXXX">
+        </div>
+        <div style="display:flex;gap:10px;">
+            <button class="so-btn so-btn-blue" style="flex:1;padding:0.8rem;" onclick="confirmDispatch()">
+                <i class="fa-solid fa-motorcycle"></i> Dispatch Rider
+            </button>
+            <button class="so-btn so-btn-outline" onclick="closeRiderModal()" style="padding:0.8rem 1rem;">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let allOrders = [];
+    let currentFilter = 'all';
+    let pendingDispatchId = null;
+    let currentPage = 1;
+    let orderSearchTerm = '';
+    let bulkMode = false;
+    const selectedOrderIds = new Set();
+    const PAGE_LIMIT = 10;
+
+    const STATUS_NEXT = {
+        pending: { status: 'preparing', label: 'Start Prep', cls: 'so-btn-primary', icon: 'fa-fire' },
+        preparing: { status: 'ready', label: 'Mark Ready', cls: 'so-btn-success', icon: 'fa-check-double' },
+        ready: { status: 'out_for_delivery', label: 'Dispatch', cls: 'so-btn-blue', icon: 'fa-truck-fast', deliveryOnly: true },
+        ready_pickup: { status: 'completed', label: 'Complete', cls: 'so-btn-success', icon: 'fa-circle-check' },
+        out_for_delivery: { status: 'completed', label: 'Delivered', cls: 'so-btn-success', icon: 'fa-circle-check' }
+    };
+
+    const BADGE_MAP = {
+        pending: 'badge-pending',
+        preparing: 'badge-preparing',
+        ready: 'badge-ready',
+        out_for_delivery: 'badge-delivery',
+        completed: 'badge-completed',
+        cancelled: 'badge-cancelled',
+        awaiting_payment: 'badge-awaiting'
+    };
+
+    const STATUS_OPTIONS = [
+        { value: 'pending', label: 'Pending' },
+        { value: 'preparing', label: 'Preparing' },
+        { value: 'ready', label: 'Ready' },
+        { value: 'out_for_delivery', label: 'Out for Delivery', deliveryOnly: true },
+        { value: 'completed', label: 'Completed' },
+        { value: 'cancelled', label: 'Cancelled' }
+    ];
+
+    function statusLabel(status) {
+        return String(status || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    async function loadOrders() {
+        try {
+            const res = await fetch('/api/orders/all');
+            if (!res.ok) throw new Error('Request failed');
+            allOrders = await res.json();
+            selectedOrderIds.clear();
+            renderOrders();
+        } catch (e) {
+            document.getElementById('order-count').textContent = 'Could not load orders.';
+            document.getElementById('orders-container').innerHTML = '<div class="empty-state"><i class="fa-solid fa-triangle-exclamation"></i> Failed to load orders.</div>';
+            KapeKanto.toast('Failed to load staff orders.', 'error');
+        }
+    }
+
+    function filterOrders(status, btn) {
+        currentFilter = status;
+        currentPage = 1;
+        document.querySelectorAll('.so-tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        renderOrders();
+    }
+
+    function setOrderSearch(value) {
+        orderSearchTerm = value.trim().toLowerCase();
+        currentPage = 1;
+        renderOrders();
+    }
+
+    function getFilteredOrders() {
+        return allOrders.filter(o => {
+            const matchesStatus = currentFilter === 'all' || o.status === currentFilter;
+            if (!matchesStatus) return false;
+            if (!orderSearchTerm) return true;
+
+            const haystack = [
+                o.id,
+                o.username,
+                o.email,
+                o.status,
+                o.order_type,
+                o.payment_method,
+                o.total
+            ].join(' ').toLowerCase();
+
+            return haystack.includes(orderSearchTerm);
+        });
+    }
+
+    function renderOrders() {
+        const filtered = getFilteredOrders();
+        const totalPages = Math.ceil(filtered.length / PAGE_LIMIT);
+        currentPage = totalPages > 0 ? Math.min(Math.max(currentPage, 1), totalPages) : 1;
+        const startIndex = (currentPage - 1) * PAGE_LIMIT;
+        const pagedOrders = filtered.slice(startIndex, startIndex + PAGE_LIMIT);
+        document.getElementById('order-count').textContent =
+            `Showing ${pagedOrders.length} of ${filtered.length} order${filtered.length === 1 ? '' : 's'}`;
+        syncBulkControls(filtered);
+
+        const container = document.getElementById('orders-container');
+        if (!filtered.length) {
+            container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-inbox"></i> No orders in this category.</div>';
+            document.getElementById('pagination-container').innerHTML = '';
+            return;
+        }
+
+        container.innerHTML = pagedOrders.map(o => buildCard(o)).join('');
+        renderPagination(currentPage, totalPages);
+    }
+
+    function renderPagination(current, totalPages) {
+        const container = document.getElementById('pagination-container');
+        if (totalPages <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+
+        const prev = current === 1 ? totalPages : current - 1;
+        const next = current === totalPages ? 1 : current + 1;
+        let html = `<button class="page-btn" onclick="changePage(${prev})"><i class="fa-solid fa-chevron-left"></i></button>`;
+
+        const limit = 10;
+        let start = Math.max(1, current - limit + 1);
+        let end = Math.min(totalPages, start + limit - 1);
+        if (end - start < limit - 1) start = Math.max(1, end - limit + 1);
+
+        if (start > 1) html += `<span class="page-dots" onclick="changePage(${start - 1})" title="Previous page range">...</span>`;
+        for (let i = start; i <= end; i++) {
+            html += `<button class="page-btn ${i === current ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+        }
+        if (end < totalPages) html += `<span class="page-dots" onclick="changePage(${end + 1})" title="Next page range">...</span>`;
+
+        html += `<button class="page-btn" onclick="changePage(${next})"><i class="fa-solid fa-chevron-right"></i></button>`;
+        container.innerHTML = html;
+    }
+
+    function changePage(page) {
+        currentPage = page;
+        renderOrders();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function buildCard(o) {
+        const date = new Date(o.created_at).toLocaleDateString('en-PH', {
+            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+        const isDelivery = o.order_type === 'delivery';
+        const nextAction = o.status === 'ready' && !isDelivery ? STATUS_NEXT.ready_pickup : STATUS_NEXT[o.status];
+
+        let actionBtns = '';
+        if (nextAction && !['completed', 'cancelled'].includes(o.status)) {
+            const action = nextAction.status === 'out_for_delivery'
+                ? `openRiderModal(${o.id})`
+                : `updateStatus(${o.id}, '${nextAction.status}')`;
+            actionBtns += `<button class="so-btn ${nextAction.cls}" onclick="${action}"><i class="fa-solid ${nextAction.icon}"></i> ${nextAction.label}</button>`;
+        }
+
+        if (!['completed', 'cancelled'].includes(o.status)) {
+            actionBtns += `<button class="so-btn so-btn-danger" onclick="updateStatus(${o.id}, 'cancelled')"><i class="fa-solid fa-ban"></i> Cancel</button>`;
+        }
+        actionBtns += `<button class="so-btn so-btn-dark" onclick="deleteOrder(${o.id})" title="Permanently delete this order record"><i class="fa-solid fa-trash-can"></i> Delete</button>`;
+
+        const riderInfo = o.status === 'out_for_delivery' && o.rider_name
+            ? `<div class="so-customer"><i class="fa-solid fa-motorcycle"></i> ${o.rider_name}${o.rider_contact ? ' / ' + o.rider_contact : ''}</div>`
+            : '';
+
+        const statusOptions = STATUS_OPTIONS
+            .filter(option => !option.deliveryOnly || isDelivery)
+            .map(option => `<option value="${option.value}" ${option.value === o.status ? 'selected' : ''}>${option.label}</option>`)
+            .join('');
+
+        return `
+            <article class="so-card ${bulkMode ? 'select-mode' : ''}">
+                ${bulkMode ? `<input class="so-check order-select" type="checkbox" ${selectedOrderIds.has(o.id) ? 'checked' : ''} onchange="toggleOrderSelection(${o.id}, this.checked)">` : ''}
+                <div>
+                    <div class="so-id">Order #${o.id}</div>
+                    <div class="so-customer">${o.username || 'Customer'} / ${date}</div>
+                    ${riderInfo}
+                </div>
+                <span class="so-type-chip"><i class="fa-solid ${isDelivery ? 'fa-truck-fast' : 'fa-bag-shopping'}"></i> ${isDelivery ? 'Delivery' : 'Pickup'}</span>
+                <span class="so-badge ${BADGE_MAP[o.status] || ''}">${statusLabel(o.status)}</span>
+                <select class="so-status-select" onchange="changeStatusFromDropdown(${o.id}, '${o.status}', this)">
+                    ${statusOptions}
+                </select>
+                <span class="so-total">PHP ${Number(o.total || 0).toFixed(2)}</span>
+                <div class="so-actions">${actionBtns || '<span class="so-customer">No actions</span>'}</div>
+            </article>
+        `;
+    }
+
+    function syncBulkControls(filtered = getFilteredOrders()) {
+        const btn = document.getElementById('bulk-mode-btn');
+        const selectAllWrap = document.getElementById('select-all-wrap');
+        const selectAll = document.getElementById('select-all-orders');
+        const deleteBtn = document.getElementById('delete-selected-btn');
+
+        btn.innerHTML = bulkMode
+            ? '<i class="fa-solid fa-xmark"></i> Cancel Selection'
+            : '<i class="fa-regular fa-square-check"></i> Select Orders';
+
+        selectAllWrap.style.display = bulkMode ? 'flex' : 'none';
+        deleteBtn.style.display = bulkMode ? 'inline-flex' : 'none';
+        selectAll.checked = bulkMode && filtered.length > 0 && filtered.every(o => selectedOrderIds.has(o.id));
+    }
+
+    function toggleBulkMode() {
+        bulkMode = !bulkMode;
+        if (!bulkMode) selectedOrderIds.clear();
+        renderOrders();
+    }
+
+    function toggleOrderSelection(id, checked) {
+        if (checked) {
+            selectedOrderIds.add(id);
+        } else {
+            selectedOrderIds.delete(id);
+        }
+        const filtered = getFilteredOrders();
+        document.getElementById('select-all-orders').checked = filtered.length > 0 && filtered.every(o => selectedOrderIds.has(o.id));
+    }
+
+    function toggleSelectAllOrders(checked) {
+        getFilteredOrders().forEach(order => {
+            if (checked) {
+                selectedOrderIds.add(order.id);
+            } else {
+                selectedOrderIds.delete(order.id);
+            }
+        });
+        renderOrders();
+    }
+
+    async function updateStatus(id, status, riderName = '', riderContact = '') {
+        const performUpdate = async () => {
+            try {
+                const body = { status };
+                if (riderName) body.rider_name = riderName;
+                if (riderContact) body.rider_contact = riderContact;
+
+                const res = await fetch(`/api/orders/${id}/status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || 'Update failed');
+
+                KapeKanto.toast(`Order #${id} -> ${statusLabel(status)}`, 'success');
+                loadOrders();
+            } catch (e) {
+                KapeKanto.toast(e.message || 'Failed to update order.', 'error');
+            }
+        };
+
+        if (status === 'cancelled') {
+            KapeKanto.confirm(`Cancel Order #${id}?`, performUpdate, { type: 'danger', confirmText: 'Cancel Order' });
+        } else {
+            performUpdate();
+        }
+    }
+
+    function changeStatusFromDropdown(id, currentStatus, select) {
+        const nextStatus = select.value;
+        if (nextStatus === currentStatus) return;
+
+        KapeKanto.confirm(
+            `Change Order #${id} from ${statusLabel(currentStatus)} to ${statusLabel(nextStatus)}?`,
+            async () => {
+                await updateStatus(id, nextStatus);
+            },
+            {
+                title: 'Change Status',
+                confirmText: 'Update Status',
+                cancelText: 'Keep Current',
+                type: nextStatus === 'cancelled' ? 'danger' : 'info'
+            }
+        );
+
+        select.value = currentStatus;
+    }
+
+    async function deleteOrder(id) {
+        KapeKanto.confirm(`Delete Order #${id}? This permanently removes the record and returns stock.`, async () => {
+            try {
+                const res = await fetch(`/api/orders/${id}`, { method: 'DELETE' });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || 'Failed to delete order.');
+                selectedOrderIds.delete(id);
+                KapeKanto.toast(`Order #${id} deleted.`, 'success');
+                loadOrders();
+            } catch (e) {
+                KapeKanto.toast(e.message || 'Error communicating with server.', 'error');
+            }
+        }, { title: 'Delete Order', confirmText: 'Delete', type: 'danger' });
+    }
+
+    async function deleteSelectedOrders() {
+        const ids = Array.from(selectedOrderIds);
+        if (!ids.length) {
+            KapeKanto.toast('Select at least one order to delete.', 'warning');
+            return;
+        }
+
+        KapeKanto.confirm(`Delete ${ids.length} selected order${ids.length === 1 ? '' : 's'}? This permanently removes the selected records.`, async () => {
+            let deleted = 0;
+            let failed = 0;
+
+            for (const id of ids) {
+                try {
+                    const res = await fetch(`/api/orders/${id}`, { method: 'DELETE' });
+                    if (res.ok) {
+                        deleted++;
+                        selectedOrderIds.delete(id);
+                    } else {
+                        failed++;
+                    }
+                } catch (e) {
+                    failed++;
+                }
+            }
+
+            KapeKanto.toast(`Deleted ${deleted} order${deleted === 1 ? '' : 's'}${failed ? `, ${failed} failed` : ''}.`, failed ? 'warning' : 'success');
+            loadOrders();
+        }, { title: 'Delete Selected Orders', confirmText: 'Delete Selected', type: 'danger' });
+    }
+
+    function openRiderModal(orderId) {
+        pendingDispatchId = orderId;
+        document.getElementById('rider-order-id').textContent = '#' + orderId;
+        document.getElementById('rider-name').value = '';
+        document.getElementById('rider-contact').value = '';
+        document.getElementById('rider-modal').classList.add('open');
+    }
+
+    function closeRiderModal() {
+        document.getElementById('rider-modal').classList.remove('open');
+        pendingDispatchId = null;
+    }
+
+    async function confirmDispatch() {
+        if (!pendingDispatchId) return;
+        const orderId = pendingDispatchId;
+        const riderName = document.getElementById('rider-name').value.trim();
+        const riderContact = document.getElementById('rider-contact').value.trim();
+        closeRiderModal();
+        await updateStatus(orderId, 'out_for_delivery', riderName, riderContact);
+    }
+
+    document.getElementById('rider-modal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('rider-modal')) closeRiderModal();
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadOrders();
+        setInterval(loadOrders, 30000);
+    });
+</script>
+
+<%- include('../partials/footer') %>

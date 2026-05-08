@@ -1,0 +1,736 @@
+<%- include('partials/header') %>
+
+    <!-- ══ INTRO LOADING SCREEN ══════════════════════════ -->
+    <div id="kk-intro" aria-hidden="true">
+        <!-- Floating beans background -->
+        <div class="intro-beans" id="introBeans"></div>
+
+        <!-- Steam above cup -->
+        <div class="intro-steam">
+            <span></span><span></span><span></span>
+        </div>
+
+        <!-- Coffee cup icon -->
+        <div class="intro-cup">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Cup body -->
+                <path d="M15 35 L22 78 Q22 82 28 82 L72 82 Q78 82 78 78 L85 35 Z" fill="#E8B86D" opacity="0.95" />
+                <!-- Cup shine -->
+                <path d="M28 40 Q32 38 36 41" stroke="rgba(255,255,255,0.5)" stroke-width="2" stroke-linecap="round" />
+                <!-- Saucer -->
+                <ellipse cx="50" cy="86" rx="40" ry="5" fill="#D4A574" opacity="0.7" />
+                <!-- Handle -->
+                <path d="M78 45 Q98 45 98 60 Q98 75 78 75" stroke="#E8B86D" stroke-width="5" fill="none"
+                    stroke-linecap="round" />
+                <!-- Coffee liquid -->
+                <ellipse cx="50" cy="50" rx="28" ry="6" fill="#6F4E37" opacity="0.6" />
+                <!-- Foam swirl -->
+                <path d="M35 50 Q50 44 65 50" stroke="rgba(255,255,255,0.35)" stroke-width="2" fill="none"
+                    stroke-linecap="round" />
+            </svg>
+        </div>
+
+        <!-- Brand -->
+        <div class="intro-brand">
+            <h1>Kape Kanto Hub</h1>
+            <p>Brewing moments, one cup at a time</p>
+        </div>
+
+        <!-- Loading bar -->
+        <div class="intro-bar-wrap">
+            <div class="intro-bar"></div>
+        </div>
+    </div>
+    <!-- ════════════════════════════════════════════════ -->
+
+    <!-- Hero Carousel -->
+    <section class="carousel-container">
+        <!-- Static fallback / First Slide -->
+        <div class="carousel-slide active"
+            style="background-image: url('https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=1600');">
+            <div class="carousel-overlay"></div>
+            <div class="carousel-content">
+                <h2>Welcome to Kape Kanto Hub</h2>
+                <p>Experience the finest coffee and warmest ambiance in the neighborhood.</p>
+                <a href="/menu" class="btn btn-primary">Explore Menu</a>
+            </div>
+        </div>
+
+        <!-- Ambiance / Featured Items (Static or Dynamic) -->
+        <div class="carousel-slide"
+            style="background-image: url('https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=80&w=1600');">
+            <div class="carousel-overlay"></div>
+            <div class="carousel-content">
+                <h2>Aesthetic Café Vibes</h2>
+                <p>The perfect spot for your morning brew or afternoon study session.</p>
+                <a href="#our-story" class="btn btn-primary" onclick="smoothScrollTo('our-story');">Our Story</a>
+            </div>
+        </div>
+
+        <!-- Active Promos (Dynamic) -->
+        <% const carouselPromos = (typeof activePromos !=='undefined' && activePromos.length > 0) ? activePromos.slice(0, 5) : []; %>
+        <% if (carouselPromos.length > 0) { %>
+            <% carouselPromos.forEach(function(promo) { %>
+                <% const promoImg=promo.image
+                    || 'https://images.unsplash.com/photo-1497935586351-b67a49e012bf?auto=format&fit=crop&q=80&w=1600' ;
+                    let isUpcomingCarousel=false; const nowCarousel=new Date(); if (promo.start_date) { const
+                    startDate=new Date(promo.start_date); if (startDate> nowCarousel) isUpcomingCarousel = true;
+                    }
+                    %>
+                    <div class="carousel-slide" style="background-image: url('<%= promoImg %>');">
+                        <div class="carousel-overlay"></div>
+                        <div class="carousel-content">
+                            <h2>
+                                <%= promo.title %>
+                            </h2>
+                            <p>
+                                <%= promo.description %>
+                            </p>
+                            <p style="font-size: 1.5rem; font-weight: bold; color: var(--accent); margin-bottom: 2rem;">
+                                <% if (promo.event_type==='promo' ) { %>
+                                    Get <%= promo.discount_percent %>% OFF! Code:
+                                        <% if (isUpcomingCarousel) { %>
+                                            <span
+                                                style="filter: blur(10px); user-select: none; opacity: 0.6; letter-spacing: 2px;"
+                                                title="Reveals when event starts">
+                                                ••••••
+                                            </span>
+                                            <% } else { %>
+                                                <%= promo.promo_code || 'N/A' %>
+                                                    <% } %>
+                                                        <% } else { %>
+                                                            Loyalty Challenge: <%= promo.title %>
+                                                                <% } %>
+                            </p>
+                            <a href="<%= (promo.event_type === 'promo' && !isUpcomingCarousel) ? '/cart' : '/profile' %>"
+                                class="btn btn-primary">
+                                <%= isUpcomingCarousel ? 'Learn More' : (promo.event_type==='promo' ? 'Get the Deal'
+                                    : 'Start Task' ) %>
+                            </a>
+                        </div>
+                    </div>
+                    <% }); %>
+                        <% } %>
+
+                            <div class="carousel-controls">
+                                <!-- Dots injected by JS -->
+                            </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="our-story" style="padding: 5rem 5%; background-color: white;">
+        <div
+            style="max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center;">
+            <div class="reveal-left about-img-wrap">
+                <img src="https://images.unsplash.com/photo-1442512595331-e89e73853f31?auto=format&fit=crop&q=80&w=800"
+                    alt="Cafe Ambiance"
+                    style="width: 100%; border-radius: 20px; box-shadow: 20px 20px 0 var(--secondary);">
+            </div>
+            <div class="reveal-right">
+                <h2 style="font-size: 2.5rem; margin-bottom: 1.5rem;">Our Story</h2>
+                <p style="margin-bottom: 1.5rem; color: var(--text-light);">
+                    Kape Kanto Hub started with a simple dream: to bring premium coffee culture to every neighborhood
+                    corner. "Kanto" represents the heart of the community—the meeting place where stories are shared and
+                    friendships are brewed.
+                </p>
+                <p style="margin-bottom: 2rem; color: var(--text-light);">
+                    We source the finest beans and bake our pastries fresh every morning to ensure every visit feels
+                    like coming home. Whether you're here for a quick espresso or a long afternoon with a book, you're
+                    always welcome at the Kanto.
+                </p>
+                <a href="/menu" class="btn btn-secondary" onclick="smoothScrollTo('best-sellers-grid');">See What's
+                    Brewing</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Menu Items -->
+    <section style="padding: 4rem 5%; background-color: var(--bg-main);">
+        <h2 class="section-title reveal">Featured Items</h2>
+        <div class="grid-container stagger-children" id="featured-items-grid">
+            <% if (typeof featuredItems !=='undefined' && featuredItems.length> 0) { %>
+                <% featuredItems.forEach(function(item) { %>
+                    <div class="menu-card" onclick="openItemDetails('<%= item.id %>')" style="cursor:pointer;">
+                        <% let
+                            imgUrl='https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=600'
+                            ; if (item.image) { imgUrl=item.image.startsWith('http') ? item.image :
+                            (item.image.startsWith('/uploads/') ? item.image : `/uploads/menu/${item.image}`); } %>
+                            <div style="position: relative;">
+                                <img src="<%= imgUrl %>" alt="<%= item.name %>" class="menu-image">
+                                <span class="badge badge-primary"
+                                    style="position: absolute; top: 10px; right: 10px;">Popular Choice</span>
+                            </div>
+                            <div class="menu-details">
+                                <h3 class="menu-name">
+                                    <%= item.name %>
+                                </h3>
+                                <p
+                                    style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.5rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                    <%= item.description || 'Specially crafted for the best experience.' %>
+                                </p>
+                                <p class="menu-price">₱<%= item.price.toFixed(2) %>
+                                </p>
+                            </div>
+                    </div>
+                    <% }); %>
+                        <% } %>
+        </div>
+
+        <!-- Product Details Container (Simplified Modal) -->
+        <div id="item-details-container"
+            style="display:none; margin-top: 2rem; padding: 2rem; background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid #eee;">
+            <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 2rem;">
+                <div style="position: relative;">
+                    <img id="detailImage" src=""
+                        style="width: 100%; height: 350px; object-fit: cover; border-radius: 15px;">
+                    <button onclick="closeItemDetails()"
+                        style="position: absolute; top: 10px; left: 10px; background: white; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1);"><i
+                            class="fa-solid fa-arrow-left"></i></button>
+                </div>
+                <div>
+                    <h2 id="detailTitle" style="font-size: 2rem; margin-bottom: 0.5rem; color: var(--primary-dark);">
+                    </h2>
+                    <p id="detailDescription"
+                        style="color: var(--text-light); margin-bottom: 1.5rem; line-height: 1.6;"></p>
+
+                    <div id="detailOptions" style="margin-bottom: 2rem;">
+                        <!-- Options loaded via JS -->
+                    </div>
+
+                    <div
+                        style="display: flex; align-items: center; justify-content: space-between; padding-top: 1.5rem; border-top: 1px solid #eee;">
+                        <div>
+                            <span
+                                style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-light); display: block;">Total
+                                Price</span>
+                            <span style="font-size: 1.5rem; font-weight: bold; color: var(--primary);">₱<span
+                                    id="detailTotalPrice">0.00</span></span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div
+                                style="display: flex; align-items: center; background: #f8f8f8; border-radius: 10px; padding: 5px;">
+                                <button onclick="changeDetailQty(-1)"
+                                    style="border: none; background: none; padding: 10px; cursor: pointer;"><i
+                                        class="fa-solid fa-minus"></i></button>
+                                <input type="number" id="detailQty" value="1" readonly
+                                    style="width: 40px; text-align: center; border: none; background: none; font-weight: bold;">
+                                <button onclick="changeDetailQty(1)"
+                                    style="border: none; background: none; padding: 10px; cursor: pointer;"><i
+                                        class="fa-solid fa-plus"></i></button>
+                            </div>
+                            <button id="detailAddBtn" class="btn btn-primary"
+                                style="height: 50px; padding: 0 2rem; font-weight: bold;">Add to Cart</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 2rem;">
+            <a href="/menu" class="btn btn-secondary">View Full Menu</a>
+        </div>
+    </section>
+
+    <!-- Gallery Modal -->
+    <div id="gallery-modal"
+        style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:2000;align-items:center;justify-content:center;padding:1rem;">
+        <div style="max-width:900px;width:100%;position:relative;">
+            <button onclick="document.getElementById('gallery-modal').style.display='none'"
+                style="position:absolute;top:-45px;right:0;background:rgba(255,255,255,0.15);border:none;color:white;font-size:1.5rem;width:40px;height:40px;border-radius:50%;cursor:pointer;">&times;</button>
+            <div
+                style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;border-radius:16px;overflow:hidden;">
+                <img src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=500"
+                    style="width:100%;aspect-ratio:1;object-fit:cover;" alt="Café 1">
+                <img src="https://images.unsplash.com/photo-1442512595331-e89e73853f31?auto=format&fit=crop&q=80&w=500"
+                    style="width:100%;aspect-ratio:1;object-fit:cover;" alt="Café 2">
+                <img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=80&w=500"
+                    style="width:100%;aspect-ratio:1;object-fit:cover;" alt="Café 3">
+                <img src="https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=500"
+                    style="width:100%;aspect-ratio:1;object-fit:cover;" alt="Café 4">
+                <img src="https://images.unsplash.com/photo-1561047029-3000c68339ca?auto=format&fit=crop&q=80&w=500"
+                    style="width:100%;aspect-ratio:1;object-fit:cover;" alt="Café 5">
+                <img src="https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&q=80&w=500"
+                    style="width:100%;aspect-ratio:1;object-fit:cover;" alt="Café 6">
+            </div>
+            <p style="text-align:center;color:rgba(255,255,255,0.6);margin-top:1rem;font-size:0.85rem;">Our cozy café
+                space — visit us anytime!</p>
+        </div>
+    </div>
+
+    <!-- Limited Time Promos with Countdown -->
+    <section style="padding: 4rem 5%; background-color: var(--bg-dark); color: white;">
+        <h2 class="section-title reveal" style="color: white; margin-bottom: 0.5rem;">Limited Time Events</h2>
+        <p class="reveal"
+            style="text-align: center; color: rgba(255,255,255,0.6); margin-bottom: 3rem; max-width: 600px; margin-left: auto; margin-right: auto;">
+            Don't miss out on our exclusive seasonal offers and community rewards. These deals are only here for a
+            limited time!
+        </p>
+        <div class="grid-container stagger-children" id="event-grid">
+            <% if (typeof activePromos !=='undefined' && activePromos.length> 0) { %>
+                <% activePromos.forEach(function(promo, index) { %>
+                    <div class="card event-card" data-index="<%= index %>"
+                        style="background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; padding: 2rem; color: white; display: none; flex-direction: column; height: 100%; transition: transform 0.3s ease, box-shadow 0.3s ease;">
+                        <% let isUpcomingCard=false; let countdownTarget=promo.end_date; const nowCard=new Date(); if
+                            (promo.start_date) { const startDate=new Date(promo.start_date); if (startDate> nowCard) {
+                            isUpcomingCard = true;
+                            countdownTarget = promo.start_date;
+                            }
+                            }
+                            %>
+
+                            <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1rem;">
+                                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                    <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(232, 184, 109, 0.15); display: flex; align-items: center; justify-content: center; color: var(--accent);">
+                                        <i class="fa-solid <%= promo.event_type === 'promo' ? 'fa-tags' : 'fa-trophy' %>" style="font-size: 1.1rem;"></i>
+                                    </div>
+                                    <h3 style="color: white; margin: 0; font-size: 1.25rem; font-weight: 700; line-height: 1.2;">
+                                        <%= promo.title %>
+                                    </h3>
+                                </div>
+                                <% if (isUpcomingCard) { %>
+                                    <span style="background: rgba(232, 184, 109, 0.2); color: var(--accent); padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid rgba(232, 184, 109, 0.3);">Upcoming</span>
+                                <% } else { %>
+                                    <span style="background: rgba(76, 175, 80, 0.2); color: #81c784; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid rgba(76, 175, 80, 0.3);">Active</span>
+                                <% } %>
+                            </div>
+
+                            <p style="margin-bottom: 1.5rem; opacity: 0.7; font-size: 0.95rem; line-height: 1.6; flex-grow: 1;">
+                                <%= promo.description %>
+                            </p>
+
+                            <% if (promo.start_date || promo.end_date) { %>
+                                <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem; background: rgba(0,0,0,0.25); padding: 1rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                                    <div style="font-size: 0.8rem; color: rgba(255,255,255,0.6); display: flex; align-items: center; gap: 8px;">
+                                        <i class="fa-regular fa-clock" style="color: var(--accent); width: 14px; text-align: center;"></i>
+                                        <span>
+                                            <strong style="color: rgba(255,255,255,0.9);"><%= isUpcomingCard ? 'Starts:' : 'Started:' %></strong>
+                                            <%= promo.start_date ? new Date(promo.start_date).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Immediate' %>
+                                        </span>
+                                    </div>
+                                    <div style="font-size: 0.8rem; color: rgba(255,255,255,0.6); display: flex; align-items: center; gap: 8px;">
+                                        <i class="fa-solid fa-hourglass-end" style="color: var(--accent); width: 14px; text-align: center;"></i>
+                                        <span>
+                                            <strong style="color: rgba(255,255,255,0.9);">Ends:</strong>
+                                            <%= promo.end_date ? new Date(promo.end_date).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'No Expiry' %>
+                                        </span>
+                                    </div>
+                                </div>
+                            <% } %>
+
+                            <% if (countdownTarget) { %>
+                                <div class="countdown" data-target="<%= countdownTarget %>" data-is-upcoming="<%= isUpcomingCard %>"
+                                    style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-bottom: 1.5rem;">
+                                    <div style="background: rgba(255,255,255,0.05); padding: 0.75rem 0.25rem; border-radius: 10px; text-align: center; border: 1px solid rgba(255,255,255,0.02);">
+                                        <div class="days" style="font-size: 1.4rem; font-weight: 800; color: var(--accent); line-height: 1;">00</div>
+                                        <div style="font-size: 0.65rem; text-transform: uppercase; margin-top: 4px; opacity: 0.6; letter-spacing: 1px;">Days</div>
+                                    </div>
+                                    <div style="background: rgba(255,255,255,0.05); padding: 0.75rem 0.25rem; border-radius: 10px; text-align: center; border: 1px solid rgba(255,255,255,0.02);">
+                                        <div class="hours" style="font-size: 1.4rem; font-weight: 800; color: var(--accent); line-height: 1;">00</div>
+                                        <div style="font-size: 0.65rem; text-transform: uppercase; margin-top: 4px; opacity: 0.6; letter-spacing: 1px;">Hours</div>
+                                    </div>
+                                    <div style="background: rgba(255,255,255,0.05); padding: 0.75rem 0.25rem; border-radius: 10px; text-align: center; border: 1px solid rgba(255,255,255,0.02);">
+                                        <div class="minutes" style="font-size: 1.4rem; font-weight: 800; color: var(--accent); line-height: 1;">00</div>
+                                        <div style="font-size: 0.65rem; text-transform: uppercase; margin-top: 4px; opacity: 0.6; letter-spacing: 1px;">Mins</div>
+                                    </div>
+                                    <div style="background: rgba(255,255,255,0.05); padding: 0.75rem 0.25rem; border-radius: 10px; text-align: center; border: 1px solid rgba(255,255,255,0.02);">
+                                        <div class="seconds" style="font-size: 1.4rem; font-weight: 800; color: var(--accent); line-height: 1;">00</div>
+                                        <div style="font-size: 0.65rem; text-transform: uppercase; margin-top: 4px; opacity: 0.6; letter-spacing: 1px;">Secs</div>
+                                    </div>
+                                </div>
+                            <% } %>
+
+                            <div style="margin-top: auto;">
+                                <% if (promo.event_type==='promo' && promo.promo_code) { %>
+                                    <div style="background: rgba(232, 184, 109, 0.1); padding: 1rem; border-radius: 12px; text-align: center; border: 1px dashed rgba(232, 184, 109, 0.4);">
+                                        <% if (isUpcomingCard) { %>
+                                            <span style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.5px; color: rgba(255,255,255,0.5); display: block; margin-bottom: 6px;">Code reveals upon start</span>
+                                            <div style="font-size: 1.3rem; font-weight: 900; color: rgba(232, 184, 109, 0.3); filter: blur(8px); user-select: none; letter-spacing: 6px;">••••••</div>
+                                        <% } else { %>
+                                            <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.7); display: block; margin-bottom: 4px;">Use Promo Code</span>
+                                            <div style="font-size: 1.4rem; font-weight: 900; color: var(--accent); letter-spacing: 2px; user-select: all;"><%= promo.promo_code %></div>
+                                        <% } %>
+                                    </div>
+                                <% } else if (promo.event_type==='task') { %>
+                                    <a href="/profile#loyalty" style="display: flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%); color: white; padding: 1rem; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 0.95rem; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);">
+                                        <i class="fa-solid fa-bolt"></i> Join Challenge
+                                    </a>
+                                <% } %>
+                            </div>
+                    </div>
+                    <% }); %>
+            <% } else { %>
+                <p style="text-align: center; grid-column: 1/-1; color: rgba(255,255,255,0.5);">No active events right now. Check back soon!</p>
+            <% } %>
+        </div>
+
+        <!-- Event Pagination Controls -->
+        <div id="event-pagination" style="display: none; justify-content: center; align-items: center; gap: 1rem; margin-top: 3rem;">
+            <button class="btn btn-outline" id="event-prev" onclick="changeEventPage(-1)" style="width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%;">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <div id="event-page-numbers" style="display: flex; gap: 0.5rem; align-items: center;"></div>
+            <button class="btn btn-outline" id="event-next" onclick="changeEventPage(1)" style="width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%;">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+        </div>
+    </section>
+
+    <script>
+        let allMenuItems = [];
+        let currentDetailItem = null;
+
+        async function loadFeaturedItems() {
+            try {
+                const res = await fetch('/api/menu');
+                if (res.ok) {
+                    allMenuItems = await res.json();
+                }
+            } catch (e) {
+                console.error('Failed to load menu items', e);
+            }
+        }
+
+        async function openItemDetails(id) {
+            if (allMenuItems.length === 0) await loadFeaturedItems();
+            currentDetailItem = allMenuItems.find(i => i.id === id);
+            if (!currentDetailItem) return;
+
+            document.getElementById('featured-items-grid').style.display = 'none';
+            // Also hide the "View All Menu" button to make it cleaner
+            const viewAllBtn = document.querySelector('a[href="/menu"].btn-secondary');
+            if (viewAllBtn && viewAllBtn.parentElement) viewAllBtn.parentElement.style.display = 'none';
+
+            document.getElementById('item-details-container').style.display = 'block';
+
+            const img = document.getElementById('detailImage');
+            const title = document.getElementById('detailTitle');
+            const desc = document.getElementById('detailDescription');
+            const optionsBox = document.getElementById('detailOptions');
+            const addBtn = document.getElementById('detailAddBtn');
+            const qtyInput = document.getElementById('detailQty');
+
+            img.src = currentDetailItem.image ? (currentDetailItem.image.startsWith('http') ? currentDetailItem.image : `/uploads/menu/${currentDetailItem.image}`) : 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=600';
+            title.innerText = currentDetailItem.name;
+            desc.innerText = currentDetailItem.description || 'Mas Langhap Sarap!';
+            qtyInput.value = 1;
+
+            optionsBox.innerHTML = '<p style="color: var(--text-light);">Loading options...</p>';
+
+            const isAvailable = currentDetailItem.is_available === 1 && currentDetailItem.stock > 0;
+            addBtn.disabled = !isAvailable;
+            updateDetailTotalPrice();
+
+            try {
+                const res = await fetch(`/api/menu/${id}/options`);
+                if (res.ok) {
+                    const options = await res.json();
+                    renderDetailOptions(options);
+                } else {
+                    optionsBox.innerHTML = '';
+                }
+            } catch (e) {
+                console.error('Failed to load options', e);
+                optionsBox.innerHTML = '';
+            }
+        }
+
+        function renderDetailOptions(options) {
+            const container = document.getElementById('detailOptions');
+            container.innerHTML = '';
+
+            if (options.length === 0) return;
+
+            options.forEach(opt => {
+                let choicesHtml = '';
+                opt.choices.forEach((choice, idx) => {
+                    const priceAdj = choice.price_adjustment || 0;
+                    const extraPriceDisplay = priceAdj > 0 ? `<span style="color: var(--text-dark); font-size: 0.9rem;">+ ₱${priceAdj.toFixed(2)}</span>` : '';
+                    choicesHtml += `
+                    <label style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; cursor: pointer; user-select: none;">
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <input type="radio" name="detail_opt_${opt.id}" value="${choice.id}" data-price="${priceAdj}" ${idx === 0 ? 'checked' : ''} onchange="updateDetailTotalPrice()" style="width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer;">
+                            <span style="font-size: 0.95rem; color: var(--text-dark);">${choice.name}</span>
+                        </div>
+                        ${extraPriceDisplay}
+                    </label>
+                `;
+                });
+
+                container.innerHTML += `
+                <div style="margin-bottom: 25px;">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 5px; color: var(--text-dark);">${opt.name}<span style="color: var(--primary);">*</span></h3>
+                    <p style="font-size: 0.8rem; color: var(--text-light); margin-bottom: 10px;">Select 1 option</p>
+                    <div style="display: flex; flex-direction: column;">
+                        ${choicesHtml}
+                    </div>
+                </div>
+            `;
+            });
+            updateDetailTotalPrice();
+        }
+
+        function updateDetailTotalPrice() {
+            if (!currentDetailItem) return;
+
+            let basePrice = currentDetailItem.price;
+            let extraPrice = 0;
+
+            // Add up selected options
+            document.querySelectorAll('#detailOptions input[type="radio"]:checked').forEach(radio => {
+                extraPrice += parseFloat(radio.dataset.price || 0);
+            });
+
+            const qty = parseInt(document.getElementById('detailQty').value) || 1;
+            const total = (basePrice + extraPrice) * qty;
+
+            const user = window.KapeKantoUser || { role: 'guest', isVerified: 0 };
+            const isAvailable = currentDetailItem.is_available === 1 && currentDetailItem.stock > 0;
+            const btn = document.getElementById('detailAddBtn');
+
+            document.getElementById('detailTotalPrice').innerText = total.toFixed(2);
+
+            if (user.role === 'guest') {
+                btn.innerHTML = `Login to Order`;
+                btn.disabled = true;
+                btn.style.opacity = '0.6';
+            } else if (user.role === 'customer' && user.isVerified != 1) {
+                btn.innerHTML = `Verify Email`;
+                btn.disabled = true;
+                btn.style.opacity = '0.6';
+            } else if (!isAvailable) {
+                btn.innerHTML = `Out of Stock`;
+                btn.disabled = true;
+                btn.style.opacity = '0.6';
+            } else {
+                btn.innerHTML = `Add to Cart`;
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            }
+        }
+
+        function closeItemDetails() {
+            document.getElementById('item-details-container').style.display = 'none';
+            document.getElementById('featured-items-grid').style.display = 'grid';
+            const viewAllBtn = document.querySelector('a[href="/menu"].btn-secondary');
+            if (viewAllBtn && viewAllBtn.parentElement) viewAllBtn.parentElement.style.display = 'block';
+            window.scrollTo({
+                top: document.getElementById('featured-items-grid').offsetTop - 100,
+                behavior: 'smooth'
+            });
+        }
+
+        function changeDetailQty(amt) {
+            const input = document.getElementById('detailQty');
+            let val = parseInt(input.value) + amt;
+            if (val < 1) val = 1;
+            input.value = val;
+            updateDetailTotalPrice();
+        }
+
+        document.getElementById('detailAddBtn')?.addEventListener('click', () => {
+            if (!currentDetailItem) return;
+
+            const qty = parseInt(document.getElementById('detailQty').value);
+            const customizations = {};
+            let extraPriceTotal = 0;
+
+            document.querySelectorAll('#detailOptions input[type="radio"]:checked').forEach(radio => {
+                // Find the option group title by navigating up DOM
+                const groupDiv = radio.closest('div').parentElement.parentElement;
+                const title = groupDiv.querySelector('h3').innerText.replace('*', '');
+
+                // Find the label text (choice name)
+                const choiceName = radio.nextElementSibling.innerText;
+                const extraPrice = parseFloat(radio.dataset.price || 0);
+
+                customizations[title] = choiceName;
+                extraPriceTotal += extraPrice;
+            });
+
+            const imgUrl = currentDetailItem.image ? (currentDetailItem.image.startsWith('http') ? currentDetailItem.image : `/uploads/menu/${currentDetailItem.image}`) : 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=600';
+
+            const cart = KapeKanto.getCart();
+            const existing = cart.find(item =>
+                item.id === currentDetailItem.id &&
+                JSON.stringify(item.customizations) === JSON.stringify(customizations)
+            );
+
+            if (existing) {
+                existing.quantity += qty;
+            } else {
+                cart.push({
+                    id: currentDetailItem.id,
+                    name: currentDetailItem.name,
+                    category_id: currentDetailItem.category_id,
+                    price: currentDetailItem.price + extraPriceTotal,
+                    image: imgUrl,
+                    quantity: qty,
+                    customizations: customizations
+                });
+            }
+
+            KapeKanto.saveCart(cart);
+            KapeKanto.toast(`${currentDetailItem.name} added to cart!`);
+            closeItemDetails();
+        });
+
+        document.addEventListener('DOMContentLoaded', loadFeaturedItems);
+
+        // Countdown Timer Logic
+
+        function updateCountdowns() {
+            const timers = document.querySelectorAll('.countdown');
+            timers.forEach(timer => {
+                const targetDate = new Date(timer.dataset.target).getTime();
+                const isUpcoming = timer.dataset.isUpcoming === 'true';
+                const now = new Date().getTime();
+                const diff = targetDate - now;
+
+                if (diff > 0) {
+                    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                    timer.querySelector('.days').innerText = days.toString().padStart(2, '0');
+                    timer.querySelector('.hours').innerText = hours.toString().padStart(2, '0');
+                    timer.querySelector('.minutes').innerText = minutes.toString().padStart(2, '0');
+                    timer.querySelector('.seconds').innerText = seconds.toString().padStart(2, '0');
+                } else {
+                    if (isUpcoming) {
+                        location.reload();
+                    } else {
+                        timer.innerHTML = '<div style="color: var(--danger); font-weight: bold;">EVENT ENDED</div>';
+                    }
+                }
+            });
+        }
+
+        setInterval(updateCountdowns, 1000);
+        updateCountdowns();
+
+        // Event Pagination Logic
+        let currentEventPage = 1;
+        const eventsPerPage = 6;
+        const totalEvents = <%= typeof activePromos !== 'undefined' ? activePromos.length : 0 %>;
+        const totalEventPages = Math.ceil(totalEvents / eventsPerPage);
+
+        function updateEventDisplay() {
+            const cards = document.querySelectorAll('.event-card');
+            const start = (currentEventPage - 1) * eventsPerPage;
+            const end = start + eventsPerPage;
+
+            cards.forEach((card, idx) => {
+                if (idx >= start && idx < end) {
+                    card.style.display = 'flex';
+                    card.classList.add('reveal');
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            renderEventPagination();
+            if (window.ScrollReveal) ScrollReveal().sync();
+        }
+
+        function renderEventPagination() {
+            const controls = document.getElementById('event-pagination');
+            const pageNumbers = document.getElementById('event-page-numbers');
+            
+            if (totalEventPages <= 1) {
+                controls.style.display = 'none';
+                return;
+            }
+            
+            controls.style.display = 'flex';
+            document.getElementById('event-prev').disabled = false;
+            document.getElementById('event-next').disabled = false;
+            
+            let pagesHtml = '';
+            const limit = 10;
+            let startPage = Math.max(1, currentEventPage - limit + 1);
+            let endPage = Math.min(totalEventPages, startPage + limit - 1);
+            
+            if (endPage - startPage < limit - 1) {
+                startPage = Math.max(1, endPage - limit + 1);
+            }
+
+            if (startPage > 1) {
+                pagesHtml += `<span style="cursor: pointer; padding: 0 8px; color: #999; display: flex; align-items: center;" onclick="goToEventPage(${startPage - 1})" title="Previous page range">...</span>`;
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                pagesHtml += `<button class="btn ${i === currentEventPage ? 'btn-primary' : 'btn-outline'}" 
+                                     onclick="goToEventPage(${i})" 
+                                     style="width: 35px; height: 35px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700;">${i}</button>`;
+            }
+
+            if (endPage < totalEventPages) {
+                pagesHtml += `<span style="cursor: pointer; padding: 0 8px; color: #999; display: flex; align-items: center;" onclick="goToEventPage(${endPage + 1})" title="Next page range">...</span>`;
+            }
+
+            pageNumbers.innerHTML = pagesHtml;
+        }
+
+        function goToEventPage(page) {
+            if (totalEventPages < 1) return;
+            currentEventPage = Math.min(Math.max(page, 1), totalEventPages);
+            updateEventDisplay();
+            document.getElementById('event-grid').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function changeEventPage(delta) {
+            const next = currentEventPage + delta;
+            if (next > totalEventPages) {
+                goToEventPage(1);
+            } else if (next < 1) {
+                goToEventPage(totalEventPages);
+            } else {
+                goToEventPage(next);
+            }
+        }
+
+        // Initialize display
+        document.addEventListener('DOMContentLoaded', () => {
+            updateEventDisplay();
+        });
+
+        // Smooth scroll helper
+        function smoothScrollTo(id) {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Gallery modal open (for carousel button)
+        document.querySelectorAll('[data-open-gallery]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const modal = document.getElementById('gallery-modal');
+                if (modal) { modal.style.display = 'flex'; }
+            });
+        });
+    </script>
+
+    <script src="/js/carousel.js"></script>
+    <script src="/js/animations.js"></script>
+    <script>
+        // Generate floating coffee beans for intro
+        (function spawnBeans() {
+            const container = document.getElementById('introBeans');
+            if (!container) return;
+            const count = 18;
+            for (let i = 0; i < count; i++) {
+                const bean = document.createElement('div');
+                bean.className = 'intro-bean';
+                bean.style.left = Math.random() * 100 + 'vw';
+                bean.style.animationDuration = (4 + Math.random() * 5) + 's';
+                bean.style.animationDelay = (Math.random() * 3) + 's';
+                bean.style.width = (12 + Math.random() * 14) + 'px';
+                bean.style.height = (7 + Math.random() * 7) + 'px';
+                bean.style.opacity = (0.1 + Math.random() * 0.2).toString();
+                container.appendChild(bean);
+            }
+        })();
+    </script>
+
+    <%- include('partials/footer') %>

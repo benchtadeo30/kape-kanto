@@ -1,0 +1,538 @@
+<%- include('partials/header') %>
+
+    <style>
+        :root {
+            --help-primary: #6f4e37;
+            --help-accent: #d2b48c;
+            --help-bg: #fafafa;
+            --help-card-bg: #ffffff;
+            --help-text: #2d2d2d;
+            --help-text-light: #666;
+            --help-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        }
+
+        .help-wrapper {
+            padding: 3rem 5%;
+            max-width: 1000px;
+            margin: 0 auto;
+            min-height: 80vh;
+        }
+
+        .help-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .help-header h1 {
+            font-size: 2.5rem;
+            color: var(--help-primary);
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+
+        .help-header p {
+            color: var(--help-text-light);
+            font-size: 1.1rem;
+        }
+
+        /* Search Bar */
+        .search-container {
+            max-width: 600px;
+            margin: 2rem auto;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 1.2rem 1.5rem 1.2rem 85px !important;
+            border-radius: 50px;
+            border: 2px solid #eee;
+            background: white;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            box-shadow: var(--help-shadow);
+            outline: none;
+            display: block;
+        }
+
+        .search-input::placeholder {
+            color: #999;
+            opacity: 1;
+            text-indent: 0;
+        }
+
+        .search-input:focus {
+            border-color: var(--help-primary);
+            box-shadow: 0 10px 40px rgba(111, 78, 55, 0.15);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 35px !important;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--help-primary);
+            font-size: 1.4rem;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        /* Tabs */
+        .help-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2.5rem;
+            border-bottom: 2px solid #eee;
+        }
+
+        .tab-btn {
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--help-text-light);
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .tab-btn.active {
+            color: var(--help-primary);
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--help-primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Category Pills */
+        .category-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+
+        .category-pill {
+            padding: 0.6rem 1.2rem;
+            background: white;
+            border: 1px solid #eee;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--help-text-light);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .category-pill:hover,
+        .category-pill.active {
+            background: var(--help-primary);
+            color: white;
+            border-color: var(--help-primary);
+            box-shadow: 0 5px 15px rgba(111, 78, 55, 0.2);
+        }
+
+        /* Help Items */
+        .help-list {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .help-item {
+            background: var(--help-card-bg);
+            border-radius: 15px;
+            box-shadow: var(--help-shadow);
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .help-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .help-question {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            font-weight: 700;
+            color: var(--help-primary);
+            font-size: 1.1rem;
+        }
+
+        .help-question i {
+            transition: transform 0.3s ease;
+            color: var(--help-accent);
+        }
+
+        .help-item.active .help-question i {
+            transform: rotate(180deg);
+        }
+
+        .help-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #fafafa;
+        }
+
+        .help-item.active .help-answer {
+            max-height: 1000px;
+            padding: 1.5rem;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .help-answer p {
+            line-height: 1.6;
+            color: var(--help-text);
+            margin-bottom: 1rem;
+        }
+
+        .help-answer ol,
+        .help-answer ul {
+            padding-left: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--help-text);
+        }
+
+        .help-answer li {
+            margin-bottom: 0.5rem;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 3rem;
+            color: var(--help-text-light);
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .help-tabs {
+                gap: 0.5rem;
+            }
+
+            .tab-btn {
+                padding: 0.8rem 1rem;
+                font-size: 0.95rem;
+            }
+        }
+    </style>
+
+    <div class="help-wrapper">
+        <div class="help-header">
+            <h1>How can we help?</h1>
+            <p>Search for solutions or browse common questions below.</p>
+        </div>
+
+        <div class="search-container">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="help-search" class="search-input"
+                placeholder="Describe your problem (e.g. 'verification', 'payment')...">
+        </div>
+
+        <div class="help-tabs">
+            <button class="tab-btn active" data-tab="troubleshooting">
+                <i class="fa-solid fa-screwdriver-wrench"></i> Troubleshooting
+            </button>
+            <button class="tab-btn" data-tab="faq">
+                <i class="fa-solid fa-circle-question"></i> FAQ
+            </button>
+        </div>
+
+        <!-- Troubleshooting Tab -->
+        <div id="troubleshooting" class="tab-content active">
+            <div class="category-pills">
+                <div class="category-pill active" data-category="all">All Problems</div>
+                <div class="category-pill" data-category="account">Account & Security</div>
+                <div class="category-pill" data-category="order">Orders & Tracking</div>
+                <div class="category-pill" data-category="payment">Payments & Refunds</div>
+                <div class="category-pill" data-category="discount">Promos & Discounts</div>
+            </div>
+
+            <div class="help-list" id="troubleshoot-list">
+                <!-- Account -->
+                <div class="help-item" data-category="account"
+                    data-keywords="email verification code receive junk spam">
+                    <div class="help-question">
+                        My verification code didn't arrive.
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                    <div class="help-answer">
+                        <p>If you haven't received your 6-digit verification code, please try the following:</p>
+                        <ol>
+                            <li>Check your <strong>Spam or Junk</strong> folder in your email.</li>
+                            <li>Ensure the email address you registered with is correct.</li>
+                            <li>Go to your Profile and click "Resend Code".</li>
+                            <li>Wait at least 2 minutes before requesting another code.</li>
+                        </ol>
+                        <p>Still having trouble? Our staff can manually verify your account if you visit the store.</p>
+                    </div>
+                </div>
+
+                <div class="help-item" data-category="account" data-keywords="login password forgot account access">
+                    <div class="help-question">
+                        I forgot my password / Can't log in.
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                    <div class="help-answer">
+                        <p>To reset your password:</p>
+                        <ol>
+                            <li>Go to the Login page.</li>
+                            <li>Click on "Forgot Password?".</li>
+                            <li>Enter your registered email address.</li>
+                            <li>Follow the link sent to your email to create a new password.</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- Orders -->
+                <div class="help-item" data-category="order" data-keywords="status pending waiting time long slow">
+                    <div class="help-question">
+                        My order is stuck on "Pending" for a long time.
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                    <div class="help-answer">
+                        <p>During peak hours (like lunchtime), orders might take longer to process. If it's been more
+                            than 20 minutes and the status hasn't changed:</p>
+                        <ul>
+                            <li>Use the "Kanto Assistant" chat widget on the bottom right to ask for a status update.
+                            </li>
+                            <li>The staff might be busy with a large volume of orders.</li>
+                            <li>Rest assured, our team is working hard to prepare your coffee/meal!</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="help-item" data-category="order" data-keywords="address change delivery wrong location">
+                    <div class="help-question">
+                        I entered the wrong delivery address.
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                    <div class="help-answer">
+                        <p>If your order is still "Pending" or "Preparing", we can usually update the address:</p>
+                        <ol>
+                            <li>Message us immediately via the Kanto Assistant chat.</li>
+                            <li>Provide your Order ID and the correct address.</li>
+                            <li>Note: If the rider has already picked up the order (Out for Delivery), we may not be
+                                able to change the destination.</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- Payments -->
+                <div class="help-item" data-category="payment" data-keywords="payrex failed error online gcash card">
+                    <div class="help-question">
+                        My PayRex payment failed or was cancelled.
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                    <div class="help-answer">
+                        <p>If your online payment didn't go through:</p>
+                        <ul>
+                            <li>Your order will be set to <strong>Awaiting Payment</strong> status.</li>
+                            <li>You can go to "Track Order" and click "Cancel Order" to try again.</li>
+                            <li>Alternatively, you can choose "Cash on Delivery" for your next attempt if online payment
+                                continues to fail.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Discounts -->
+                <div class="help-item" data-category="discount"
+                    data-keywords="senior pwd discount id verification reject">
+                    <div class="help-question">
+                        My Senior/PWD discount is not appearing.
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                    <div class="help-answer">
+                        <p>To use the 20% discount, your ID must be verified:</p>
+                        <ol>
+                            <li>Check your Profile to see your ID verification status.</li>
+                            <li>If it's "Rejected", check the reason provided. You may need to upload a clearer photo.
+                            </li>
+                            <li>If it's "Verified", the discount is automatically applied to all eligible items in your
+                                cart during checkout.</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+            <div id="no-troubleshoot" class="no-results">
+                <i class="fa-solid fa-search-minus" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                <p>No troubleshooting guides found for your search.</p>
+            </div>
+        </div>
+
+        <!-- FAQ Tab -->
+        <div id="faq" class="tab-content">
+            <div class="help-list">
+                <div class="help-item">
+                    <div class="help-question">
+                        How do I apply my Senior Citizen or PWD discount?
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                    <div class="help-answer">
+                        <p>To avail of the 20% discount on your orders, follow these steps:</p>
+                        <ol>
+                            <li>Log in and go to your <strong>Profile</strong>.</li>
+                            <li>Select the <strong>ID & Verification</strong> tab.</li>
+                            <li>Upload a clear photo of your valid Senior Citizen or PWD ID.</li>
+                            <li>Wait for verification (usually takes a few minutes to 24 hours).</li>
+                            <li>Once verified, the 20% discount applies automatically to your orders!</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="help-item">
+                    <div class="help-question">
+                        How can I track my delivery order?
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                    <div class="help-answer">
+                        <p>Tracking your order is easy!</p>
+                        <ol>
+                            <li>Click on <strong>Track Order</strong> in the menu.</li>
+                            <li>You will see a live timeline of your order's progress.</li>
+                            <li>If it's "On the Way", you'll see your rider's details.</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="help-item">
+                    <div class="help-question">
+                        What payment methods do you accept?
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                    <div class="help-answer">
+                        <p>We accept multiple payment methods:</p>
+                        <ul>
+                            <li><strong>Cash on Delivery (COD):</strong> Pay cash to the rider.</li>
+                            <li><strong>Online Payment (PayRex):</strong> GCash, Maya, and Credit/Debit cards.</li>
+                            <li><strong>Pay at Store:</strong> For pickup orders, you can pay at the counter.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="help-item">
+                    <div class="help-question">
+                        What are your operating hours?
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                    <div class="help-answer">
+                        <p>Kape Kanto Hub is open daily:</p>
+                        <p><strong>Monday - Sunday:</strong> 8:00 AM - 10:00 PM</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabs = document.querySelectorAll('.tab-btn');
+            const contents = document.querySelectorAll('.tab-content');
+            const searchInput = document.getElementById('help-search');
+            const troubleshootItems = document.querySelectorAll('#troubleshoot-list .help-item');
+            const categoryPills = document.querySelectorAll('.category-pill');
+            const noResults = document.getElementById('no-troubleshoot');
+
+            // Tab Switching
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const target = tab.getAttribute('data-tab');
+
+                    tabs.forEach(t => t.classList.remove('active'));
+                    contents.forEach(c => c.classList.remove('active'));
+
+                    tab.classList.add('active');
+                    document.getElementById(target).classList.add('active');
+
+                    // Clear search when switching tabs
+                    searchInput.value = '';
+                    filterTroubleshoot();
+                });
+            });
+
+            // Accordion Toggle
+            document.addEventListener('click', (e) => {
+                const question = e.target.closest('.help-question');
+                if (question) {
+                    const item = question.parentElement;
+                    const isActive = item.classList.contains('active');
+
+                    // Close others in the same list
+                    const list = item.parentElement;
+                    list.querySelectorAll('.help-item').forEach(i => i.classList.remove('active'));
+
+                    if (!isActive) item.classList.add('active');
+                }
+            });
+
+            // Search & Category Filtering
+            function filterTroubleshoot() {
+                const query = searchInput.value.toLowerCase().trim();
+                const activeCategory = document.querySelector('.category-pill.active').getAttribute('data-category');
+                let hasResults = false;
+
+                troubleshootItems.forEach(item => {
+                    const category = item.getAttribute('data-category');
+                    const text = item.innerText.toLowerCase();
+                    const keywords = item.getAttribute('data-keywords').toLowerCase();
+
+                    const matchesSearch = text.includes(query) || keywords.includes(query);
+                    const matchesCategory = activeCategory === 'all' || activeCategory === category;
+
+                    if (matchesSearch && matchesCategory) {
+                        item.style.display = 'block';
+                        hasResults = true;
+                    } else {
+                        item.style.display = 'none';
+                        item.classList.remove('active'); // Close if hidden
+                    }
+                });
+
+                noResults.style.display = hasResults ? 'none' : 'block';
+            }
+
+            searchInput.addEventListener('input', filterTroubleshoot);
+
+            categoryPills.forEach(pill => {
+                pill.addEventListener('click', () => {
+                    categoryPills.forEach(p => p.classList.remove('active'));
+                    pill.classList.add('active');
+                    filterTroubleshoot();
+                });
+            });
+        });
+    </script>
+
+    <%- include('partials/footer') %>

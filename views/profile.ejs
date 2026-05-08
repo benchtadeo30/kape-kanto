@@ -1,0 +1,1008 @@
+<%- include('partials/header') %>
+
+    <style>
+        :root {
+            --profile-bg: #FFF8F0;
+            --sidebar-bg: #FFFFFF;
+            --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            --p-primary: #6F4E37;
+            --p-accent: #E8B86D;
+        }
+
+        .profile-container {
+            min-height: 100vh;
+            background: var(--profile-bg);
+            padding: 3rem 5%;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .profile-layout {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 2.5rem;
+        }
+
+        .sidebar-card {
+            background: var(--sidebar-bg);
+            padding: 2.5rem;
+            border-radius: 24px;
+            box-shadow: var(--card-shadow);
+            text-align: center;
+            position: sticky;
+            top: 100px;
+        }
+
+        .avatar-wrapper {
+            position: relative;
+            width: 130px;
+            height: 130px;
+            margin: 0 auto 1.5rem;
+        }
+
+        .avatar-circle {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--p-primary), #4A3423);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.5rem;
+            font-weight: 800;
+            box-shadow: 0 15px 25px rgba(111, 78, 55, 0.2);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .avatar-circle img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .avatar-edit-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: all 0.3s;
+            cursor: pointer;
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .avatar-circle:hover .avatar-edit-overlay {
+            opacity: 1;
+        }
+
+        .nav-menu {
+            list-style: none;
+            padding: 0;
+            margin: 2rem 0 0;
+            text-align: left;
+        }
+
+        .nav-item {
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            border-radius: 14px;
+            color: var(--text-light);
+            font-weight: 500;
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+
+        .nav-link i {
+            font-size: 1.2rem;
+            width: 24px;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background: #FDF5E6;
+            color: var(--p-primary);
+        }
+
+        .content-area {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .main-card {
+            background: white;
+            border-radius: 24px;
+            padding: 2.5rem;
+            box-shadow: var(--card-shadow);
+        }
+
+        .status-badge {
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-verified {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
+
+        .status-pending {
+            background: #fff3e0;
+            color: #ef6c00;
+            border: 1px solid #ffe0b2;
+        }
+
+        .status-unverified {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-save {
+            background: var(--p-primary);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 50px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-save:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+
+        /* Modern Upload Area */
+        .upload-zone {
+            border: 2px dashed #e0e0e0;
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+            background: #fafafa;
+            position: relative;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--p-primary);
+            background: #fff8f0;
+        }
+
+        .upload-zone i {
+            font-size: 2.5rem;
+            color: var(--p-primary);
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .upload-zone input[type="file"] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .file-preview {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: var(--p-primary);
+            font-weight: 600;
+            display: none;
+        }
+
+        .select-modern {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid #e0e0e0;
+            background: white;
+            font-family: inherit;
+            font-size: 1rem;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%236F4E37' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 18px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 992px) {
+            .profile-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar-card {
+                position: static;
+            }
+        }
+    </style>
+
+    <div class="profile-container">
+
+        <!-- ── Email Verification Banner ─────────────────── -->
+        <% if (user.is_verified !=1) { %>
+            <div
+                style="max-width:1200px; margin:0 auto 1.5rem; background:linear-gradient(135deg,#fff8e1,#fff3cd); border:1.5px solid #ffb300; border-radius:18px; padding:1.2rem 1.8rem; display:flex; align-items:center; gap:1.2rem; box-shadow:0 4px 15px rgba(255,179,0,0.15);">
+                <div
+                    style="width:46px;height:46px;border-radius:50%;background:#ffb300;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="fa-solid fa-envelope-circle-check" style="font-size:1.3rem;color:white;"></i>
+                </div>
+                <div style="flex:1;">
+                    <p style="margin:0;font-weight:700;color:#7a5200;font-size:1rem;">📧 Your email is not verified yet
+                    </p>
+                    <p style="margin:0.2rem 0 0;font-size:0.88rem;color:#856404;">You need to verify your email to place
+                        orders and update your profile. Check your inbox or click below.</p>
+                </div>
+                <button onclick="startVerification(event, '<%= user.email %>')"
+                    style="flex-shrink:0;background:#ffb300;color:white;border:none;padding:0.6rem 1.4rem;border-radius:50px;font-weight:700;cursor:pointer;font-size:0.9rem;transition:all 0.2s;"
+                    onmouseover="this.style.background='#e6a100'" onmouseout="this.style.background='#ffb300'">
+                    Verify Now
+                </button>
+            </div>
+            <% } %>
+
+                <div class="profile-layout">
+
+                    <!-- Sidebar -->
+                    <aside>
+                        <div class="sidebar-card">
+                            <div class="avatar-wrapper">
+                                <div class="avatar-circle" id="sidebar-avatar">
+                                    <% if (user.profile_image) { %>
+                                        <img src="/uploads/profiles/<%= user.profile_image %>" alt="Profile">
+                                    <% } else { %>
+                                        <%= user.username.charAt(0).toUpperCase() %>
+                                    <% } %>
+                                    <div class="avatar-edit-overlay" onclick="document.getElementById('avatar-input').click()">
+                                        <i class="fa-solid fa-camera"></i>
+                                    </div>
+                                </div>
+                                <input type="file" id="avatar-input" hidden accept="image/*" onchange="uploadAvatar(this)">
+                            </div>
+                            <h2 style="margin-bottom: 0.5rem;">
+                                <%= user.username %>
+                            </h2>
+                            <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1.5rem;">
+                                <%= user.email %>
+                            </p>
+
+                            <div style="margin-bottom: 1.5rem;"></div>
+
+                            <nav class="nav-menu">
+                                <div class="nav-item">
+                                    <a href="#" onclick="switchTab(event, 'account')" class="nav-link active"
+                                        id="link-account">
+                                        <i class="fa-solid fa-user-gear"></i> Account Settings
+                                    </a>
+                                </div>
+                                <div class="nav-item">
+                                    <a href="#" onclick="switchTab(event, 'verification')" class="nav-link"
+                                        id="link-verification">
+                                        <i class="fa-solid fa-id-card-clip"></i> ID & Verification
+                                    </a>
+                                </div>
+                                <div class="nav-item">
+                                    <a href="/order-tracking" class="nav-link">
+                                        <i class="fa-solid fa-receipt"></i> Order History
+                                    </a>
+                                </div>
+                                <div class="nav-item">
+                                    <a href="#" onclick="switchTab(event, 'loyalty')" class="nav-link"
+                                        id="link-loyalty">
+                                        <i class="fa-solid fa-gift"></i> Loyalty & Promos
+                                    </a>
+                                </div>
+                                <div class="nav-item"
+                                    style="margin-top: 2rem; border-top: 1px solid #eee; padding-top: 1rem;">
+                                    <a href="#" onclick="KapeKanto.logout()" class="nav-link"
+                                        style="color: var(--danger);">
+                                        <i class="fa-solid fa-right-from-bracket"></i> Logout
+                                    </a>
+                                </div>
+                            </nav>
+                        </div>
+                    </aside>
+
+                    <!-- Main Content -->
+                    <div class="content-area">
+
+                        <!-- Tab: Account Settings -->
+                        <div id="tab-account" class="tab-content active">
+                            <div class="main-card">
+                                <h3 style="margin-bottom: 2rem; display: flex; align-items: center; gap: 10px;">
+                                    <i class="fa-solid fa-address-card" style="color: var(--p-primary);"></i>
+                                    Personal Information
+                                </h3>
+                                <form id="update-profile-form">
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label>Username</label>
+                                            <input type="text" name="username" value="<%= user.username %>" required <%= user.is_verified != 1 ? 'disabled' : '' %>>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Email Address</label>
+                                            <input type="email" name="email" value="<%= user.email %>" required <%= user.is_verified != 1 ? 'disabled' : '' %>>
+                                        </div>
+                                    </div>
+                                    
+                                    <% if (user.is_verified != 1) { %>
+                                        <div style="margin-top: 1.5rem; padding: 1.2rem; background: #fff5f5; border-radius: 12px; border: 1px solid #ffcdd2; display: flex; align-items: center; gap: 12px;">
+                                            <i class="fa-solid fa-circle-exclamation" style="color: #c62828; font-size: 1.2rem;"></i>
+                                            <div style="flex: 1;">
+                                                <p style="margin: 0; font-size: 0.9rem; font-weight: 700; color: #c62828;">Email Verification Required</p>
+                                                <p style="margin: 2px 0 0; font-size: 0.8rem; color: #d32f2f;">You must verify your email before you can update your profile.</p>
+                                            </div>
+                                            <a href="#" onclick="switchTab(event, 'verification')" style="font-size: 0.85rem; font-weight: 700; color: #c62828; text-decoration: underline;">Verify Now</a>
+                                        </div>
+                                    <% } %>
+
+                                    <div id="account-verification-section" style="margin-top: 1.5rem; padding: 1.5rem; background: #fdfae6; border-radius: 12px; border: 1px solid #f9e8b3; <%= user.is_verified == 1 ? '' : 'display:none;' %>">
+                                        <p style="font-size: 0.85rem; color: #856404; margin-bottom: 1rem; font-weight: 600;">
+                                            <i class="fa-solid fa-key"></i> Confirm Identity to Save Changes
+                                        </p>
+                                        <div style="display: flex; gap: 10px; align-items: flex-end;">
+                                            <div class="form-group" style="flex: 1; margin: 0;">
+                                                <label style="font-size: 0.75rem;">Authorization Code</label>
+                                                <input type="text" name="code" placeholder="Enter 6-digit code" maxlength="6" style="text-align: center; letter-spacing: 2px;">
+                                            </div>
+                                            <button type="button" onclick="requestSecurityCode(this)" class="btn-save" style="width: auto; height: 45px; background: #856404; font-size: 0.85rem;">Get Code</button>
+                                        </div>
+                                    </div>
+
+                                    <button type="submit" class="btn-save" style="margin-top: 1.5rem;" <%= user.is_verified != 1 ? 'disabled style="opacity: 0.6; cursor: not-allowed;"' : '' %>>
+                                        <%= user.is_verified != 1 ? 'Verify Email to Update' : 'Update Profile Info' %>
+                                    </button>
+                                </form>
+                            </div>
+
+                            <div class="main-card" style="margin-top: 2rem;">
+                                <h3 style="margin-bottom: 2rem;">Security</h3>
+                                <form id="change-password-form">
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label>New Password</label>
+                                            <input type="password" name="new_password" placeholder="Min 6 characters">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Confirm Password</label>
+                                            <input type="password" name="confirm_password" <%= user.is_verified != 1 ? 'disabled' : '' %>>
+                                        </div>
+                                    </div>
+
+                                    <div id="password-verification-section" style="margin-top: 1.5rem; padding: 1.5rem; background: #fdfae6; border-radius: 12px; border: 1px solid #f9e8b3; <%= user.is_verified == 1 ? '' : 'display:none;' %>">
+                                        <div style="display: flex; gap: 10px; align-items: flex-end;">
+                                            <div class="form-group" style="flex: 1; margin: 0;">
+                                                <label style="font-size: 0.75rem;">Verification Code</label>
+                                                <input type="text" name="code" placeholder="Enter 6-digit code" maxlength="6" style="text-align: center; letter-spacing: 2px;">
+                                            </div>
+                                            <button type="button" onclick="requestSecurityCode(this)" class="btn-save" style="width: auto; height: 45px; background: #856404; font-size: 0.85rem;">Send Code</button>
+                                        </div>
+                                    </div>
+
+                                    <button type="submit" class="btn-save" style="margin-top: 1.5rem;" <%= user.is_verified != 1 ? 'disabled style="opacity: 0.6; cursor: not-allowed;"' : '' %>>
+                                        <%= user.is_verified != 1 ? 'Verify Email to Update' : 'Change Password' %>
+                                    </button>
+                                </form>
+                            </div>
+
+                            <div class="main-card" style="margin-top: 2rem; border: 1px solid #ffcdd2;">
+                                <h3 style="margin-bottom: 1rem; color: var(--danger);">Danger Zone</h3>
+                                <p style="color: var(--text-light); margin-bottom: 1.5rem; font-size: 0.9rem;">
+                                    Once you delete your account, there is no going back. Please be certain.
+                                </p>
+                                
+                                <div id="delete-verification-section" style="margin-bottom: 1.5rem; padding: 1.5rem; background: #fff5f5; border-radius: 12px; border: 1px solid #ffcdd2; <%= user.is_verified == 1 ? '' : 'display:none;' %>">
+                                    <p style="font-size: 0.85rem; color: var(--danger); margin-bottom: 1rem; font-weight: 600;">
+                                        <i class="fa-solid fa-triangle-exclamation"></i> Verification Required to Delete Account
+                                    </p>
+                                    <div style="display: flex; gap: 10px; align-items: flex-end;">
+                                        <div class="form-group" style="flex: 1; margin: 0;">
+                                            <label style="font-size: 0.75rem;">Verification Code</label>
+                                            <input type="text" id="delete-code" placeholder="Enter 6-digit code" maxlength="6" style="text-align: center; letter-spacing: 2px;">
+                                        </div>
+                                        <button type="button" onclick="requestSecurityCode(this)" class="btn-save" style="width: auto; height: 45px; background: var(--danger); font-size: 0.85rem;">Send Code</button>
+                                    </div>
+                                </div>
+
+                                <button onclick="confirmDeleteAccount()" class="btn-save" style="background: var(--danger);" <%= user.is_verified != 1 ? 'disabled title="Verify email to delete account" style="background: var(--danger); opacity: 0.5; cursor: not-allowed;"' : '' %>>
+                                    <%= user.is_verified != 1 ? 'Verify Email Required' : 'Delete Account' %>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Tab: Verification -->
+                        <div id="tab-verification" class="tab-content">
+                            <div class="main-card">
+                                <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;">
+                                    <i class="fa-solid fa-envelope-circle-check" style="color: var(--p-primary);"></i>
+                                    1. Email Authentication
+                                </h3>
+                                
+                                <% if (user.is_verified != 1) { %>
+                                    <div style="background: #fff8e1; border-left: 4px solid #ffb300; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
+                                        <div style="display: flex; gap: 15px; align-items: flex-start;">
+                                            <i class="fa-solid fa-triangle-exclamation" style="font-size: 1.5rem; color: #ffb300; margin-top: 3px;"></i>
+                                            <div>
+                                                <p style="margin: 0; color: #856404; font-weight: 800; font-size: 1.1rem;">Email Verification Required</p>
+                                                <p style="margin: 0.5rem 0 1.2rem 0; color: #856404; font-size: 0.95rem; line-height: 1.5;">
+                                                    Your account is currently restricted. Please verify your email <strong>(<%= user.email %>)</strong> to unlock ordering, profile updates, and loyalty rewards.
+                                                </p>
+                                                <button onclick="startVerification(event, '<%= user.email %>')" class="btn-save" style="background: #ffb300; color: #000; width: auto; padding: 10px 24px;">
+                                                    <i class="fa-solid fa-paper-plane"></i> Send Verification Link
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <% } else { %>
+                                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 1.5rem; border-radius: 12px; display: flex; align-items: center; gap: 15px;">
+                                        <div style="width: 48px; height: 48px; background: #dcfce7; color: #16a34a; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                                            <i class="fa-solid fa-check"></i>
+                                        </div>
+                                        <div>
+                                            <p style="margin: 0; font-weight: 700; color: #166534;">Your email is verified!</p>
+                                            <p style="margin: 0; font-size: 0.85rem; color: #15803d;">You have full access to all features and secure updates.</p>
+                                        </div>
+                                    </div>
+                                <% } %>
+
+                                <hr style="margin: 3rem 0; border: none; border-top: 1px solid #eee;">
+
+                                <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;">
+                                    <i class="fa-solid fa-address-card" style="color: var(--p-primary);"></i>
+                                    2. Discount & ID Verification
+                                </h3>
+
+                                <h3 style="margin-bottom: 1rem;">Senior / PWD Discount Status</h3>
+                                            <div
+                                                style="display: flex; align-items: center; gap: 2rem; background: #f9f9f9; padding: 2rem; border-radius: 16px;">
+                                                <div style="font-size: 2.5rem; color: var(--p-primary);">
+                                                    <i class="fa-solid fa-id-badge"></i>
+                                                </div>
+                                                <div style="flex: 1;">
+                                                    <p style="margin-bottom: 5px; font-weight: 600;">Current Status:</p>
+                                                    <% if (user.id_verification_status==='verified' ) { %>
+                                                        <span class="status-badge status-verified">Verified</span>
+                                                        <p
+                                                            style="font-size: 0.85rem; color: var(--text-light); margin-top: 10px;">
+                                                            Your 20% discount is automatically applied to all orders.
+                                                        </p>
+                                                        <div style="margin-top: 15px; display: flex; gap: 10px;">
+                                                            <button onclick="toggleIdUpdate()" class="btn-save"
+                                                                style="padding: 8px 16px; font-size: 0.85rem; background: var(--p-primary); color: white; border: none; border-radius: 8px; cursor: pointer;">Update
+                                                                ID</button>
+                                                            <button onclick="removeId()" class="btn-save"
+                                                                style="padding: 8px 16px; font-size: 0.85rem; background: white; color: var(--danger); border: 1px solid var(--danger); border-radius: 8px; cursor: pointer;">Remove
+                                                                ID</button>
+                                                        </div>
+                                                        <% } else if (user.id_verification_status==='pending' ) { %>
+                                                            <span class="status-badge status-pending">Analyzing
+                                                                ID...</span>
+                                                            <p
+                                                                style="font-size: 0.85rem; color: var(--text-light); margin-top: 10px;">
+                                                                Our AI is currently processing your document. Please
+                                                                wait a moment.</p>
+                                                            <% } else if (user.id_verification_status==='rejected' ) { %>
+                                                                <span
+                                                                    class="status-badge status-unverified">Rejected</span>
+                                                                <p
+                                                                    style="font-size: 0.85rem; color: var(--danger); margin-top: 10px;">
+                                                                    Reason: The image is not a valid Senior or PWD ID.
+                                                                </p>
+                                                                <% } else { %>
+                                                                    <span class="status-badge"
+                                                                        style="background: #eee;">Not Submitted</span>
+                                                                    <p
+                                                                        style="font-size: 0.85rem; color: var(--text-light); margin-top: 10px;">
+                                                                        Please upload an ID for verification for
+                                                                        discount.</p>
+                                                                    <% } %>
+                                                </div>
+                                            </div>
+
+                                            <% const showUpload = (user.id_verification_status === 'none' || user.id_verification_status === 'rejected'); %>
+                                                <div id="id-upload-container" style="margin-top: 3rem; <%= showUpload ? '' : 'display: none;' %>">
+                                                    <h4
+                                                        style="margin-bottom: 1rem; display: flex; align-items: center; gap: 10px;">
+                                                        <i class="fa-solid fa-cloud-arrow-up"
+                                                            style="color: var(--p-primary);"></i>
+                                                        Submit ID for Verification
+                                                    </h4>
+                                                    <p
+                                                        style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 2rem;">
+                                                        To avail of the 20% Senior Citizen or PWD discount, please
+                                                        upload a clear photo of your valid ID.
+                                                        Our AI system will process it automatically.
+                                                    </p>
+
+                                                    <form id="id-upload-form" enctype="multipart/form-data">
+                                                        <div style="display: grid; gap: 1.5rem; margin-bottom: 2rem;">
+                                                            <div class="form-group">
+                                                                <label
+                                                                    style="display: block; margin-bottom: 0.5rem; font-weight: 600;">ID
+                                                                    Type</label>
+                                                                <select id="id_type" name="id_type"
+                                                                    class="select-modern" required>
+                                                                    <option value="" disabled selected>Select your ID
+                                                                        type</option>
+                                                                    <option value="senior">Senior Citizen ID</option>
+                                                                    <option value="pwd">PWD ID</option>
+                                                                </select>
+                                                            </div>
+
+                                                            <div class="form-group">
+                                                                <label
+                                                                    style="display: block; margin-bottom: 0.5rem; font-weight: 600;">ID
+                                                                    Document Photo</label>
+                                                                <div class="upload-zone" id="drop-zone">
+                                                                    <i class="fa-solid fa-image"></i>
+                                                                    <p style="margin: 0; font-weight: 500;">Click or
+                                                                        Drag & Drop your ID photo here</p>
+                                                                    <p
+                                                                        style="margin: 0.5rem 0 0; font-size: 0.8rem; color: var(--text-light);">
+                                                                        Supports JPG, PNG (Max 5MB)</p>
+                                                                    <input type="file" name="id_image" id="id_image"
+                                                                        accept="image/*" required
+                                                                        onchange="handleFileSelect(this)">
+                                                                    <div id="file-preview" class="file-preview">
+                                                                        <i class="fa-solid fa-file-circle-check"
+                                                                            style="font-size: 1.2rem; display: inline; margin: 0 5px 0 0;"></i>
+                                                                        <span id="file-name-text"></span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <button type="submit" class="btn-save"
+                                                            style="width: 100%; height: 55px; font-size: 1.1rem; box-shadow: 0 10px 20px rgba(111, 78, 55, 0.2);">
+                                                            Submit & Verify ID
+                                                        </button>
+                                                    </form>
+                                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab: Loyalty & Promos -->
+                        <div id="tab-loyalty" class="tab-content">
+                            <div class="main-card">
+                                <h3 style="margin-bottom: 2rem; display: flex; align-items: center; gap: 10px;">
+                                    <i class="fa-solid fa-gift" style="color: var(--p-primary);"></i> My Rewards & Tasks
+                                </h3>
+
+                                <h4 style="margin-bottom: 1rem;">Earned Coupons</h4>
+                                <% if (typeof coupons !=='undefined' && coupons.length> 0) { %>
+                                    <div style="display: grid; gap: 1rem; margin-bottom: 2.5rem;">
+                                        <% 
+                                            const groupedCoupons = {}; 
+                                            coupons.forEach(c => {
+                                                if (!groupedCoupons[c.promo_id]) groupedCoupons[c.promo_id] = { ...c, count: 0 };
+                                                groupedCoupons[c.promo_id].count++;
+                                            });
+                                            Object.values(groupedCoupons).forEach(coupon => { 
+                                        %>
+                                            <div
+                                                style="background: linear-gradient(135deg, #fff3e0, #ffe0b2); border: 2px dashed #ffb300; border-radius: 12px; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; position: relative;">
+                                                <% if (coupon.count> 1) { %>
+                                                    <div
+                                                        style="position: absolute; top: -10px; right: -10px; background: var(--danger); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; box-shadow: 0 4px 10px rgba(0,0,0,0.2); border: 2px solid white;">
+                                                        x<%= coupon.count %>
+                                                    </div>
+                                                    <% } %>
+                                                        <div>
+                                                            <h5 style="margin: 0; font-size: 1.1rem; color: #e65100;">
+                                                                <%= coupon.title %>
+                                                            </h5>
+                                                            <p
+                                                                style="margin: 0; font-size: 0.9rem; color: #7a5200; margin-bottom: 5px;">
+                                                                <%= coupon.discount_percent %>% OFF your next order!
+                                                            </p>
+                                                            <% if (coupon.end_date) { %>
+                                                                <span
+                                                                    style="font-size: 0.75rem; font-weight: bold; color: var(--danger); background: rgba(220, 53, 69, 0.1); padding: 3px 8px; border-radius: 12px;">
+                                                                    <i class="fa-solid fa-clock"></i> Expires <%= new Date(coupon.end_date.replace(' ', 'T')).toLocaleDateString() %>
+                                                                </span>
+                                                                <% } else { %>
+                                                                    <span
+                                                                        style="font-size: 0.75rem; font-weight: bold; color: var(--success); background: rgba(40, 167, 69, 0.1); padding: 3px 8px; border-radius: 12px;">
+                                                                        No Expiration
+                                                                    </span>
+                                                                    <% } %>
+                                                        </div>
+                                                        <div style="text-align: right;">
+                                                            <p
+                                                                style="margin: 0; font-size: 0.8rem; color: #7a5200; margin-bottom: 5px;">
+                                                                Promo Code</p>
+                                                            <span
+                                                                style="background: #fff; padding: 8px 16px; border-radius: 50px; font-weight: bold; color: #e65100; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                                                                <%= coupon.promo_code %>
+                                                            </span>
+                                                        </div>
+                                            </div>
+                                            <% }) %>
+                                    </div>
+                                    <% } else { %>
+                                        <div
+                                            style="text-align: center; padding: 2rem; background: #fafafa; border-radius: 12px; margin-bottom: 2.5rem;">
+                                            <i class="fa-solid fa-ticket"
+                                                style="font-size: 2rem; color: #ddd; margin-bottom: 1rem;"></i>
+                                            <p style="color: var(--text-light); margin: 0;">No unused coupons yet.
+                                                Complete tasks to earn them!</p>
+                                        </div>
+                                        <% } %>
+
+                                            <h4 style="margin-bottom: 1rem;">Active Tasks</h4>
+                                            <% if (typeof promoProgress !=='undefined' && promoProgress.length> 0) { %>
+                                                <div style="display: grid; gap: 1.5rem;">
+                                                    <% promoProgress.forEach(task=> { %>
+                                                        <div
+                                                            style="border: 1px solid #f0f0f0; border-radius: 12px; padding: 1.5rem;">
+                                                            <div
+                                                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                                                <h5 style="margin: 0; font-size: 1.05rem;">
+                                                                    <%= task.title %>
+                                                                        <% if (task.end_date) { %>
+                                                                            <span
+                                                                                style="font-size: 0.8rem; font-weight: normal; color: var(--danger); margin-left: 10px;">
+                                                                                <i class="fa-solid fa-clock"></i> Ends <%= new Date(task.end_date).toLocaleDateString() %>
+                                                                            </span>
+                                                                            <% } %>
+                                                                </h5>
+                                                                <% if (task.is_completed) { %>
+                                                                    <span
+                                                                        class="status-badge status-verified">Completed</span>
+                                                                    <% } else { %>
+                                                                        <span class="status-badge status-pending">In
+                                                                            Progress</span>
+                                                                        <% } %>
+                                                            </div>
+                                                            <p
+                                                                style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 1.5rem;">
+                                                                <%= task.description %>
+                                                            </p>
+
+                                                            <div
+                                                                style="background: #f5f5f5; height: 8px; border-radius: 50px; overflow: hidden; margin-bottom: 8px;">
+                                                                <% const progressPercent=Math.min((task.current_quantity / task.required_quantity) * 100, 100); %>
+                                                                    <div style="background: linear-gradient(90deg, var(--p-primary), var(--p-accent)); height: 100%; width: <%= progressPercent %>%;">
+                                                                    </div>
+                                                            </div>
+                                                            <div
+                                                                style="text-align: right; font-size: 0.8rem; font-weight: bold; color: var(--p-primary);">
+                                                                <%= task.current_quantity %> / <%=
+                                                                        task.required_quantity %> purchased
+                                                            </div>
+                                                        </div>
+                                                        <% }) %>
+                                                </div>
+                                                <% } else { %>
+                                                    <div
+                                                        style="text-align: center; padding: 2rem; background: #fafafa; border-radius: 12px;">
+                                                        <i class="fa-solid fa-list-check"
+                                                            style="font-size: 2rem; color: #ddd; margin-bottom: 1rem;"></i>
+                                                        <p style="color: var(--text-light); margin: 0;">Buy promo items
+                                                            to start unlocking rewards automatically.</p>
+                                                    </div>
+                                                    <% } %>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+    </div>
+
+    <script>
+        async function uploadAvatar(input) {
+            if (!input.files || !input.files[0]) return;
+
+            const formData = new FormData();
+            formData.append('profile_image', input.files[0]);
+
+            try {
+                const res = await fetch('/api/auth/update-avatar', {
+                    method: 'PATCH',
+                    body: formData
+                });
+                const result = await res.json();
+                
+                if (res.ok) {
+                    KapeKanto.toast(result.message, 'success');
+                    // Update all avatars on page
+                    const newUrl = `/uploads/profiles/${result.filename}`;
+                    document.getElementById('sidebar-avatar').innerHTML = `<img src="${newUrl}" alt="Profile"><div class="avatar-edit-overlay" onclick="document.getElementById('avatar-input').click()"><i class="fa-solid fa-camera"></i></div>`;
+                    const navAvatar = document.querySelector('.nav-avatar-btn');
+                    if (navAvatar) navAvatar.innerHTML = `<img src="${newUrl}" alt="Profile">`;
+                } else {
+                    KapeKanto.toast(result.error, 'error');
+                }
+            } catch (err) {
+                KapeKanto.toast('Failed to upload image.', 'error');
+            }
+        }
+
+        function switchTab(e, tabId) {
+            if (e) e.preventDefault();
+
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+
+            // Show selected tab
+            const targetTab = document.getElementById('tab-' + tabId);
+            const targetLink = document.getElementById('link-' + tabId);
+            if (targetTab) targetTab.classList.add('active');
+            if (targetLink) targetLink.classList.add('active');
+
+            // Update URL hash
+            window.location.hash = tabId;
+        }
+
+        // Handle initial hash and hash changes
+        document.addEventListener('DOMContentLoaded', () => {
+            const handleHash = () => {
+                const hash = window.location.hash.replace('#', '');
+                if (hash && document.getElementById('tab-' + hash)) {
+                    switchTab(null, hash);
+                }
+            };
+            
+            handleHash();
+            window.addEventListener('hashchange', handleHash);
+        });
+
+        // Profile Update Logic
+        document.getElementById('update-profile-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+
+            try {
+                const res = await fetch('/api/auth/update-profile', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                if (res.ok) {
+                    if (result.emailChanged) {
+                        KapeKanto.toast(result.message, 'success');
+                        setTimeout(() => window.location.href = `/verify-email?email=${encodeURIComponent(result.newEmail)}`, 1500);
+                    } else {
+                        KapeKanto.toast(result.message, 'success');
+                        setTimeout(() => location.reload(), 1500);
+                    }
+                } else {
+                    KapeKanto.toast(result.error, 'error');
+                }
+            } catch (err) {
+                KapeKanto.toast('Update failed. Please try again.', 'error');
+            }
+        });
+
+        async function requestSecurityCode(btn) {
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Sending...';
+            
+            try {
+                const res = await fetch('/api/auth/request-security-code', { method: 'POST' });
+                const result = await res.json();
+                if (res.ok) {
+                    KapeKanto.toast(result.message, 'success');
+                    btn.innerText = 'Sent!';
+                    setTimeout(() => {
+                        btn.innerText = 'Resend';
+                        btn.disabled = false;
+                    }, 30000);
+                } else {
+                    KapeKanto.toast(result.error, 'error');
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }
+            } catch (err) {
+                KapeKanto.toast('Failed to send code.', 'error');
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // Password Change Logic
+        document.getElementById('change-password-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+
+            if (!data.new_password) {
+                return KapeKanto.toast('Please enter a new password.', 'warning');
+            }
+            if (data.new_password !== data.confirm_password) {
+                return KapeKanto.toast('Passwords do not match.', 'error');
+            }
+
+            try {
+                const res = await fetch('/api/auth/change-password', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                if (res.ok) {
+                    KapeKanto.toast(result.message, 'success');
+                    e.target.reset();
+                } else {
+                    KapeKanto.toast(result.error || 'Failed to update password.', 'error');
+                }
+            } catch (err) {
+                KapeKanto.toast('Connection error. Please try again.', 'error');
+            }
+        });
+
+        function toggleIdUpdate() {
+            const container = document.getElementById('id-upload-container');
+            if (container.style.display === 'none') {
+                container.style.display = 'block';
+                container.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                container.style.display = 'none';
+            }
+        }
+
+        async function removeId() {
+            KapeKanto.confirm("Are you sure you want to remove your verified ID? You will lose your 20% discount until you verify again.", async () => {
+                try {
+                    const res = await fetch('/api/verify/remove-id', { method: 'POST' });
+                    if (res.ok) {
+                        KapeKanto.toast('ID removed successfully.');
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        KapeKanto.toast('Failed to remove ID.', 'error');
+                    }
+                } catch (err) {
+                    KapeKanto.toast('Connection error.', 'error');
+                }
+            }, { title: 'Remove ID', confirmText: 'Yes, Remove', type: 'danger' });
+        }
+
+        async function startVerification(event, email) {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerText = 'Sending Code...';
+
+            try {
+                await fetch('/api/auth/resend-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                window.location.href = `/verify-email?email=${encodeURIComponent(email)}`;
+            } catch (err) {
+                window.location.href = `/verify-email?email=${encodeURIComponent(email)}`;
+            }
+        }
+
+        function handleFileSelect(input) {
+            const preview = document.getElementById('file-preview');
+            const fileNameText = document.getElementById('file-name-text');
+            const dropZone = document.getElementById('drop-zone');
+
+            if (input.files && input.files[0]) {
+                fileNameText.innerText = `Selected: ${input.files[0].name}`;
+                preview.style.display = 'block';
+                dropZone.style.borderColor = 'var(--p-accent)';
+                dropZone.style.background = '#fff';
+            } else {
+                preview.style.display = 'none';
+                dropZone.style.borderColor = '#e0e0e0';
+                dropZone.style.background = '#fafafa';
+            }
+        }
+
+        // ID Upload Logic
+        document.getElementById('id-upload-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const btn = e.target.querySelector('button');
+            btn.disabled = true;
+            btn.innerText = 'Analyzing ID...';
+
+            try {
+                const res = await fetch('/api/verify/upload-id', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await res.json();
+                if (res.ok) {
+                    KapeKanto.toast('ID submitted successfully!', 'success');
+                    setTimeout(() => location.reload(), 2000);
+                } else {
+                    KapeKanto.toast(result.error, 'error');
+                    btn.disabled = false;
+                    btn.innerText = 'Submit for Verification';
+                }
+            } catch (err) {
+                KapeKanto.toast('Upload failed.', 'error');
+                btn.disabled = false;
+                btn.innerText = 'Submit for Verification';
+            }
+        });
+
+        // Delete Account Logic
+        function confirmDeleteAccount() {
+            const code = document.getElementById('delete-code').value;
+            if (!code) {
+                return KapeKanto.toast('Please request and enter a verification code to delete your account.', 'warning');
+            }
+
+            KapeKanto.confirm("Are you sure you want to permanently delete your account? This action cannot be undone.", async () => {
+                try {
+                    const res = await fetch('/api/auth/delete-account', {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ code })
+                    });
+                    const result = await res.json();
+
+                    if (res.ok) {
+                        KapeKanto.toast("Your account has been successfully deleted.", 'success');
+                        setTimeout(() => window.location.href = '/login', 1500);
+                    } else {
+                        KapeKanto.toast(result.error, 'error');
+                    }
+                } catch (err) {
+                    KapeKanto.toast('Failed to delete account.', 'error');
+                }
+            }, { title: 'Delete Account', confirmText: 'Yes, Delete', type: 'danger' });
+        }
+    </script>
+
+    <%- include('partials/footer') %>
