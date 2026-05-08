@@ -4,17 +4,23 @@ const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
 
-// Ensure database directory exists
-const dbDir = path.join(__dirname);
-if (!fs.existsSync(dbDir)) {
-    fs.mkdirSync(dbDir, { recursive: true });
+function resolveDatabasePath() {
+    const fallbackPath = path.join(__dirname, 'cafe.db');
+    const requestedPath = process.env.DB_PATH || fallbackPath;
+    const resolvedDbDir = path.dirname(requestedPath);
+
+    try {
+        if (!fs.existsSync(resolvedDbDir)) {
+            fs.mkdirSync(resolvedDbDir, { recursive: true });
+        }
+        return requestedPath;
+    } catch (error) {
+        console.warn(`Unable to use DB_PATH "${requestedPath}". Falling back to "${fallbackPath}".`, error.message);
+        return fallbackPath;
+    }
 }
 
-const dbPath = process.env.DB_PATH || path.join(__dirname, 'cafe.db');
-const resolvedDbDir = path.dirname(dbPath);
-if (!fs.existsSync(resolvedDbDir)) {
-    fs.mkdirSync(resolvedDbDir, { recursive: true });
-}
+const dbPath = resolveDatabasePath();
 const db = new Database(dbPath, { verbose: console.log });
 
 // Enable foreign keys
