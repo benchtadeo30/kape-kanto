@@ -12,6 +12,10 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Render/other hosts terminate HTTPS before requests reach Express.
+// Trusting the first proxy lets secure session cookies work correctly there.
+app.set('trust proxy', 1);
+
 // Set view engine
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));

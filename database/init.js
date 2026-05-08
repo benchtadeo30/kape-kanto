@@ -9,7 +9,11 @@ if (!fs.existsSync(dbDir)) {
     fs.mkdirSync(dbDir, { recursive: true });
 }
 
-const dbPath = path.join(__dirname, 'cafe.db');
+const dbPath = process.env.DB_PATH || path.join(__dirname, 'cafe.db');
+const resolvedDbDir = path.dirname(dbPath);
+if (!fs.existsSync(resolvedDbDir)) {
+    fs.mkdirSync(resolvedDbDir, { recursive: true });
+}
 const db = new Database(dbPath, { verbose: console.log });
 
 // Enable foreign keys
@@ -399,6 +403,10 @@ function seedData() {
         const addOption = (itemName, optionName, choices) => {
             const item = db.prepare('SELECT id FROM menu_items WHERE name = ?').get(itemName);
             if (!item) return;
+
+            const existingOption = db.prepare('SELECT id FROM menu_item_options WHERE menu_item_id = ? AND LOWER(name) = LOWER(?)').get(item.id, optionName);
+            if (existingOption) return;
+
             const optionId = db.prepare('INSERT INTO menu_item_options (menu_item_id, name) VALUES (?, ?)').run(item.id, optionName).lastInsertRowid;
             const insertChoice = db.prepare('INSERT INTO menu_item_option_choices (option_id, name, price_adjustment) VALUES (?, ?, ?)');
             choices.forEach(([name, adj]) => insertChoice.run(optionId, name, adj));
