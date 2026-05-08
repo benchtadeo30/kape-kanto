@@ -256,6 +256,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
     updateCartBadge();
 
+    // Mobile hamburger navigation
+    const navToggle = document.querySelector('.nav-toggle');
+    const navLinks = document.getElementById('primary-navigation');
+    const closeMobileNav = () => {
+        document.body.classList.remove('nav-open');
+        navToggle?.setAttribute('aria-expanded', 'false');
+    };
+
+    if (navToggle && navLinks) {
+        navToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = document.body.classList.toggle('nav-open');
+            navToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        });
+
+        navLinks.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', closeMobileNav);
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeMobileNav();
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!document.body.classList.contains('nav-open')) return;
+            if (navLinks.contains(e.target) || navToggle.contains(e.target)) return;
+            closeMobileNav();
+        });
+
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) closeMobileNav();
+        });
+    }
+
     // Disable default browser validation globally and use custom logic
     document.querySelectorAll('form').forEach(form => {
         form.setAttribute('novalidate', true);
