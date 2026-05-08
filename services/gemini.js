@@ -16,7 +16,7 @@ function fileToGenerativePart(filePath, mimeType) {
 
 async function verifyIdCard(filePath, mimeType) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
 
     const prompt = `
       Analyze this image and determine if it is a valid Philippine Senior Citizen ID or PWD ID.
@@ -55,7 +55,7 @@ async function verifyIdCard(filePath, mimeType) {
 async function generateChatResponse(message, history) {
   try {
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash-exp",
       systemInstruction: `You are the official AI Customer Service Assistant for Kape Kanto Hub, a local coffee shop in the Philippines.
 You are helpful, polite, and concise.
 
