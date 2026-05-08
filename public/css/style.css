@@ -1902,7 +1902,8 @@ footer a {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 2rem;
+    gap: clamp(1.5rem, 8vw, 2rem);
+    padding: 2rem;
     transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1),
                 transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
@@ -1933,31 +1934,31 @@ footer a {
 }
 
 .intro-cup svg {
-    width: 90px;
-    height: 90px;
+    width: clamp(60px, 20vw, 90px);
+    height: clamp(60px, 20vw, 90px);
     filter: drop-shadow(0 0 24px rgba(232,184,109,0.45));
 }
 
 /* Steam lines */
 .intro-steam {
     display: flex;
-    gap: 10px;
+    gap: clamp(6px, 2vw, 10px);
     justify-content: center;
-    margin-bottom: -16px;
+    margin-bottom: clamp(-12px, -4vw, -16px);
     animation: introDropIn 0.7s 0.1s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
 .intro-steam span {
     display: block;
-    width: 3px;
+    width: clamp(2px, 1vw, 3px);
     border-radius: 4px;
     background: var(--accent);
     opacity: 0.7;
     animation: steamRise 1.4s ease-in-out infinite;
 }
-.intro-steam span:nth-child(1) { height: 18px; animation-delay: 0s; }
-.intro-steam span:nth-child(2) { height: 26px; animation-delay: 0.2s; }
-.intro-steam span:nth-child(3) { height: 18px; animation-delay: 0.4s; }
+.intro-steam span:nth-child(1) { height: clamp(12px, 6vw, 18px); animation-delay: 0s; }
+.intro-steam span:nth-child(2) { height: clamp(18px, 8vw, 26px); animation-delay: 0.2s; }
+.intro-steam span:nth-child(3) { height: clamp(12px, 6vw, 18px); animation-delay: 0.4s; }
 
 @keyframes steamRise {
     0%   { transform: translateY(0) scaleX(1);   opacity: 0.7; }
@@ -1985,9 +1986,9 @@ footer a {
 
 .intro-brand p {
     font-family: var(--font-body);
-    font-size: 1rem;
+    font-size: clamp(0.8rem, 3vw, 1rem);
     color: rgba(255,255,255,0.55);
-    letter-spacing: 0.25em;
+    letter-spacing: clamp(0.1em, 1vw, 0.25em);
     text-transform: uppercase;
 }
 
@@ -1995,8 +1996,8 @@ footer a {
 .intro-bar-wrap {
     position: relative;
     z-index: 1;
-    width: min(320px, 80vw);
-    height: 3px;
+    width: min(320px, 85vw);
+    height: clamp(2px, 1vw, 3px);
     background: rgba(255,255,255,0.08);
     border-radius: 99px;
     overflow: hidden;
@@ -2035,8 +2036,8 @@ footer a {
 
 .intro-bean {
     position: absolute;
-    width: 18px;
-    height: 10px;
+    width: clamp(12px, 6vw, 18px);
+    height: clamp(6px, 3vw, 10px);
     border-radius: 50%;
     background: rgba(160, 120, 93, 0.18);
     border: 1px solid rgba(160, 120, 93, 0.25);
@@ -2048,6 +2049,70 @@ footer a {
     10%  { opacity: 1; }
     90%  { opacity: 1; }
     100% { transform: translateY(-120px) rotate(360deg); opacity: 0; }
+}
+
+/* ── Responsive Loading Screen ────────────────────── */
+@media (max-width: 480px) {
+    #kk-intro {
+        gap: 1rem;
+        padding: 1rem;
+    }
+    
+    .intro-cup svg {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .intro-steam {
+        gap: 4px;
+        margin-bottom: -8px;
+    }
+    
+    .intro-steam span {
+        width: 1.5px;
+    }
+    
+    .intro-steam span:nth-child(1) { height: 10px; }
+    .intro-steam span:nth-child(2) { height: 14px; }
+    .intro-steam span:nth-child(3) { height: 10px; }
+    
+    .intro-brand h1 {
+        font-size: 1.8rem;
+        margin-bottom: 0.2rem;
+    }
+    
+    .intro-brand p {
+        font-size: 0.75rem;
+        letter-spacing: 0.15em;
+    }
+    
+    .intro-bar-wrap {
+        width: min(280px, 90vw);
+        height: 2px;
+    }
+}
+
+@media (max-width: 768px) {
+    #kk-intro {
+        gap: 1.25rem;
+    }
+    
+    .intro-cup svg {
+        width: 70px;
+        height: 70px;
+    }
+    
+    .intro-steam span:nth-child(1) { height: 14px; }
+    .intro-steam span:nth-child(2) { height: 20px; }
+    .intro-steam span:nth-child(3) { height: 14px; }
+    
+    .intro-brand h1 {
+        font-size: 2.2rem;
+    }
+    
+    .intro-brand p {
+        font-size: 0.9rem;
+    }
 }
 
 /* ═══════════════════════════════════════════════════════

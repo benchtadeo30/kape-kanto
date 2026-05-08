@@ -55,7 +55,7 @@ async function verifyIdCard(filePath, mimeType) {
 async function generateChatResponse(message, history) {
   try {
     const model = genAI.getGenerativeModel({
-      model: "gemini-flash-latest",
+      model: "gemini-2.5-flash",
       systemInstruction: `You are the official AI Customer Service Assistant for Kape Kanto Hub, a local coffee shop in the Philippines.
 You are helpful, polite, and concise.
 
