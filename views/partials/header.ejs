@@ -32,6 +32,64 @@
                 <span></span>
                 <span></span>
             </button>
+            
+            <% if (user) { %>
+                <div class="nav-profile-dropdown mobile-profile">
+                    <div class="nav-avatar-btn">
+                        <% if (user.profile_image) { %>
+                            <img src="/uploads/profiles/<%= user.profile_image %>" alt="Profile">
+                        <% } else { %>
+                            <i class="fa-solid fa-user-tie"></i>
+                        <% } %>
+                    </div>
+                    <div class="dropdown-content">
+                        <div class="dropdown-header">
+                            <% if (user.profile_image) { %>
+                                <img src="/uploads/profiles/<%= user.profile_image %>" alt="Profile">
+                            <% } else { %>
+                                <div class="header-avatar" style="background: var(--primary); display: flex; align-items: center; justify-content: center; color: white; font-weight: 800;">
+                                    <%= user.username.charAt(0).toUpperCase() %>
+                                </div>
+                            <% } %>
+                            <div class="header-user-info">
+                                <p><%= user.username %></p>
+                                <span><%= user.email %></span>
+                            </div>
+                        </div>
+                        
+                        <a href="/profile#account" class="dropdown-item">
+                            <i class="fa-regular fa-user"></i>
+                            Your Profile
+                        </a>
+                        
+                        <% if (user.role === 'customer') { %>
+                            <a href="/order-tracking" class="dropdown-item">
+                                <i class="fa-solid fa-box-archive"></i>
+                                Your Orders
+                            </a>
+                            <a href="/profile#loyalty" class="dropdown-item">
+                                <i class="fa-solid fa-award"></i>
+                                Loyalty Program
+                            </a>
+                        <% } %>
+
+                        <div class="dropdown-divider"></div>
+                        
+                        <a href="/profile#verification" class="dropdown-item">
+                            <i class="fa-solid fa-id-card-clip"></i>
+                            ID & Verification
+                        </a>
+                        
+                        <div class="dropdown-divider"></div>
+                        
+                        <a href="#" onclick="KapeKanto.logout()" class="dropdown-item logout">
+                            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                            Sign out
+                        </a>
+                    </div>
+                </div>
+            <% } %>
+            
             <ul class="nav-links" id="primary-navigation">
                 <li><a href="/">Home</a></li>
                 <li><a href="/menu">Menu</a></li>
@@ -44,7 +102,7 @@
                         <li><a href="/staff/dashboard">Staff Dashboard</a></li>
                     <% } %>
                     
-                    <li class="nav-profile-dropdown">
+                    <li class="nav-profile-dropdown desktop-profile">
                         <div class="nav-avatar-btn">
                             <% if (user.profile_image) { %>
                                 <img src="/uploads/profiles/<%= user.profile_image %>" alt="Profile">
