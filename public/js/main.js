@@ -133,11 +133,18 @@ function saveCart(cart) {
 
 function updateCartBadge() {
     const badge = document.getElementById('cart-badge');
-    if (badge) {
+    const mobileBadge = document.getElementById('mobile-cart-badge');
+    if (badge || mobileBadge) {
         const cart = getCart();
         const count = cart.reduce((total, item) => total + item.quantity, 0);
-        badge.innerText = count;
-        badge.style.display = count > 0 ? 'flex' : 'none';
+        if (badge) {
+            badge.innerText = count;
+            badge.style.display = count > 0 ? 'flex' : 'none';
+        }
+        if (mobileBadge) {
+            mobileBadge.innerText = count;
+            mobileBadge.style.display = count > 0 ? 'flex' : 'none';
+        }
     }
 }
 
@@ -286,7 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         window.addEventListener('resize', () => {
-            if (window.innerWidth > 768) closeMobileNav();
+            if (window.innerWidth > 1024) closeMobileNav();
         });
     }
 

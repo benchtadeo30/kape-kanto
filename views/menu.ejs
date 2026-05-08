@@ -404,20 +404,28 @@
             }
         });
 
-        // ── Category-specific fallback images ───────────────────
-        const CATEGORY_IMAGES = {
-            'hot coffee':  '/uploads/menu/1777958220554-54856874.jpg',
-            'iced coffee': '/uploads/menu/1778176198834-94406819.jpg',
-            'frappe':      '/uploads/menu/1778176214739-88534653.jpg',
-            'pastries':    '/uploads/menu/1778176198834-94406819.jpg',
-            'meals':       '/uploads/menu/1778176214739-88534653.jpg',
-            'milkshakes':  '/uploads/menu/1778176214739-88534653.jpg',
+        // ── Name-aware deterministic fallback images ────────────
+        const FALLBACK_IMAGES = {
+            iced_coffee: 'https://images.unsplash.com/photo-1517701550927-30cf4ba1f63f?auto=format&fit=crop&q=80&w=900',
+            hot_coffee: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=900',
+            latte: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&q=80&w=900',
+            frappe: 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&q=80&w=900',
+            milkshake: 'https://images.unsplash.com/photo-1577805947697-89e18249d767?auto=format&fit=crop&q=80&w=900',
+            pastry: 'https://images.unsplash.com/photo-1483695028939-5bb13f8648b0?auto=format&fit=crop&q=80&w=900',
+            meal: 'https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&q=80&w=900',
+            default: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=80&w=900'
         };
-        const DEFAULT_IMG = '/uploads/menu/1777958220554-54856874.jpg';
 
         function getCategoryFallbackImage(item) {
-            const cat = (item.category_name || '').toLowerCase();
-            return CATEGORY_IMAGES[cat] || DEFAULT_IMG;
+            const text = `${item?.name || ''} ${item?.category_name || ''}`.toLowerCase();
+            if (/(iced|cold|spanish latte|cappuccino|americano|espresso)/.test(text)) return FALLBACK_IMAGES.iced_coffee;
+            if (/(frappe|blended)/.test(text)) return FALLBACK_IMAGES.frappe;
+            if (/(latte|mocha|macchiato)/.test(text)) return FALLBACK_IMAGES.latte;
+            if (/(milkshake|shake)/.test(text)) return FALLBACK_IMAGES.milkshake;
+            if (/(pastry|croissant|muffin|bread|cake|cookie|donut)/.test(text)) return FALLBACK_IMAGES.pastry;
+            if (/(meal|rice|pasta|sandwich|burger|silog|ulam)/.test(text)) return FALLBACK_IMAGES.meal;
+            if (/(coffee|hot)/.test(text)) return FALLBACK_IMAGES.hot_coffee;
+            return FALLBACK_IMAGES.default;
         }
 
         function getItemImage(item) {

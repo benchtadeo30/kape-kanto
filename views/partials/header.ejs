@@ -26,7 +26,7 @@
 <body>
     <header>
         <nav class="navbar">
-            <a href="/" class="brand"><img src="/images/logo.png" width="100" alt="Kape Kanto Hub"></a>
+            <a href="/" class="brand"><img src="/images/logo.png" alt="Kape Kanto Hub"></a>
             <button type="button" class="nav-toggle" aria-label="Open navigation menu" aria-expanded="false" aria-controls="primary-navigation">
                 <span></span>
                 <span></span>
@@ -105,13 +105,22 @@
                 
                 <% if (!user || user.role === 'customer') { %>
                     <li>
-                                <a href="/cart" class="cart-link" style="position: relative; font-size: 1.4rem; color: var(--primary);">
-                        <i class="fa-solid fa-cart-shopping"></i>
+                                <a href="/cart" class="cart-link" style="position: relative; color: var(--primary);">
+                        <span class="cart-link-icon"><i class="fa-solid fa-cart-shopping"></i></span>
+                        <span class="cart-link-label">Cart</span>
                         <span id="cart-badge" class="cart-badge" style="position: absolute; top: -8px; right: -12px; background: var(--danger); color: white; border-radius: 50%; padding: 2px 7px; font-size: 0.7rem; font-weight: 700; display: none; border: 2px solid white;">0</span>
                     </a>
                     </li>
                 <% } %>
             </ul>
         </nav>
+        
+        <!-- Mobile Cart Icon -->
+        <% if (!user || user.role === 'customer') { %>
+            <a href="/cart" class="mobile-cart-link" style="position: fixed; top: 1rem; right: 5rem; z-index: 103; display: none;">
+                <i class="fa-solid fa-cart-shopping" style="font-size: 1.5rem; color: var(--primary); background: white; border-radius: 50%; padding: 0.75rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></i>
+                <span id="mobile-cart-badge" class="cart-badge" style="position: absolute; top: -4px; right: -4px; background: var(--danger); color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.65rem; font-weight: 700; display: none; border: 2px solid white; min-width: 18px; text-align: center;">0</span>
+            </a>
+        <% } %>
     </header>
     <main>
