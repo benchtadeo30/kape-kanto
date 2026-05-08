@@ -2,6 +2,7 @@ const Database = require('better-sqlite3');
 const bcrypt = require('bcrypt');
 const path = require('path');
 const fs = require('fs');
+require('dotenv').config();
 
 // Ensure database directory exists
 const dbDir = path.join(__dirname);
@@ -334,8 +335,8 @@ function seedData() {
 
     // Seed Categories
     const categories = ['Hot Coffee', 'Iced Coffee', 'Pastries', 'Meals', 'Frappe'];
-    const catCheck = db.prepare(`SELECT count(*) as count FROM categories`).get();
-    const itemCheck = db.prepare(`SELECT count(*) as count FROM menu_items`).get();
+    const insertCategory = db.prepare(`INSERT OR IGNORE INTO categories (name) VALUES (?)`);
+    categories.forEach(category => insertCategory.run(category));
     
     // Always sync menu items to update images/descriptions if needed
     const categoriesList = ['Hot Coffee', 'Iced Coffee', 'Pastries', 'Meals', 'Frappe'];

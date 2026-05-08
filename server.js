@@ -4,10 +4,14 @@ const session = require('express-session');
 const cors = require('cors');
 const path = require('path');
 const dotenv = require('dotenv');
-const { db } = require('./database/init');
 
 // Load environment variables
 dotenv.config();
+
+const { db, initDb, seedData } = require('./database/init');
+
+initDb();
+seedData();
 
 const app = express();
 const PORT = process.env.PORT || 3000;

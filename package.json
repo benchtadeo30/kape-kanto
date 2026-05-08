@@ -6,7 +6,6 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "setup-db": "node database/init.js",
     "create-user": "node scripts/create-user.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
