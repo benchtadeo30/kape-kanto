@@ -84,8 +84,15 @@ Keep responses short and well-formatted.`
     const response = await result.response;
     return response.text();
   } catch (error) {
-    console.error("Gemini Chat Error:", error);
-    throw new Error("Failed to generate chatbot response.");
+    console.error("Gemini Chat Error:", error.message || error);
+    if (error.status === 403) {
+      throw new Error("API key invalid or expired. Please check your Gemini API key.");
+    } else if (error.status === 429) {
+      throw new Error("Rate limit exceeded. Please try again in a moment.");
+    } else if (error.status === 500) {
+      throw new Error("Gemini API server error. Please try again later.");
+    }
+    throw new Error("Failed to generate chatbot response. " + (error.message || "Unknown error"));
   }
 }
 

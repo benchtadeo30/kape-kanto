@@ -19,8 +19,9 @@ router.post('/api/chat', async (req, res) => {
         const reply = await generateChatResponse(message, history || []);
         res.json({ reply });
     } catch (error) {
-        console.error('Chat error:', error);
-        res.status(500).json({ error: 'Failed to connect to AI Assistant. Please try again later.' });
+        console.error('Chat error:', error.message || error);
+        const errorMessage = error.message || 'Failed to connect to AI Assistant. Please try again later.';
+        res.status(500).json({ error: errorMessage });
     }
 });
 

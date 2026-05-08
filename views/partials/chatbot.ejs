@@ -362,7 +362,8 @@
                 chatHistory.push({ role: 'user', text: text });
                 chatHistory.push({ role: 'model', text: data.reply });
             } else {
-                addMessage('Sorry, I encountered an error. Please try again.', 'bot');
+                console.error('Chat API Error:', response.status, data);
+                addMessage(data.error || 'Sorry, I encountered an error. Please try again.', 'bot');
             }
 
         } catch (error) {
