@@ -166,7 +166,7 @@ header {
 
 .brand {
     font-family: var(--font-heading);
-    font-size: 1.8rem;
+    font-size: 1.6rem;
     font-weight: 700;
     color: var(--primary-dark);
 }
@@ -174,8 +174,8 @@ header {
 .brand img {
     display: block;
     width: auto;
-    max-width: clamp(220px, 28vw, 380px);
-    max-height: 130px;
+    max-width: clamp(180px, 24vw, 320px);
+    max-height: 110px;
     height: auto;
     object-fit: contain;
 }
@@ -183,13 +183,13 @@ header {
 .nav-links {
     list-style: none;
     display: flex;
-    gap: 2.5rem; /* Increased gap */
+    gap: 1.75rem;
     align-items: center;
 }
 
     .nav-links a {
     font-weight: 600;
-    font-size: 1.3rem; /* Larger font size */
+    font-size: 1.05rem;
     color: var(--text-primary);
 }
 
@@ -199,8 +199,8 @@ header {
 
 .nav-toggle {
     display: none;
-    width: 52px;
-    height: 52px;
+    width: 44px;
+    height: 44px;
     border: 1px solid rgba(111, 78, 55, 0.18);
     border-radius: 12px;
     background: #fff;
@@ -209,21 +209,21 @@ header {
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    gap: 6px;
+    gap: 5px;
     box-shadow: var(--shadow-soft);
 }
 
 .nav-toggle span {
     display: block;
-    width: 26px;
-    height: 3px;
+    width: 22px;
+    height: 2.5px;
     border-radius: 999px;
     background: currentColor;
     transition: transform 0.22s ease, opacity 0.22s ease;
 }
 
 body.nav-open .nav-toggle span:nth-child(1) {
-    transform: translateY(10px) rotate(45deg);
+    transform: translateY(7.5px) rotate(45deg);
 }
 
 body.nav-open .nav-toggle span:nth-child(2) {
@@ -231,19 +231,19 @@ body.nav-open .nav-toggle span:nth-child(2) {
 }
 
 body.nav-open .nav-toggle span:nth-child(3) {
-    transform: translateY(-10px) rotate(-45deg);
+    transform: translateY(-7.5px) rotate(-45deg);
 }
 
 .cart-icon {
     position: relative;
-    font-size: 1.6rem; /* Larger cart icon */
+    font-size: 1.3rem;
 }
 
 .cart-link .cart-link-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.85rem; /* Larger icon */
+    font-size: 1.45rem;
     line-height: 1;
 }
 
@@ -3099,10 +3099,6 @@ span.flatpickr-weekday {
         grid-template-columns: repeat(3, 1fr) !important;
         gap: 2rem !important;
     }
-    
-    .nav-links a {
-        font-size: 1.4rem; /* Even larger for desktop */
-    }
 }
 
 /* ==========================================================================
@@ -3374,7 +3370,7 @@ button,
         background: rgba(111, 78, 55, 0.07);
         color: var(--primary-dark);
         font-weight: 700;
-        font-size: 1.25rem;
+        font-size: 1.05rem;
     }
 
     .nav-links a:hover {
@@ -4054,7 +4050,7 @@ button,
         background: rgba(111, 78, 55, 0.07);
         color: var(--primary-dark);
         font-weight: 700;
-        font-size: 1.25rem;
+        font-size: 1.05rem;
     }
 
     .nav-links a:hover {

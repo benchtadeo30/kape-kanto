@@ -163,7 +163,13 @@
                 
                 <div class="form-group">
                     <label for="password" style="font-weight: 700; font-size: 0.85rem; color: #5D4037; text-transform: uppercase; letter-spacing: 1px;">Security Password</label>
-                    <input type="password" id="password" required placeholder="••••••••" style="padding: 14px 20px; border-radius: 14px; border: 2px solid #f0f0f0; background: #fafafa;">
+                    <div style="position: relative; display: flex; align-items: center;">
+                        <input type="password" id="password" required placeholder="••••••••" style="padding: 14px 50px 14px 20px; border-radius: 14px; border: 2px solid #f0f0f0; background: #fff; width: 100%; transition: all 0.2s;">
+                        <div id="toggle-password" 
+                            style="position: absolute; right: 1rem; cursor: pointer; color: #5D4037; z-index: 100; display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; transition: opacity 0.2s;">
+                            <i class="fa-solid fa-eye" style="font-size: 1.1rem;"></i>
+                        </div>
+                    </div>
                 </div>
 
                 <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 16px; border-radius: 14px; font-weight: 700; font-size: 1rem; box-shadow: 0 10px 20px rgba(111, 78, 55, 0.2);">Create Account</button>
@@ -238,6 +244,25 @@
             document.getElementById('avatar-preview').innerHTML = `<img src="${url}" alt="Selfie">`;
             closeCamera();
         }, 'image/jpeg', 0.9);
+    }
+
+    // Toggle Password Visibility
+    const togglePassword = document.getElementById('toggle-password');
+    const passwordInput = document.getElementById('password');
+
+    if (togglePassword && passwordInput) {
+        togglePassword.addEventListener('click', () => {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            
+            // Toggle icon class
+            const icon = togglePassword.querySelector('i');
+            if (type === 'text') {
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        });
     }
 
     document.getElementById('register-form').addEventListener('submit', async (e) => {

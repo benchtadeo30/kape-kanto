@@ -22,8 +22,14 @@
                     <label style="font-weight: 600; color: var(--primary-dark);">Password</label>
                     <a href="/forgot-password" style="font-size: 0.85rem; color: var(--primary); font-weight: 600;">Forgot password?</a>
                 </div>
-                <input type="password" id="password" placeholder="••••••••" required 
-                    style="width: 100%; padding: 1rem; border-radius: 12px; border: 1.5px solid #eee; outline: none; transition: border-color 0.2s;">
+                <div style="position: relative; display: flex; align-items: center;">
+                    <input type="password" id="password" placeholder="••••••••" required 
+                        style="width: 100%; padding: 1rem 3.5rem 1rem 1rem; border-radius: 12px; border: 1.5px solid #eee; outline: none; transition: all 0.2s; background: #fff;">
+                    <div id="toggle-password" 
+                        style="position: absolute; right: 1rem; cursor: pointer; color: #6F4E37; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 5px; width: 30px; height: 30px; transition: opacity 0.2s;">
+                        <i class="fa-solid fa-eye" style="font-size: 1.1rem;"></i>
+                    </div>
+                </div>
             </div>
             
             <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1.2rem; font-size: 1.1rem; border-radius: 50px; margin-top: 1.5rem;">Sign In</button>
@@ -83,6 +89,25 @@
             btn.innerText = 'Sign In';
         }
     });
+
+    // Toggle Password Visibility
+    const togglePassword = document.getElementById('toggle-password');
+    const passwordInput = document.getElementById('password');
+
+    if (togglePassword && passwordInput) {
+        togglePassword.addEventListener('click', () => {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            
+            // Toggle icon class
+            const icon = togglePassword.querySelector('i');
+            if (type === 'text') {
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        });
+    }
 
     // Simple input animation
     document.querySelectorAll('input').forEach(input => {
