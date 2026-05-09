@@ -50,7 +50,7 @@ app.use((req, res, next) => {
     if (req.session && req.session.userId) {
         try {
             if (db) {
-                res.locals.user = db.prepare(`SELECT id, username, email, pending_email, role, is_senior, is_pwd, is_verified, id_verification_status, id_verification_notes, profile_image FROM users WHERE id = ?`).get(req.session.userId);
+                res.locals.user = db.prepare(`SELECT id, username, email, pending_email, role, is_senior, is_pwd, is_verified, id_verification_status, id_verification_notes, id_verification_message, profile_image FROM users WHERE id = ?`).get(req.session.userId);
             }
         } catch (e) {
             console.error("Session User Middleware Error:", e);
@@ -83,6 +83,55 @@ app.use('/api/payment', paymentRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
 
+const { GoogleGenAI  } = require("@google/genai");
+const genAI =  new GoogleGenAI({
+  apiKey: process.env.GEMINI_VISION_API_KEY
+})
+app.get("/models", async (req, res) => {
+
+  try {
+
+    const models = await genAI.models.list();
+
+    res.json(models);
+
+  } catch (error) {
+
+    console.dir(error, { depth: null });
+
+    res.json({
+      success: false,
+      error
+    });
+
+  }
+
+});
+app.get("/test-gemini", async (req, res) => {
+
+  try {
+
+    const response = await genAI.models.generateContent({
+      model: "gemini-2.0-flash-exp",
+      contents: "Hello"
+    });
+
+    res.json({
+      success: true,
+      text: response.text
+    });
+
+  } catch (error) {
+
+    console.dir(error, { depth: null });
+
+    res.json({
+      success: false,
+      error
+    });
+  }
+
+});
 // Mount Page Routes
 app.use('/', pageRoutes);
 app.use('/help', helpRoutes);

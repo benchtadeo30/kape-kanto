@@ -16,6 +16,7 @@
   "dependencies": {
     "@google/genai": "^1.52.0",
     "@google/generative-ai": "^0.24.1",
+    "@openrouter/sdk": "^0.12.35",
     "bcrypt": "^6.0.0",
     "better-sqlite3": "^12.9.0",
     "cors": "^2.8.6",

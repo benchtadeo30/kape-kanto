@@ -236,6 +236,10 @@ function initDb() {
     if (!colNames.includes('profile_image')) {
         db.prepare('ALTER TABLE users ADD COLUMN profile_image TEXT').run();
     }
+    if (!colNames.includes('id_verification_message')) {
+        db.prepare('ALTER TABLE users ADD COLUMN id_verification_message TEXT').run();
+        console.log("Migration: Added id_verification_message column to users.");
+    }
 
     // Migration: Check if order_items has customizations column
     try {
