@@ -84,6 +84,7 @@ function initDb() {
             title TEXT NOT NULL,
             description TEXT,
             discount_percent REAL NOT NULL,
+            discount_amount REAL DEFAULT 0,
             image TEXT,
             start_date DATETIME,
             end_date DATETIME,
@@ -98,6 +99,29 @@ function initDb() {
             FOREIGN KEY(applicable_menu_item_id) REFERENCES menu_items(id) ON DELETE SET NULL
         )
     `).run();
+
+    // Migration: Add columns for promo system upgrades if they don't exist
+    const promoCols = db.prepare("PRAGMA table_info(promos)").all().map(c => c.name);
+    if (!promoCols.includes('discount_amount')) {
+        db.prepare('ALTER TABLE promos ADD COLUMN discount_amount REAL DEFAULT 0').run();
+        console.log("Migration: Added discount_amount to promos.");
+    }
+    if (!promoCols.includes('applicable_category_id')) {
+        db.prepare('ALTER TABLE promos ADD COLUMN applicable_category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL').run();
+        console.log("Migration: Added applicable_category_id to promos.");
+    }
+    if (!promoCols.includes('applicable_menu_item_id')) {
+        db.prepare('ALTER TABLE promos ADD COLUMN applicable_menu_item_id INTEGER REFERENCES menu_items(id) ON DELETE SET NULL').run();
+        console.log("Migration: Added applicable_menu_item_id to promos.");
+    }
+    if (!promoCols.includes('applicable_category_ids')) {
+        db.prepare("ALTER TABLE promos ADD COLUMN applicable_category_ids TEXT DEFAULT '[]'").run();
+        console.log("Migration: Added applicable_category_ids (JSON) to promos.");
+    }
+    if (!promoCols.includes('applicable_menu_item_ids')) {
+        db.prepare("ALTER TABLE promos ADD COLUMN applicable_menu_item_ids TEXT DEFAULT '[]'").run();
+        console.log("Migration: Added applicable_menu_item_ids (JSON) to promos.");
+    }
 
     // 5. Promo Items (Join table for Promo -> Menu Items)
     db.prepare(`
@@ -271,7 +295,6 @@ function initDb() {
     }
 
     // Migration: Add columns for promo system upgrades if they don't exist
-    const promoCols = db.prepare("PRAGMA table_info(promos)").all().map(c => c.name);
     if (!promoCols.includes('applicable_category_id')) {
         db.prepare('ALTER TABLE promos ADD COLUMN applicable_category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL').run();
         console.log("Migration: Added applicable_category_id to promos.");
