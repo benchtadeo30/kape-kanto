@@ -35,9 +35,6 @@
                 Didn't receive the code?
                 <a href="#" id="resend-link" style="color: var(--primary); font-weight: bold;">Resend Code</a>
             </p>
-            <p style="font-size: 0.9rem; color: var(--text-light);">
-                <a href="/" style="color: var(--text-light); text-decoration: underline;">Skip for now</a>
-            </p>
             <% if (typeof user !== 'undefined' && user && user.pending_email) { %>
                 <p style="font-size: 0.9rem; color: var(--text-light); margin-top: 1rem;">
                     Changed your mind? <a href="#" id="cancel-change-link" style="color: var(--danger); font-weight: bold;">Cancel and keep old email</a>
@@ -57,7 +54,15 @@
             e.target.value = val;
             if (val) {
                 e.target.classList.add('otp-filled');
-                if (idx < digits.length - 1) digits[idx + 1].focus();
+                if (idx < digits.length - 1) {
+                    digits[idx + 1].focus();
+                } else {
+                    // ALL DIGITS FILLED - Auto-submit!
+                    const code = getOtpValue();
+                    if (code.length === 6) {
+                        document.getElementById('verify-form').dispatchEvent(new Event('submit'));
+                    }
+                }
             } else {
                 e.target.classList.remove('otp-filled');
             }
@@ -137,7 +142,10 @@
         const email = document.getElementById('verify-email').value;
         const link = e.target;
 
+        if (link.style.pointerEvents === 'none') return;
+
         link.style.pointerEvents = 'none';
+        link.style.opacity = '0.5';
         link.innerText = 'Sending…';
 
         try {
@@ -158,10 +166,12 @@
         } catch (error) {
             KapeKanto.toast('Failed to resend code.', 'error');
         } finally {
+            // Short delay before allowing resend again
             setTimeout(() => {
                 link.style.pointerEvents = 'auto';
+                link.style.opacity = '1';
                 link.innerText = 'Resend Code';
-            }, 30000); // 30s cooldown
+            }, 5000); // 5s cooldown
         }
     });
 

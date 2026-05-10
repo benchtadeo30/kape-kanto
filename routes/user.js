@@ -15,7 +15,7 @@ router.get('/', (req, res) => {
     const search = req.query.search || '';
 
     try {
-        let query = `SELECT id, username, email, role, created_at FROM users`;
+        let query = `SELECT id, username, email, role, created_at, profile_image FROM users`;
         let countQuery = `SELECT COUNT(*) as total FROM users`;
         const params = [];
         const countParams = [];
@@ -72,16 +72,19 @@ router.post('/', async (req, res) => {
         return res.status(400).json({ error: 'Missing required fields.' });
     }
 
-    // Validation: Must be Gmail
-    if (!email.endsWith('@gmail.com')) {
-        return res.status(400).json({ error: 'Only Gmail addresses are allowed.' });
+    // Domain Logic: Customers MUST use Gmail. Admin/Staff MUST use kapekantohub.com
+    if (role === 'customer' && !email.endsWith('@gmail.com')) {
+        return res.status(400).json({ error: 'Customer accounts require a valid @gmail.com address.' });
+    }
+    if (role !== 'customer' && !email.endsWith('@kapekantohub.com')) {
+        return res.status(400).json({ error: 'Internal accounts (Admin/Staff) must use @kapekantohub.com.' });
     }
 
     // Validation: Password Complexity (Same as registration)
-    const passwordRegex = /^(?=.*[A-Z])(?=.*[0-9].*[0-9])(?=.*[!@#$%^&*])(?=.{5,})/;
+    const passwordRegex = /^(?=.*[A-Z])(?=.*[0-9].*[0-9])(?=.*[!@#$%^&*_])(?=.{5,})/;
     if (!passwordRegex.test(password)) {
         return res.status(400).json({ 
-            error: 'Password needs 5+ chars, 1 uppercase, 2 numbers, 1 special char.' 
+            error: 'Password needs 5+ chars, 1 uppercase, 2 numbers, 1 special char (including _).' 
         });
     }
 
@@ -113,7 +116,17 @@ router.post('/', async (req, res) => {
 
 // PUT /api/users/:id
 router.put('/:id', async (req, res) => {
-    const { username, email, role, is_senior, is_pwd, id_verification_status, password } = req.body;
+    const { username, email: rawEmail, role, is_senior, is_pwd, id_verification_status, password } = req.body;
+    const email = rawEmail ? rawEmail.trim().toLowerCase() : rawEmail;
+
+    if (email) {
+        if (role === 'customer' && !email.endsWith('@gmail.com')) {
+            return res.status(400).json({ error: 'Customer accounts require a valid @gmail.com address.' });
+        }
+        if (role !== 'customer' && !email.endsWith('@kapekantohub.com')) {
+            return res.status(400).json({ error: 'Internal accounts (Admin/Staff) must use @kapekantohub.com.' });
+        }
+    }
     
     try {
         let stmt;

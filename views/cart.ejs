@@ -4,24 +4,26 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
-<div class="cart-layout-wrapper" style="padding: 2rem 5%; max-width: 1200px; margin: 0 auto;">
+<div class="cart-layout-wrapper" style="padding: 2rem 5%; max-width: 1400px; margin: 0 auto;">
     <h1 class="section-title" style="margin-top: 1rem;">Your Cart</h1>
 
-    <div class="cart-layout" id="cart-layout">
+    <div class="cart-layout" id="cart-layout" style="display: flex; flex-wrap: wrap; gap: 2.5rem; align-items: flex-start;">
 
-        <!-- Cart Items List -->
-        <div class="cart-main-content">
+        <!-- Left Column: Cart Items and Order Details -->
+        <div class="cart-items-column" style="flex: 2; min-width: 0; width: 100%; display: flex; flex-direction: column; gap: 2rem;">
+            <!-- 1. Cart Items Card -->
             <div class="card" id="cart-items-container">
                 <!-- Loaded via JS -->
             </div>
 
-            <div class="card" style="margin-top: 2rem;">
-                <h3 style="margin-bottom: 1.5rem;">Order Details</h3>
+            <!-- 2. Order Details Card (Stacked fields as requested) -->
+            <div class="card">
+                <h3 style="margin-bottom: 2rem;"><i class="fa-solid fa-list-check" style="color: var(--primary); margin-right: 12px;"></i>Order Details</h3>
                 <form id="checkout-form">
-
-                    <!-- Order Type -->
-                    <div class="form-group">
-                        <label>Order Type</label>
+                    
+                    <!-- Order Type (Stacked) -->
+                    <div class="form-group" style="margin-bottom: 2rem;">
+                        <label style="font-weight: 700; color: var(--primary-dark); margin-bottom: 0.75rem; display: block; font-size: 1.05rem;">Order Type</label>
                         <input type="hidden" id="order-type" value="pickup">
                         <div class="cart-tabs-wrap">
                             <button type="button" class="cart-tab-btn active" data-group="order" data-type="pickup" onclick="setOrderType('pickup')">
@@ -33,41 +35,25 @@
                         </div>
                     </div>
 
-
-
-                    <!-- Delivery Fields -->
-                    <div id="delivery-fields" style="display: none;">
+                    <!-- Delivery Address (Stacked) -->
+                    <div id="delivery-fields" style="display: none; margin-bottom: 2rem;">
                         <div class="form-group">
-                            <label>Delivery Address</label>
+                            <label style="font-weight: 700; color: var(--primary-dark); margin-bottom: 0.75rem; display: block; font-size: 1.05rem;">Delivery Address</label>
                             <div class="address-input-wrap">
-                                <input type="text" id="delivery-address"
-                                    placeholder="Type to search address in the Philippines…"
-                                    autocomplete="off"
-                                    oninput="handleAddressInput(this.value)">
+                                <input type="text" id="delivery-address" placeholder="Type to search address in the Philippines…" autocomplete="off" oninput="handleAddressInput(this.value)" style="width: 100%; padding: 1rem; border-radius: 12px; border: 2px solid #eee;">
                                 <div class="address-suggestions" id="address-suggestions"></div>
                             </div>
-                            <button type="button" class="detect-location-btn" id="detect-btn" onclick="detectMyLocation()">
-                                <i class="fa-solid fa-location-crosshairs"></i>
-                                Use My Current Location
+                            <button type="button" class="detect-location-btn" id="detect-btn" onclick="detectMyLocation()" style="margin-top: 0.75rem; width: 100%; padding: 0.8rem; border-radius: 12px;">
+                                <i class="fa-solid fa-location-crosshairs"></i> Use My Current Location
                             </button>
-                        </div>
-
-                        <!-- Hot beverage delivery warning -->
-                        <div class="hot-beverage-warning" id="hot-warn">
-                            <i class="fa-solid fa-mug-hot"></i>
-                            <span>
-                                <strong>Heads up!</strong> Your cart contains hot beverages. They may cool during delivery.
-                                Consider adding a note to request extra-hot preparation, or choose <strong>Pickup</strong> for best quality.
-                            </span>
                         </div>
                     </div>
 
-                    <!-- Schedule Mode Toggle -->
+                    <!-- Schedule Mode Toggle (Stacked) -->
                     <div class="schedule-picker-container" style="margin-bottom: 2rem;">
                         <label class="schedule-label" style="display:block; margin-bottom:0.75rem; font-weight:700; color:var(--primary-dark); font-size:1.05rem;">
-                            <i class="fa-solid fa-clock" style="color:var(--primary);margin-right:8px;"></i><span id="schedule-heading">When would you like this?</span>
+                            <i class="fa-solid fa-clock" style="color:var(--primary);margin-right:8px;"></i><span id="schedule-heading">When should we have it ready?</span>
                         </label>
-
                         <input type="hidden" id="schedule-mode" value="asap">
                         <div class="cart-tabs-wrap" style="margin-bottom: 1rem;">
                             <button type="button" class="cart-tab-btn active" data-group="schedule" data-type="asap" onclick="setScheduleMode('asap')">
@@ -77,28 +63,22 @@
                                 <i class="fa-solid fa-calendar-day"></i> Schedule
                             </button>
                         </div>
-
-                        <!-- ASAP Estimation Badge -->
                         <div id="asap-badge" style="display: flex; align-items: center; gap: 12px; padding: 1rem 1.25rem; background: linear-gradient(135deg, #f0faf0 0%, #e8f5e9 100%); border: 1px solid #c8e6c9; border-radius: 12px;">
                             <i class="fa-solid fa-circle-check" style="font-size: 1.4rem; color: #43a047;"></i>
                             <div>
                                 <strong style="color: #2e7d32; font-size: 0.95rem;" id="asap-label">Ready in ~20 minutes</strong>
-                                <p style="margin: 2px 0 0 0; font-size: 0.82rem; color: #689f68;">We'll start preparing your order right away.</p>
                             </div>
                         </div>
-
-                        <!-- Scheduled Picker (hidden by default) -->
                         <div id="scheduled-picker-wrap" style="display: none;">
                             <div class="schedule-input-wrapper" style="position:relative;">
                                 <i class="fa-solid fa-calendar-day" style="position:absolute; left:1rem; top:50%; transform:translateY(-50%); color:var(--primary); font-size:1.1rem; pointer-events:none;"></i>
                                 <input type="text" id="scheduled-datetime" placeholder="Select Date & Time" readonly
-                                    style="width:100%; padding:1rem 1rem 1rem 3rem; border:2px solid #eaeaea; border-radius:12px; font-size:1rem; font-weight:600; color:var(--text-primary); cursor:pointer; background:#fafafa; transition:all 0.3s ease;">
-                                <i class="fa-solid fa-chevron-down" style="position:absolute; right:1.2rem; top:50%; transform:translateY(-50%); color:var(--text-light); pointer-events:none; transition:transform 0.3s ease;"></i>
+                                    style="width:100%; padding:1rem 1rem 1rem 3rem; border:2px solid #eee; border-radius:12px; font-size:1rem; font-weight:600; color:var(--text-primary); cursor:pointer; background:#fafafa;">
                             </div>
                         </div>
                     </div>
 
-                    <!-- Payment Method -->
+                    <!-- Payment Method (Stacked) -->
                     <div class="form-group" style="margin-bottom: 2rem;">
                         <label style="font-weight: 700; color: var(--primary-dark); margin-bottom: 0.75rem; display: block; font-size: 1.05rem;">
                             <i class="fa-solid fa-credit-card" style="color:var(--primary);margin-right:8px;"></i>How would you like to pay?
@@ -112,155 +92,93 @@
                                 <i class="fa-solid fa-globe"></i> Pay Online
                             </button>
                         </div>
-                        <p id="payment-method-desc" style="font-size: 0.85rem; color: var(--text-light); margin-top: 0.75rem; line-height: 1.5; padding: 0 0.5rem;">
-                            You will pay at the counter when you pick up your order.
-                        </p>
+                        <p id="payment-method-desc" style="font-size: 0.85rem; color: var(--text-light); margin-top: 0.75rem; line-height: 1.5; padding: 0 0.5rem;"></p>
                     </div>
 
-                    <!-- Notes -->
+                    <!-- Temperature Quality Warning (Handles Hot & Cold) -->
+                    <div id="hot-warn" style="display: none; align-items: flex-start; gap: 12px; padding: 1.25rem; background: #fffdf0; border: 1.5px solid #ffecb3; border-radius: 14px; margin-bottom: 2rem;">
+                        <i class="fa-solid fa-temperature-half" style="color: #ffb300; font-size: 1.4rem; margin-top: 2px;"></i>
+                        <div style="flex: 1;">
+                            <p style="margin: 0; font-weight: 700; color: #7a5200; font-size: 0.95rem;">Delivery Quality Note</p>
+                            <p style="margin: 4px 0 10px; font-size: 0.82rem; color: #856404; line-height: 1.5;">
+                                Your cart contains beverages that are sensitive to travel time. To ensure the best experience, you can click below to add a special request:
+                            </p>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <button type="button" onclick="appendNote('Please make it extra hot.')" style="background: white; border: 1px solid #ffb300; padding: 5px 12px; border-radius: 50px; font-size: 0.75rem; color: #7a5200; cursor: pointer; font-weight: 600;">+ Extra Hot</button>
+                                <button type="button" onclick="appendNote('Please add extra ice.')" style="background: white; border: 1px solid #ffb300; padding: 5px 12px; border-radius: 50px; font-size: 0.75rem; color: #7a5200; cursor: pointer; font-weight: 600;">+ Extra Ice</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notes (Stacked) -->
                     <div class="form-group">
-                        <label>Special Notes / Instructions</label>
-                        <textarea id="notes" rows="3" placeholder="Any special requests? (e.g., extra hot, no sugar)"></textarea>
+                        <label style="font-weight: 700; color: var(--primary-dark); margin-bottom: 0.75rem; display: block; font-size: 1.05rem;">Special Notes / Instructions</label>
+                        <textarea id="notes" rows="3" placeholder="Any special requests? (e.g., extra hot, no sugar)" style="width: 100%; padding: 1rem; border-radius: 12px; border: 2px solid #eee;"></textarea>
                     </div>
                 </form>
             </div>
         </div>
 
-        <!-- Checkout Summary -->
-<div class="cart-columns">
-                <div class="cart-items-col">
-                    <div class="card" id="cart-items-container">
-                        <!-- Loaded via JS -->
-                    </div>
+        <!-- Right Column: Sticky Summary -->
+        <div class="cart-details-column" style="flex: 1; min-width: 0; width: 100%; position: sticky; top: 100px;">
+            <div class="card">
+                <h3 style="margin-bottom:1.5rem;"><i class="fa-solid fa-receipt" style="color: var(--primary); margin-right: 10px;"></i>Order Summary</h3>
+                
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
+                    <span>Subtotal (Gross):</span>
+                    <span id="summary-subtotal" style="font-weight: 600;">₱0.00</span>
                 </div>
-                <div class="cart-summary-col">
-                    <div class="card" style="position: sticky; top: 100px;">
-                        <h3 style="margin-bottom:1rem;">Order Summary</h3>
-                        <hr style="margin: 1rem 0; border: none; border-top: 1px solid #eee;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                            <span>Subtotal (Gross):</span>
-                            <span id="summary-subtotal">₱0.00</span>
-                        </div>
-                        <div style="margin-bottom: 1rem;">
-                            <div style="display: flex; justify-content: space-between; color: var(--danger);">
-                                <span>Discount: <span id="discount-label"
-                                        style="font-size: 0.8rem; background: #eee; padding: 2px 6px; border-radius: 4px; color: #333;">None</span></span>
-                                <span id="summary-discount-total">-₱0.00</span>
-                            </div>
-                            <div id="summary-discount"></div>
-                        </div>
-                        <hr style="margin: 1rem 0; border: none; border-top: 1px solid #eee;">
-                        <div style="display: none; justify-content: space-between; margin-bottom: 0.5rem; color: var(--text-light); font-size: 0.9rem;" id="vat-row">
-                            <span id="vat-label">VAT (12% Inclusive):</span>
-                            <span id="summary-vat">₱0.00</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; color: var(--text-light); font-size: 0.9rem;" id="delivery-fee-row">
-                            <span>Delivery Fee:</span>
-                            <span id="summary-delivery">₱0.00</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 1rem; color: var(--primary); font-weight: 600; font-size: 0.95rem;" id="tax-fees-row">
-                            <span>Taxes &amp; Fees Total:</span>
-                            <span id="summary-tax-fees">₱0.00</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 1.5rem; font-weight: 800; font-size: 1.3rem; color: var(--primary-dark);">
-                            <span>Total:</span>
-                            <span id="summary-total">₱0.00</span>
-                        </div>
-                        <div class="form-group" style="display: flex; gap: 0.5rem;" id="promo-wrapper">
-                            <input type="text" id="promo-code" placeholder="Promo Code" style="flex: 1;">
-                            <button id="promo-btn" class="btn btn-secondary" onclick="applyPromo()">Apply</button>
-                        </div>
-                        <div id="promo-status" style="margin-top: -0.5rem; margin-bottom: 1rem; font-size: 0.85rem;"></div>
-                        <button id="remove-promo-btn" class="btn btn-outline" style="width: 100%; margin-bottom: 1rem; display: none; padding: 6px; font-size: 0.8rem;" onclick="removePromo()">
-                            <i class="fa-solid fa-xmark"></i> Remove Promo Code
-                        </button>
-                        <% if (user && (user.is_senior || user.is_pwd)) { %>
-                            <div style="background: var(--bg-main); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; font-size: 0.9rem;">
-                                <% if (user.id_verification_status==='verified') { %>
-                                    <span style="color: var(--success); font-weight: bold;">✅ Verified <%= user.is_senior ? 'Senior Citizen' : 'PWD' %></span>
-                                    <br>20% discount is automatically applied!
-                                <% } else if (user.id_verification_status==='pending') { %>
-                                    <span style="color: var(--warning); font-weight: bold;">⏳ ID Verification Pending</span>
-                                    <br>Discount available once Admin approves your ID.
-                                <% } else if (user.id_verification_status==='rejected') { %>
-                                    <span style="color: var(--danger); font-weight: bold;">❌ ID Verification Rejected</span>
-                                <% } %>
-                            </div>
-                        <% } %>
-                        <button class="btn btn-primary" style="width: 100%; font-size: 1.05rem; padding: 1rem;"
-                            onclick="placeOrder()" id="checkout-btn">
-                            Place Order
-                        </button>
-                        <p id="checkout-note"
-                            style="font-size: 0.8rem; text-align: center; margin-top: 1rem; color: var(--text-light);"> </p>
-                    </div>
-                </div>
-            </div>
 
                 <div style="margin-bottom: 1rem;">
                     <div style="display: flex; justify-content: space-between; color: var(--danger);">
-                        <span>Discount: <span id="discount-label"
-                                style="font-size: 0.8rem; background: #eee; padding: 2px 6px; border-radius: 4px; color: #333;">None</span></span>
-                        <span id="summary-discount-total">-₱0.00</span>
+                        <span>Discount: <span id="discount-label" style="font-size: 0.8rem; background: #eee; padding: 2px 6px; border-radius: 4px; color: #333;">None</span></span>
+                        <span id="summary-discount-total" style="font-weight: 600;">-₱0.00</span>
                     </div>
                     <div id="summary-discount"></div>
                 </div>
 
-                <hr style="margin: 1rem 0; border: none; border-top: 1px solid #eee;">
-
-                <div style="display: none; justify-content: space-between; margin-bottom: 0.5rem; color: var(--text-light); font-size: 0.9rem;" id="vat-row">
+                <div style="display: none; justify-content: space-between; margin-bottom: 0.75rem; color: var(--text-light); font-size: 0.9rem;" id="vat-row">
                     <span id="vat-label">VAT (12% Inclusive):</span>
                     <span id="summary-vat">₱0.00</span>
                 </div>
 
-                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; color: var(--text-light); font-size: 0.9rem;" id="delivery-fee-row">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem; color: var(--text-light); font-size: 0.9rem;" id="delivery-fee-row">
                     <span>Delivery Fee:</span>
                     <span id="summary-delivery">₱0.00</span>
                 </div>
 
-                <div style="display: flex; justify-content: space-between; margin-bottom: 1rem; color: var(--primary); font-weight: 600; font-size: 0.95rem;" id="tax-fees-row">
-                    <span>Taxes & Fees Total:</span>
-                    <span id="summary-tax-fees">₱0.00</span>
-                </div>
-
-                <div style="display: flex; justify-content: space-between; margin-bottom: 1.5rem; font-weight: 800; font-size: 1.3rem; color: var(--primary-dark);">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 2rem; font-weight: 800; font-size: 1.6rem; color: var(--primary-dark); border-top: 2px solid #f9f9f9; padding-top: 1.5rem;">
                     <span>Total:</span>
                     <span id="summary-total">₱0.00</span>
                 </div>
 
                 <!-- Promo Code -->
-                <div class="form-group" style="display: flex; gap: 0.5rem;" id="promo-wrapper">
-                    <input type="text" id="promo-code" placeholder="Promo Code" style="flex: 1;">
+                <div class="form-group" style="display: flex; gap: 0.5rem; margin-bottom: 1rem;" id="promo-wrapper">
+                    <input type="text" id="promo-code" placeholder="Promo Code" style="flex: 1; padding: 0.8rem; border-radius: 10px; border: 1px solid #ddd;">
                     <button id="promo-btn" class="btn btn-secondary" onclick="applyPromo()">Apply</button>
                 </div>
                 <div id="promo-status" style="margin-top: -0.5rem; margin-bottom: 1rem; font-size: 0.85rem;"></div>
-                <button id="remove-promo-btn" class="btn btn-outline" style="width: 100%; margin-bottom: 1rem; display: none; padding: 6px; font-size: 0.8rem;" onclick="removePromo()">
+                <button id="remove-promo-btn" class="btn btn-outline" style="width: 100%; margin-bottom: 1.5rem; display: none; padding: 6px; font-size: 0.8rem;" onclick="removePromo()">
                     <i class="fa-solid fa-xmark"></i> Remove Promo Code
                 </button>
 
                 <!-- Senior/PWD Badge -->
                 <% if (user && (user.is_senior || user.is_pwd)) { %>
-                    <div style="background: var(--bg-main); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; font-size: 0.9rem;">
+                    <div style="background: #fdfae6; padding: 1rem; border-radius: 12px; margin-bottom: 2rem; border: 1px solid #f9e8b3; font-size: 0.85rem;">
                         <% if (user.id_verification_status==='verified') { %>
-                            <span style="color: var(--success); font-weight: bold;">✅ Verified <%= user.is_senior ? 'Senior Citizen' : 'PWD' %></span>
-                            <br>20% discount is automatically applied!
-                        <% } else if (user.id_verification_status==='pending') { %>
-                            <span style="color: var(--warning); font-weight: bold;">⏳ ID Verification Pending</span>
-                            <br>Discount available once Admin approves your ID.
-                        <% } else if (user.id_verification_status==='rejected') { %>
-                            <span style="color: var(--danger); font-weight: bold;">❌ ID Verification Rejected</span>
+                            <span style="color: #2e7d32; font-weight: bold;">✅ Verified <%= user.is_senior ? 'Senior Citizen' : 'PWD' %></span>
+                            <br>20% discount is applied!
+                        <% } else { %>
+                            <span style="color: #856404; font-weight: bold;">⏳ Verification Pending</span>
+                            <br>Discount will be applied once verified.
                         <% } %>
                     </div>
                 <% } %>
 
-                <button class="btn btn-primary" style="width: 100%; font-size: 1.05rem; padding: 1rem;"
-                    onclick="placeOrder()" id="checkout-btn">
+                <button class="btn btn-primary" style="width: 100%; font-size: 1.15rem; padding: 1.25rem; border-radius: 50px; font-weight: 800; box-shadow: 0 8px 25px rgba(111, 78, 55, 0.2);" onclick="placeOrder()" id="checkout-btn">
                     Place Order
                 </button>
-                <p id="checkout-note"
-                    style="font-size: 0.8rem; text-align: center; margin-top: 1rem; color: var(--text-light);">
-                </p>
-
+                <p id="checkout-note" style="font-size: 0.8rem; text-align: center; margin-top: 1rem; color: var(--text-light);"></p>
             </div>
         </div>
     </div>
@@ -272,22 +190,43 @@
         type: "<%= user && user.is_senior ? 'Senior Citizen' : (user && user.is_pwd ? 'PWD' : 'None') %>"
     };
 
-    // Hot beverage keywords
-    const HOT_KEYWORDS = ['americano', 'latte', 'cappuccino', 'espresso', 'hot', 'brewed', 'drip', 'cortado', 'macchiato', 'pour-over'];
+    // Quality Warning Keywords (Hot & Cold)
+    const DRINK_KEYWORDS = ['americano', 'latte', 'cappuccino', 'espresso', 'hot', 'brewed', 'drip', 'cortado', 'macchiato', 'pour-over', 'frappe', 'iced', 'cold', 'smoothie', 'shake', 'slush'];
 
-    function hasHotBeverage() {
+    function hasSensitiveBeverage() {
+        if (typeof getCart !== 'function') return false;
         const cart = getCart();
         return cart.some(item =>
-            HOT_KEYWORDS.some(kw => item.name.toLowerCase().includes(kw))
+            DRINK_KEYWORDS.some(kw => item.name.toLowerCase().includes(kw))
         );
     }
 
     function checkHotWarning() {
         const warn = document.getElementById('hot-warn');
-        const orderType = document.getElementById('order-type').value;
-        if (warn) {
-            warn.classList.toggle('show', orderType === 'delivery' && hasHotBeverage());
+        const orderTypeEl = document.getElementById('order-type');
+        if (!warn || !orderTypeEl) return;
+        
+        const orderType = orderTypeEl.value;
+        if (orderType === 'delivery' && hasSensitiveBeverage()) {
+            warn.style.display = 'flex';
+        } else {
+            warn.style.display = 'none';
         }
+    }
+
+    function appendNote(text) {
+        const notes = document.getElementById('notes');
+        if (!notes) return;
+        
+        const current = notes.value.trim();
+        if (current.includes(text)) {
+            KapeKanto.toast('Note already added!', 'info');
+            return;
+        }
+        
+        notes.value = current ? current + ' ' + text : text;
+        notes.focus();
+        KapeKanto.toast('Special request added to notes.', 'success');
     }
 </script>
 <script src="/js/cart.js"></script>

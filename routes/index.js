@@ -86,6 +86,11 @@ router.get('/verify-email', (req, res) => {
     res.render('verify-email', { email, title: 'Verify Email - Kape Kanto Hub' });
 });
 
+router.get('/verify-account-change', (req, res) => {
+    if (!req.session.userId) return res.redirect('/login');
+    res.render('verify-account-change', { title: 'Security Verification - Kape Kanto Hub' });
+});
+
 router.get('/forgot-password', (req, res) => {
     if (res.locals.user) return res.redirect('/');
     res.render('forgot-password', { title: 'Forgot Password - Kape Kanto Hub' });

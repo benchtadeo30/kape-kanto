@@ -282,28 +282,6 @@
 
     <div class="profile-container">
 
-        <!-- ── Email Verification Banner ─────────────────── -->
-        <% if (user.is_verified !=1) { %>
-            <div
-                style="max-width:1200px; margin:0 auto 1.5rem; background:linear-gradient(135deg,#fff8e1,#fff3cd); border:1.5px solid #ffb300; border-radius:18px; padding:1.2rem 1.8rem; display:flex; align-items:center; gap:1.2rem; box-shadow:0 4px 15px rgba(255,179,0,0.15);">
-                <div
-                    style="width:46px;height:46px;border-radius:50%;background:#ffb300;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                    <i class="fa-solid fa-envelope-circle-check" style="font-size:1.3rem;color:white;"></i>
-                </div>
-                <div style="flex:1;">
-                    <p style="margin:0;font-weight:700;color:#7a5200;font-size:1rem;">📧 Your email is not verified yet
-                    </p>
-                    <p style="margin:0.2rem 0 0;font-size:0.88rem;color:#856404;">You need to verify your email to place
-                        orders and update your profile. Check your inbox or click below.</p>
-                </div>
-                <button onclick="startVerification(event, '<%= user.email %>')"
-                    style="flex-shrink:0;background:#ffb300;color:white;border:none;padding:0.6rem 1.4rem;border-radius:50px;font-weight:700;cursor:pointer;font-size:0.9rem;transition:all 0.2s;"
-                    onmouseover="this.style.background='#e6a100'" onmouseout="this.style.background='#ffb300'">
-                    Verify Now
-                </button>
-            </div>
-            <% } %>
-
                 <div class="profile-layout">
 
                     <!-- Sidebar -->
@@ -338,23 +316,25 @@
                                         <i class="fa-solid fa-user-gear"></i> Account Settings
                                     </a>
                                 </div>
-                                <div class="nav-item">
-                                    <a href="#" onclick="switchTab(event, 'verification')" class="nav-link"
-                                        id="link-verification">
-                                        <i class="fa-solid fa-id-card-clip"></i> ID & Verification
-                                    </a>
-                                </div>
-                                <div class="nav-item">
-                                    <a href="/order-tracking" class="nav-link">
-                                        <i class="fa-solid fa-receipt"></i> Order History
-                                    </a>
-                                </div>
-                                <div class="nav-item">
-                                    <a href="#" onclick="switchTab(event, 'loyalty')" class="nav-link"
-                                        id="link-loyalty">
-                                        <i class="fa-solid fa-gift"></i> Loyalty & Promos
-                                    </a>
-                                </div>
+                                <% if (user.role === 'customer') { %>
+                                    <div class="nav-item">
+                                        <a href="#" onclick="switchTab(event, 'verification')" class="nav-link"
+                                            id="link-verification">
+                                            <i class="fa-solid fa-id-card-clip"></i> ID & Verification
+                                        </a>
+                                    </div>
+                                    <div class="nav-item">
+                                        <a href="/order-tracking" class="nav-link">
+                                            <i class="fa-solid fa-receipt"></i> Order History
+                                        </a>
+                                    </div>
+                                    <div class="nav-item">
+                                        <a href="#" onclick="switchTab(event, 'loyalty')" class="nav-link"
+                                            id="link-loyalty">
+                                            <i class="fa-solid fa-gift"></i> Loyalty & Promos
+                                        </a>
+                                    </div>
+                                <% } %>
                                 <div class="nav-item"
                                     style="margin-top: 2rem; border-top: 1px solid #eee; padding-top: 1rem;">
                                     <a href="#" onclick="KapeKanto.logout()" class="nav-link"
@@ -380,70 +360,48 @@
                                     <div class="form-row">
                                         <div class="form-group">
                                             <label>Username</label>
-                                            <input type="text" name="username" value="<%= user.username %>" required <%= user.is_verified != 1 ? 'disabled' : '' %>>
+                                            <input type="text" name="username" value="<%= user.username %>" required <%= (user.is_verified != 1 && user.role === 'customer') ? 'disabled' : '' %>>
                                         </div>
                                         <div class="form-group">
-                                            <label>Email Address</label>
-                                            <input type="email" name="email" value="<%= user.email %>" required <%= user.is_verified != 1 ? 'disabled' : '' %>>
+                                            <div class="flex-stack-mobile" style="margin-bottom: 0.5rem;">
+                                                <label style="margin: 0;">Email Address</label>
+                                                <% if (user.email && user.role === 'customer') { %>
+                                                    <a href="#" onclick="confirmRemoveEmail(event)" style="font-size: 0.75rem; color: var(--danger); font-weight: 600; text-decoration: underline;">Remove Email</a>
+                                                <% } %>
+                                            </div>
+                                            <input type="email" name="email" value="<%= user.email %>" placeholder="No email set" required <%= (user.is_verified != 1 || user.role !== 'customer') ? 'disabled' : '' %> style="<%= user.role !== 'customer' ? 'background: #f9f9f9; cursor: not-allowed;' : '' %>">
+                                            <% if (user.role !== 'customer') { %>
+                                                <p style="font-size: 0.75rem; color: #888; margin-top: 0.5rem;">Email updates are restricted for <%= user.role %> accounts.</p>
+                                            <% } %>
                                         </div>
                                     </div>
                                     
-                                    <% if (user.is_verified != 1) { %>
-                                        <div style="margin-top: 1.5rem; padding: 1.2rem; background: #fff5f5; border-radius: 12px; border: 1px solid #ffcdd2; display: flex; align-items: center; gap: 12px;">
-                                            <i class="fa-solid fa-circle-exclamation" style="color: #c62828; font-size: 1.2rem;"></i>
-                                            <div style="flex: 1;">
-                                                <p style="margin: 0; font-size: 0.9rem; font-weight: 700; color: #c62828;">Email Verification Required</p>
-                                                <p style="margin: 2px 0 0; font-size: 0.8rem; color: #d32f2f;">You must verify your email before you can update your profile.</p>
-                                            </div>
-                                            <a href="#" onclick="switchTab(event, 'verification')" style="font-size: 0.85rem; font-weight: 700; color: #c62828; text-decoration: underline;">Verify Now</a>
-                                        </div>
-                                    <% } %>
-
-                                    <div id="account-verification-section" style="margin-top: 1.5rem; padding: 1.5rem; background: #fdfae6; border-radius: 12px; border: 1px solid #f9e8b3; <%= user.is_verified == 1 ? '' : 'display:none;' %>">
-                                        <p style="font-size: 0.85rem; color: #856404; margin-bottom: 1rem; font-weight: 600;">
-                                            <i class="fa-solid fa-key"></i> Confirm Identity to Save Changes
-                                        </p>
-                                        <div style="display: flex; gap: 10px; align-items: flex-end;">
-                                            <div class="form-group" style="flex: 1; margin: 0;">
-                                                <label style="font-size: 0.75rem;">Authorization Code</label>
-                                                <input type="text" name="code" placeholder="Enter 6-digit code" maxlength="6" style="text-align: center; letter-spacing: 2px;">
-                                            </div>
-                                            <button type="button" onclick="requestSecurityCode(this)" class="btn-save" style="width: auto; height: 45px; background: #856404; font-size: 0.85rem;">Get Code</button>
-                                        </div>
-                                    </div>
-
-                                    <button type="submit" class="btn-save" style="margin-top: 1.5rem;" <%= user.is_verified != 1 ? 'disabled style="opacity: 0.6; cursor: not-allowed;"' : '' %>>
-                                        <%= user.is_verified != 1 ? 'Verify Email to Update' : 'Update Profile Info' %>
+                                    <button type="submit" class="btn-save" style="margin-top: 1.5rem;" <%= (user.is_verified != 1 && user.role === 'customer') ? 'disabled style="opacity: 0.6; cursor: not-allowed;"' : '' %>>
+                                        Update Profile Info
                                     </button>
                                 </form>
                             </div>
 
+                            <% if (user.role === 'customer') { %>
                             <div class="main-card" style="margin-top: 2rem;">
                                 <h3 style="margin-bottom: 2rem;">Security</h3>
                                 <form id="change-password-form">
                                     <div class="form-row">
                                         <div class="form-group">
                                             <label>New Password</label>
-                                            <input type="password" name="new_password" placeholder="Min 6 characters">
+                                            <input type="password" id="new_password" name="new_password" placeholder="Min 5 characters" required>
+                                            <p style="font-size: 0.75rem; color: #888; margin-top: 0.5rem;">
+                                                Must have 5+ chars, 1 uppercase, 2 numbers, 1 special char (including _).
+                                            </p>
                                         </div>
                                         <div class="form-group">
                                             <label>Confirm Password</label>
-                                            <input type="password" name="confirm_password" <%= user.is_verified != 1 ? 'disabled' : '' %>>
-                                        </div>
-                                    </div>
-
-                                    <div id="password-verification-section" style="margin-top: 1.5rem; padding: 1.5rem; background: #fdfae6; border-radius: 12px; border: 1px solid #f9e8b3; <%= user.is_verified == 1 ? '' : 'display:none;' %>">
-                                        <div style="display: flex; gap: 10px; align-items: flex-end;">
-                                            <div class="form-group" style="flex: 1; margin: 0;">
-                                                <label style="font-size: 0.75rem;">Verification Code</label>
-                                                <input type="text" name="code" placeholder="Enter 6-digit code" maxlength="6" style="text-align: center; letter-spacing: 2px;">
-                                            </div>
-                                            <button type="button" onclick="requestSecurityCode(this)" class="btn-save" style="width: auto; height: 45px; background: #856404; font-size: 0.85rem;">Send Code</button>
+                                            <input type="password" id="confirm_password" name="confirm_password" required>
                                         </div>
                                     </div>
 
                                     <button type="submit" class="btn-save" style="margin-top: 1.5rem;" <%= user.is_verified != 1 ? 'disabled style="opacity: 0.6; cursor: not-allowed;"' : '' %>>
-                                        <%= user.is_verified != 1 ? 'Verify Email to Update' : 'Change Password' %>
+                                        Change Password
                                     </button>
                                 </form>
                             </div>
@@ -454,25 +412,14 @@
                                     Once you delete your account, there is no going back. Please be certain.
                                 </p>
                                 
-                                <div id="delete-verification-section" style="margin-bottom: 1.5rem; padding: 1.5rem; background: #fff5f5; border-radius: 12px; border: 1px solid #ffcdd2; <%= user.is_verified == 1 ? '' : 'display:none;' %>">
-                                    <p style="font-size: 0.85rem; color: var(--danger); margin-bottom: 1rem; font-weight: 600;">
-                                        <i class="fa-solid fa-triangle-exclamation"></i> Verification Required to Delete Account
-                                    </p>
-                                    <div style="display: flex; gap: 10px; align-items: flex-end;">
-                                        <div class="form-group" style="flex: 1; margin: 0;">
-                                            <label style="font-size: 0.75rem;">Verification Code</label>
-                                            <input type="text" id="delete-code" placeholder="Enter 6-digit code" maxlength="6" style="text-align: center; letter-spacing: 2px;">
-                                        </div>
-                                        <button type="button" onclick="requestSecurityCode(this)" class="btn-save" style="width: auto; height: 45px; background: var(--danger); font-size: 0.85rem;">Send Code</button>
-                                    </div>
-                                </div>
-
-                                <button onclick="confirmDeleteAccount()" class="btn-save" style="background: var(--danger);" <%= user.is_verified != 1 ? 'disabled title="Verify email to delete account" style="background: var(--danger); opacity: 0.5; cursor: not-allowed;"' : '' %>>
-                                    <%= user.is_verified != 1 ? 'Verify Email Required' : 'Delete Account' %>
+                                <button onclick="requestAccountDeletion(event)" class="btn-save" style="background: var(--danger);" <%= user.is_verified != 1 ? 'disabled title="Verify email to delete account" style="background: var(--danger); opacity: 0.5; cursor: not-allowed;"' : '' %>>
+                                    Delete Account
                                 </button>
                             </div>
+                            <% } %>
                         </div>
 
+                        <% if (user.role === 'customer') { %>
                         <!-- Tab: Verification -->
                         <div id="tab-verification" class="tab-content">
                             <div class="main-card">
@@ -498,283 +445,297 @@
                                     </div>
                                 <% } else { %>
                                     <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 1.5rem; border-radius: 12px; display: flex; align-items: center; gap: 15px;">
-                                        <div style="width: 48px; height: 48px; background: #dcfce7; color: #16a34a; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                                        <div style="width: 40px; height: 40px; border-radius: 50%; background: #2e7d32; color: white; display: flex; align-items: center; justify-content: center;">
                                             <i class="fa-solid fa-check"></i>
                                         </div>
                                         <div>
-                                            <p style="margin: 0; font-weight: 700; color: #166534;">Your email is verified!</p>
-                                            <p style="margin: 0; font-size: 0.85rem; color: #15803d;">You have full access to all features and secure updates.</p>
+                                            <p style="margin: 0; font-weight: 700; color: #2e7d32;">Email Verified</p>
+                                            <p style="margin: 0; font-size: 0.85rem; color: #666;">You can now use all features of Kape Kanto Hub.</p>
                                         </div>
                                     </div>
                                 <% } %>
 
-                                <hr style="margin: 3rem 0; border: none; border-top: 1px solid #eee;">
+                                <div style="margin-top: 3rem;">
+                                    <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;">
+                                        <i class="fa-solid fa-id-card" style="color: var(--p-primary);"></i>
+                                        2. Senior Citizen / PWD Discount
+                                    </h3>
 
-                                <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;">
-                                    <i class="fa-solid fa-address-card" style="color: var(--p-primary);"></i>
-                                    2. Discount & ID Verification
-                                </h3>
-
-                                <h3 style="margin-bottom: 1rem;">Senior / PWD Discount Status</h3>
+                                    <div
+                                        style="background: #fdfae6; border-radius: 16px; padding: 1.5rem; border: 1px solid #f9e8b3; margin-bottom: 2rem;">
+                                        <div style="display: flex; gap: 15px;">
                                             <div
-                                                style="display: flex; align-items: center; gap: 2rem; background: #f9f9f9; padding: 2rem; border-radius: 16px;">
-                                                <div style="font-size: 2.5rem; color: var(--p-primary);">
-                                                    <i class="fa-solid fa-id-badge"></i>
-                                                </div>
-                                                <div style="flex: 1;">
-                                                    <p style="margin-bottom: 5px; font-weight: 600;">Current Status:</p>
-                                                    <% if (user.id_verification_status==='verified' ) { %>
-                                                        <span class="status-badge status-verified">Verified <%= user.is_senior ? 'Senior Citizen' : 'PWD' %> ID</span>
-                                                        <p
-                                                            style="font-size: 0.85rem; color: var(--success); margin-top: 10px; font-weight: 600;">
-                                                            <i class="fa-solid fa-circle-check"></i> <%= user.id_verification_message || 'Success! Your ' + (user.is_senior ? 'Senior Citizen' : 'PWD') + ' ID has been verified.' %>
-                                                        </p>
-                                                        <div style="margin-top: 15px; display: flex; gap: 10px;">
-                                                            <button onclick="toggleIdUpdate()" class="btn-save"
-                                                                style="padding: 8px 16px; font-size: 0.85rem; background: var(--p-primary); color: white; border: none; border-radius: 8px; cursor: pointer;">Update
-                                                                ID</button>
-                                                            <button onclick="removeId()" class="btn-save"
-                                                                style="padding: 8px 16px; font-size: 0.85rem; background: white; color: var(--danger); border: 1px solid var(--danger); border-radius: 8px; cursor: pointer;">Remove
-                                                                ID</button>
-                                                        </div>
-                                                        <% } else if (user.id_verification_status==='pending' ) { %>
-                                                            <span class="status-badge status-pending">Under Review</span>
-                                                            <p
-                                                                style="font-size: 0.85rem; color: var(--text-light); margin-top: 10px;">
-                                                                <i class="fa-solid fa-spinner fa-spin"></i> <%= user.id_verification_message || 'Our AI is currently analyzing your ID...' %></p>
-                                                            <% } else if (user.id_verification_status==='rejected' ) { %>
-                                                                <span
-                                                                    class="status-badge status-unverified" style="background: var(--danger); color: white;">Verification Failed</span>
-                                                                <p
-                                                                    style="font-size: 0.85rem; color: var(--danger); margin-top: 10px; font-weight: 600; line-height: 1.5;">
-                                                                    <i class="fa-solid fa-circle-xmark"></i> <%= user.id_verification_message %>
-                                                                </p>
-                                                                <div style="margin-top: 12px; padding: 10px; background: #fff5f5; border-radius: 8px; border: 1px solid #ffcdd2;">
-                                                                    <p style="margin:0; font-size: 0.8rem; color: #c62828;">
-                                                                        <strong>Note:</strong> Please ensure your ID is clearly visible, not expired, and matches the type you selected. You can try again below.
-                                                                    </p>
-                                                                </div>
-                                                                <% } else { %>
-                                                                    <span class="status-badge"
-                                                                        style="background: #eee;">Not Submitted</span>
-                                                                    <p
-                                                                        style="font-size: 0.85rem; color: var(--text-light); margin-top: 10px;">
-                                                                        Please upload a Senior Citizen or PWD ID to avail of the 20% discount.</p>
-                                                                    <% } %>
-                                                </div>
+                                                style="width: 50px; height: 50px; border-radius: 12px; background: #E8B86D; color: white; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1.5rem;">
+                                                <i class="fa-solid fa-percent"></i>
                                             </div>
+                                            <div>
+                                                <h4 style="margin: 0 0 5px 0; color: #856404;">20% Lifetime Discount</h4>
+                                                <p style="margin: 0; font-size: 0.85rem; color: #856404; line-height: 1.5;">
+                                                    Upload your valid Philippine Senior Citizen or PWD ID. Our AI will verify it
+                                                    instantly to apply your discount.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
 
-                                            <% const showUpload = (user.id_verification_status === 'none' || user.id_verification_status === 'rejected'); %>
-                                                <div id="id-upload-container" style="margin-top: 3rem; <%= showUpload ? '' : 'display: none;' %>">
-                                                    <h4
-                                                        style="margin-bottom: 1rem; display: flex; align-items: center; gap: 10px;">
-                                                        <i class="fa-solid fa-cloud-arrow-up"
-                                                            style="color: var(--p-primary);"></i>
-                                                        Submit ID for Verification
-                                                    </h4>
+                                    <div class="main-card" style="border: 1px solid #eee; padding: 2rem;">
+                                        <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 20px;">
+                                            <div
+                                                style="width: 60px; height: 60px; border-radius: 50%; background: #f5f5f5; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #ccc;">
+                                                <i class="fa-solid fa-id-badge"></i>
+                                            </div>
+                                            <div style="flex: 1;" id="id-verification-status-area">
+                                                <p style="margin-bottom: 5px; font-weight: 600;">Current Status</p>
+                                                <% if (user.id_verification_status==='verified' ) { %>
+                                                    <span class="status-badge status-verified">Verified <%= user.is_senior ? 'Senior Citizen' : 'PWD' %> ID</span>
                                                     <p
-                                                        style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 2rem;">
-                                                        To avail of the 20% Senior Citizen or PWD discount, please
-                                                        upload a clear photo of your valid ID.
-                                                        Our AI system will process it automatically.
+                                                        style="font-size: 0.85rem; color: var(--success); margin-top: 10px; font-weight: 600;">
+                                                        <i class="fa-solid fa-circle-check"></i> <%= user.id_verification_message || 'Success! Your ' + (user.is_senior ? 'Senior Citizen' : 'PWD') + ' ID has been verified.' %>
                                                     </p>
+                                                    <div style="margin-top: 15px; display: flex; gap: 10px;">
+                                                        <button onclick="requestAccountChange('update_id', null, this)" class="btn-save"
+                                                            style="padding: 8px 16px; font-size: 0.85rem; background: var(--p-primary); color: white; border: none; border-radius: 8px; cursor: pointer;">Update
+                                                            ID</button>
+                                                        <button onclick="requestAccountChange('remove_id', null, this)" class="btn-save"
+                                                            style="padding: 8px 16px; font-size: 0.85rem; background: white; color: var(--danger); border: 1px solid var(--danger); border-radius: 8px; cursor: pointer;">Remove
+                                                            ID</button>
+                                                    </div>
 
-                                                    <form id="id-upload-form" enctype="multipart/form-data">
-                                                        <div style="display: grid; gap: 1.5rem; margin-bottom: 2rem;">
-                                                            <div class="form-group">
-                                                                <label
-                                                                    style="display: block; margin-bottom: 0.5rem; font-weight: 600;">ID
-                                                                    Type</label>
-                                                                <select id="id_type" name="id_type"
-                                                                    class="select-modern" required>
-                                                                    <option value="" disabled selected>Select your ID
-                                                                        type</option>
-                                                                    <option value="senior">Senior Citizen ID</option>
-                                                                    <option value="pwd">PWD ID</option>
-                                                                </select>
+                                                    <% } else if (user.id_verification_status==='pending' ) { %>
+                                                        <span class="status-badge status-pending">Under Review</span>
+                                                        <p
+                                                            style="font-size: 0.85rem; color: var(--text-light); margin-top: 10px;">
+                                                            <i class="fa-solid fa-spinner fa-spin"></i> <%= user.id_verification_message || 'Our AI is currently analyzing your ID...' %></p>
+                                                        <% } else if (user.id_verification_status==='rejected' ) { %>
+                                                            <span
+                                                                class="status-badge status-unverified" style="background: var(--danger); color: white;">Verification Failed</span>
+                                                            <p
+                                                                style="font-size: 0.85rem; color: var(--danger); margin-top: 10px; font-weight: 600; line-height: 1.5;">
+                                                                <i class="fa-solid fa-circle-xmark"></i> <%= user.id_verification_message %>
+                                                            </p>
+                                                            <div style="margin-top: 12px; padding: 10px; background: #fff5f5; border-radius: 8px; border: 1px solid #ffcdd2;">
+                                                                <p style="margin:0; font-size: 0.8rem; color: #c62828;">
+                                                                    <strong>Note:</strong> Please ensure your ID is clearly visible, not expired, and matches the type you selected. You can try again below.
+                                                                </p>
                                                             </div>
+                                                            <% } else { %>
+                                                                <span class="status-badge"
+                                                                    style="background: #eee;">Not Submitted</span>
+                                                                <p
+                                                                    style="font-size: 0.85rem; color: var(--text-light); margin-top: 10px;">
+                                                                    Please upload a Senior Citizen or PWD ID to avail of the 20% discount.</p>
+                                                                <% } %>
+                                            </div>
+                                        </div>
 
-                                                            <div class="form-group">
-                                                                <label
-                                                                    style="display: block; margin-bottom: 0.5rem; font-weight: 600;">ID
-                                                                    Document Photo</label>
-                                                                <div class="upload-zone" id="drop-zone">
-                                                                    <i class="fa-solid fa-image"></i>
-                                                                    <p style="margin: 0; font-weight: 500;">Click or
-                                                                        Drag & Drop your ID photo here</p>
-                                                                    <p
-                                                                        style="margin: 0.5rem 0 0; font-size: 0.8rem; color: var(--text-light);">
-                                                                        Supports JPG, PNG (Max 5MB)</p>
-                                                                    <input type="file" name="id_image" id="id_image"
-                                                                        accept="image/*" required
-                                                                        onchange="handleFileSelect(this)">
-                                                                    <div id="file-preview" class="file-preview">
-                                                                        <i class="fa-solid fa-file-circle-check"
-                                                                            style="font-size: 1.2rem; display: inline; margin: 0 5px 0 0;"></i>
-                                                                        <span id="file-name-text"></span>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        <button type="submit" class="btn-save"
-                                                            style="width: 100%; height: 55px; font-size: 1.1rem; box-shadow: 0 10px 20px rgba(111, 78, 55, 0.2);">
-                                                            Submit & Verify ID
-                                                        </button>
-                                                    </form>
+                                        <% const showUpload = (user.id_verification_status === 'none' || user.id_verification_status === 'rejected' || canUpdateID); %>
+                                        
+                                        <div id="id-upload-container" style="<%= showUpload ? '' : 'display: none;' %> border-top: 1px solid #eee; padding-top: 2rem;">
+                                            <% if (canUpdateID) { %>
+                                                <div id="id-update-notice" style="background: #fff8e1; border: 1px solid #ffe082; padding: 1rem; border-radius: 12px; margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between;">
+                                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                                        <i class="fa-solid fa-pen-to-square" style="color: #f57f17;"></i>
+                                                        <span style="font-size: 0.85rem; font-weight: 600; color: #7f4b02;">ID Update Enabled. Your old ID is still valid until the new one is verified.</span>
+                                                    </div>
+                                                    <button type="button" onclick="cancelIDUpdate()" style="background: none; border: none; color: #f57f17; font-weight: 700; cursor: pointer; font-size: 0.8rem;">Cancel</button>
                                                 </div>
+                                            <% } %>
+                                            <form id="id-upload-form">
+                                                <div class="form-group" style="margin-bottom: 1.5rem;">
+                                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Select ID Type</label>
+                                                    <select name="id_type" class="select-modern" required>
+                                                        <option value="senior">Senior Citizen ID</option>
+                                                        <option value="pwd">PWD ID</option>
+                                                    </select>
+                                                </div>
+
+                                                <div class="form-group">
+                                                    <label
+                                                        style="display: block; margin-bottom: 0.5rem; font-weight: 600;">ID
+                                                        Document Photo</label>
+                                                    <div class="upload-zone" id="drop-zone">
+                                                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                                                        <p style="margin: 0; font-weight: 600;">Click to upload or drag & drop</p>
+                                                        <p style="margin: 5px 0 0 0; font-size: 0.8rem; color: #888;">PNG, JPG or JPEG (Max 5MB)</p>
+                                                        <input type="file" id="id-file" name="id_image" accept="image/*" required onchange="handleFileSelect(this)">
+                                                    </div>
+                                                    <div id="file-preview" class="file-preview">
+                                                        <i class="fa-solid fa-file-image"></i>
+                                                        <span id="file-name-text"></span>
+                                                    </div>
+                                                </div>
+
+                                                <button type="submit" class="btn-save" style="width: 100%; margin-top: 2rem;">
+                                                    <i class="fa-solid fa-bolt"></i> Submit for AI Analysis
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Tab: Loyalty & Promos -->
+                        <!-- Tab: Loyalty -->
                         <div id="tab-loyalty" class="tab-content">
                             <div class="main-card">
-                                <h3 style="margin-bottom: 2rem; display: flex; align-items: center; gap: 10px;">
-                                    <i class="fa-solid fa-gift" style="color: var(--p-primary);"></i> My Rewards & Tasks
-                                </h3>
-
-                                <h4 style="margin-bottom: 1rem;">Earned Coupons</h4>
-                                <% if (typeof coupons !=='undefined' && coupons.length> 0) { %>
-                                    <div style="display: grid; gap: 1rem; margin-bottom: 2.5rem;">
-                                        <% 
-                                            const groupedCoupons = {}; 
-                                            coupons.forEach(c => {
-                                                if (!groupedCoupons[c.promo_id]) groupedCoupons[c.promo_id] = { ...c, count: 0 };
-                                                groupedCoupons[c.promo_id].count++;
-                                            });
-                                            Object.values(groupedCoupons).forEach(coupon => { 
-                                        %>
-                                            <div
-                                                style="background: linear-gradient(135deg, #fff3e0, #ffe0b2); border: 2px dashed #ffb300; border-radius: 12px; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; position: relative;">
-                                                <% if (coupon.count> 1) { %>
-                                                    <div
-                                                        style="position: absolute; top: -10px; right: -10px; background: var(--danger); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; box-shadow: 0 4px 10px rgba(0,0,0,0.2); border: 2px solid white;">
-                                                        x<%= coupon.count %>
-                                                    </div>
-                                                    <% } %>
-                                                        <div>
-                                                            <h5 style="margin: 0; font-size: 1.1rem; color: #e65100;">
-                                                                <%= coupon.title %>
-                                                            </h5>
-                                                            <p
-                                                                style="margin: 0; font-size: 0.9rem; color: #7a5200; margin-bottom: 5px;">
-                                                                <%= coupon.discount_percent %>% OFF your next order!
-                                                            </p>
-                                                            <% if (coupon.end_date) { %>
-                                                                <span
-                                                                    style="font-size: 0.75rem; font-weight: bold; color: var(--danger); background: rgba(220, 53, 69, 0.1); padding: 3px 8px; border-radius: 12px;">
-                                                                    <i class="fa-solid fa-clock"></i> Expires <%= new Date(coupon.end_date.replace(' ', 'T')).toLocaleDateString() %>
-                                                                </span>
-                                                                <% } else { %>
-                                                                    <span
-                                                                        style="font-size: 0.75rem; font-weight: bold; color: var(--success); background: rgba(40, 167, 69, 0.1); padding: 3px 8px; border-radius: 12px;">
-                                                                        No Expiration
-                                                                    </span>
-                                                                    <% } %>
-                                                        </div>
-                                                        <div style="text-align: right;">
-                                                            <p
-                                                                style="margin: 0; font-size: 0.8rem; color: #7a5200; margin-bottom: 5px;">
-                                                                Promo Code</p>
-                                                            <span
-                                                                style="background: #fff; padding: 8px 16px; border-radius: 50px; font-weight: bold; color: #e65100; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
-                                                                <%= coupon.promo_code %>
-                                                            </span>
-                                                        </div>
-                                            </div>
-                                            <% }) %>
-                                    </div>
-                                    <% } else { %>
-                                        <div
-                                            style="text-align: center; padding: 2rem; background: #fafafa; border-radius: 12px; margin-bottom: 2.5rem;">
-                                            <i class="fa-solid fa-ticket"
-                                                style="font-size: 2rem; color: #ddd; margin-bottom: 1rem;"></i>
-                                            <p style="color: var(--text-light); margin: 0;">No unused coupons yet.
-                                                Complete tasks to earn them!</p>
-                                        </div>
-                                        <% } %>
-
-                                            <h4 style="margin-bottom: 1rem;">Active Tasks</h4>
-                                            <% if (typeof promoProgress !=='undefined' && promoProgress.length> 0) { %>
-                                                <div style="display: grid; gap: 1.5rem;">
-                                                    <% promoProgress.forEach(task=> { %>
-                                                        <div
-                                                            style="border: 1px solid #f0f0f0; border-radius: 12px; padding: 1.5rem;">
-                                                            <div
-                                                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                                                                <h5 style="margin: 0; font-size: 1.05rem;">
-                                                                    <%= task.title %>
-                                                                        <% if (task.end_date) { %>
-                                                                            <span
-                                                                                style="font-size: 0.8rem; font-weight: normal; color: var(--danger); margin-left: 10px;">
-                                                                                <i class="fa-solid fa-clock"></i> Ends <%= new Date(task.end_date).toLocaleDateString() %>
-                                                                            </span>
-                                                                            <% } %>
-                                                                </h5>
-                                                                <% if (task.is_completed) { %>
-                                                                    <span
-                                                                        class="status-badge status-verified">Completed</span>
-                                                                    <% } else { %>
-                                                                        <span class="status-badge status-pending">In
-                                                                            Progress</span>
-                                                                        <% } %>
-                                                            </div>
-                                                            <p
-                                                                style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 1.5rem;">
-                                                                <%= task.description %>
-                                                            </p>
-
-                                                            <div
-                                                                style="background: #f5f5f5; height: 8px; border-radius: 50px; overflow: hidden; margin-bottom: 8px;">
-                                                                <% const progressPercent=Math.min((task.current_quantity / task.required_quantity) * 100, 100); %>
-                                                                    <div style="background: linear-gradient(90deg, var(--p-primary), var(--p-accent)); height: 100%; width: <%= progressPercent %>%;">
-                                                                    </div>
-                                                            </div>
-                                                            <div
-                                                                style="text-align: right; font-size: 0.8rem; font-weight: bold; color: var(--p-primary);">
-                                                                <%= task.current_quantity %> / <%=
-                                                                        task.required_quantity %> purchased
-                                                            </div>
-                                                        </div>
-                                                        <% }) %>
+                                <h3 style="margin-bottom: 2rem;">My Coupons</h3>
+                                <% if (coupons && coupons.length > 0) { %>
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
+                                        <% coupons.forEach(coupon => { %>
+                                            <div style="background: linear-gradient(135deg, #6F4E37, #4A3423); color: white; border-radius: 16px; padding: 1.5rem; position: relative; overflow: hidden; box-shadow: 0 10px 20px rgba(111, 78, 55, 0.2);">
+                                                <div style="position: absolute; right: -20px; top: -20px; width: 100px; height: 100px; background: rgba(255,255,255,0.1); border-radius: 50%;"></div>
+                                                <h4 style="margin: 0 0 10px 0; font-size: 1.2rem;"><%= coupon.title %></h4>
+                                                <p style="margin: 0; font-size: 2rem; font-weight: 800;"><%= coupon.discount_percent %>% OFF</p>
+                                                <div style="margin-top: 15px; background: rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 8px; font-family: monospace; font-size: 1.1rem; letter-spacing: 2px; text-align: center;">
+                                                    <%= coupon.promo_code %>
                                                 </div>
-                                                <% } else { %>
-                                                    <div
-                                                        style="text-align: center; padding: 2rem; background: #fafafa; border-radius: 12px;">
-                                                        <i class="fa-solid fa-list-check"
-                                                            style="font-size: 2rem; color: #ddd; margin-bottom: 1rem;"></i>
-                                                        <p style="color: var(--text-light); margin: 0;">Buy promo items
-                                                            to start unlocking rewards automatically.</p>
-                                                    </div>
-                                                    <% } %>
+                                                <p style="margin: 15px 0 0 0; font-size: 0.75rem; opacity: 0.8;">Expires: <%= coupon.end_date ? new Date(coupon.end_date).toLocaleDateString() : 'Never' %></p>
+                                            </div>
+                                        <% }) %>
+                                    </div>
+                                <% } else { %>
+                                    <div style="text-align: center; padding: 3rem; background: #fafafa; border-radius: 20px;">
+                                        <i class="fa-solid fa-ticket-simple" style="font-size: 3rem; color: #ddd; margin-bottom: 1.5rem;"></i>
+                                        <p style="color: #888;">You don't have any active coupons. Complete tasks to earn rewards!</p>
+                                    </div>
+                                <% } %>
+
+                                <h3 style="margin-top: 4rem; margin-bottom: 2rem;">Promo Challenges</h3>
+                                <% if (promoProgress && promoProgress.length > 0) { %>
+                                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                                        <% promoProgress.forEach(task => { %>
+                                            <div style="background: white; border: 1px solid #eee; border-radius: 16px; padding: 1.5rem;">
+                                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                                                    <h5 style="margin: 0; font-size: 1.1rem;"><%= task.title %></h5>
+                                                    <span class="status-badge <%= task.is_completed ? 'status-verified' : 'status-pending' %>">
+                                                        <%= task.is_completed ? 'Completed' : 'In Progress' %>
+                                                    </span>
+                                                </div>
+                                                <p style="font-size: 0.9rem; color: #666; margin-bottom: 1.5rem;"><%= task.description %></p>
+                                                <div style="background: #f5f5f5; height: 10px; border-radius: 50px; overflow: hidden; margin-bottom: 8px;">
+                                                    <% const progressPercent = Math.min((task.current_quantity / task.required_quantity) * 100, 100); %>
+                                                    <div style="background: linear-gradient(90deg, #6F4E37, #E8B86D); height: 100%; width: <%= progressPercent %>%;"></div>
+                                                </div>
+                                                <div style="text-align: right; font-size: 0.8rem; font-weight: bold; color: #6F4E37;">
+                                                    <%= task.current_quantity %> / <%= task.required_quantity %> Progress
+                                                </div>
+                                            </div>
+                                        <% }) %>
+                                    </div>
+                                <% } %>
                             </div>
                         </div>
+                        <% } %>
 
                     </div>
                 </div>
     </div>
 
     <script>
-        async function uploadAvatar(input) {
-            if (!input.files || !input.files[0]) return;
-
-            const formData = new FormData();
-            formData.append('profile_image', input.files[0]);
+        // --- UNIFIED ACCOUNT CHANGE FLOW ---
+        async function requestAccountChange(type, data, btn) {
+            const originalHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Processing...';
 
             try {
-                const res = await fetch('/api/auth/update-avatar', {
-                    method: 'PATCH',
-                    body: formData
+                const res = await fetch('/api/auth/request-account-change', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type, data })
                 });
-                const result = await res.json();
                 
+                const result = await res.json();
                 if (res.ok) {
                     KapeKanto.toast(result.message, 'success');
-                    // Update all avatars on page
-                    const newUrl = `/uploads/profiles/${result.filename}`;
-                    document.getElementById('sidebar-avatar').innerHTML = `<img src="${newUrl}" alt="Profile"><div class="avatar-edit-overlay" onclick="document.getElementById('avatar-input').click()"><i class="fa-solid fa-camera"></i></div>`;
-                    const navAvatar = document.querySelector('.nav-avatar-btn');
-                    if (navAvatar) navAvatar.innerHTML = `<img src="${newUrl}" alt="Profile">`;
+                    
+                    if (result.direct) {
+                        btn.innerHTML = '<i class="fa-solid fa-check"></i> Updated!';
+                        setTimeout(() => location.reload(), 1500);
+                        return;
+                    }
+
+                    btn.innerHTML = '<i class="fa-solid fa-check"></i> Redirecting...';
+                    // Redirect to verification page
+                    setTimeout(() => {
+                        window.location.href = `/verify-account-change?type=${type}`;
+                    }, 1500);
+                } else {
+                    KapeKanto.toast(result.error, 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = originalHTML;
+                }
+            } catch (err) {
+                console.error(err);
+                KapeKanto.toast('Failed to process request.', 'error');
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+            }
+        }
+
+        document.getElementById('update-profile-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            const formData = new FormData(e.target);
+            const newUsername = formData.get('username').trim();
+            const newEmail = formData.get('email')?.trim().toLowerCase() || "<%= user.email %>";
+
+            // Change Detection
+            const currentUsername = "<%= user.username %>";
+            const currentEmail = "<%= user.email %>";
+
+            if (newUsername === currentUsername && newEmail === currentEmail) {
+                return KapeKanto.toast('No changes detected in your profile info.', 'info');
+            }
+
+            requestAccountChange('profile', { username: newUsername, email: newEmail }, btn);
+        });
+
+        document.getElementById('change-password-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            const formData = new FormData(e.target);
+            const new_password = formData.get('new_password');
+            const confirm_password = formData.get('confirm_password');
+
+            if (new_password !== confirm_password) {
+                return KapeKanto.toast('Passwords do not match.', 'error');
+            }
+
+            // Frontend Password Complexity Check (including underscore)
+            const passwordRegex = /^(?=.*[A-Z])(?=.*[0-9].*[0-9])(?=.*[!@#$%^&*_])(?=.{5,})/;
+            if (!passwordRegex.test(new_password)) {
+                return KapeKanto.toast('Password needs 5+ chars, 1 uppercase, 2 numbers, 1 special char (including _).', 'error');
+            }
+
+            requestAccountChange('password', { new_password }, btn);
+        });
+
+        function requestAccountDeletion(event) {
+            const btn = event?.target || document.querySelector('button[onclick^="requestAccountDeletion"]');
+            KapeKanto.confirm('Are you absolutely sure? This will delete your entire account history.', () => {
+                requestAccountChange('delete', {}, btn);
+            }, { title: 'Delete Account', confirmText: 'Yes, Send Code', type: 'danger' });
+        }
+
+        function confirmRemoveEmail(e) {
+            e.preventDefault();
+            const btn = e.target;
+            KapeKanto.confirm('Are you sure you want to remove your email address? You will not be able to reset your password or receive order updates via email until you add a new one.', () => {
+                requestAccountChange('remove_email', {}, btn);
+            }, { title: 'Remove Email', confirmText: 'Yes, Send Code', type: 'warning' });
+        }
+
+        async function uploadAvatar(input) {
+            if (!input.files || !input.files[0]) return;
+            const formData = new FormData();
+            formData.append('profile_image', input.files[0]);
+            try {
+                const res = await fetch('/api/auth/update-avatar', { method: 'PATCH', body: formData });
+                const result = await res.json();
+                if (res.ok) {
+                    KapeKanto.toast(result.message, 'success');
+                    location.reload();
                 } else {
                     KapeKanto.toast(result.error, 'error');
                 }
@@ -785,236 +746,139 @@
 
         function switchTab(e, tabId) {
             if (e) e.preventDefault();
-
-            // Hide all tabs
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-
-            // Show selected tab
             const targetTab = document.getElementById('tab-' + tabId);
             const targetLink = document.getElementById('link-' + tabId);
             if (targetTab) targetTab.classList.add('active');
             if (targetLink) targetLink.classList.add('active');
-
-            // Update URL hash
             window.location.hash = tabId;
         }
 
-        // Handle initial hash and hash changes
         document.addEventListener('DOMContentLoaded', () => {
-            const handleHash = () => {
-                const hash = window.location.hash.replace('#', '');
-                if (hash && document.getElementById('tab-' + hash)) {
-                    switchTab(null, hash);
-                }
-            };
-            
-            handleHash();
-            window.addEventListener('hashchange', handleHash);
+            const hash = window.location.hash.replace('#', '') || 'account';
+            if (document.getElementById('tab-' + hash)) switchTab(null, hash);
         });
 
-        // Profile Update Logic
-        document.getElementById('update-profile-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const data = Object.fromEntries(formData.entries());
-
+        async function cancelIDUpdate() {
             try {
-                const res = await fetch('/api/auth/update-profile', {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                const result = await res.json();
+                const res = await fetch('/api/verify/cancel-id-update', { method: 'POST' });
                 if (res.ok) {
-                    if (result.emailChanged) {
-                        KapeKanto.toast(result.message, 'success');
-                        setTimeout(() => window.location.href = `/verify-email?email=${encodeURIComponent(result.newEmail)}`, 1500);
-                    } else {
-                        KapeKanto.toast(result.message, 'success');
-                        setTimeout(() => location.reload(), 1500);
-                    }
-                } else {
-                    KapeKanto.toast(result.error, 'error');
+                    location.reload();
                 }
             } catch (err) {
-                KapeKanto.toast('Update failed. Please try again.', 'error');
-            }
-        });
-
-        async function requestSecurityCode(btn) {
-            const originalText = btn.innerText;
-            btn.disabled = true;
-            btn.innerText = 'Sending...';
-            
-            try {
-                const res = await fetch('/api/auth/request-security-code', { method: 'POST' });
-                const result = await res.json();
-                if (res.ok) {
-                    KapeKanto.toast(result.message, 'success');
-                    btn.innerText = 'Sent!';
-                    setTimeout(() => {
-                        btn.innerText = 'Resend';
-                        btn.disabled = false;
-                    }, 30000);
-                } else {
-                    KapeKanto.toast(result.error, 'error');
-                    btn.innerText = originalText;
-                    btn.disabled = false;
-                }
-            } catch (err) {
-                KapeKanto.toast('Failed to send code.', 'error');
-                btn.innerText = originalText;
-                btn.disabled = false;
-            }
-        }
-
-        // Password Change Logic
-        document.getElementById('change-password-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const data = Object.fromEntries(formData.entries());
-
-            if (!data.new_password) {
-                return KapeKanto.toast('Please enter a new password.', 'warning');
-            }
-            if (data.new_password !== data.confirm_password) {
-                return KapeKanto.toast('Passwords do not match.', 'error');
-            }
-
-            try {
-                const res = await fetch('/api/auth/change-password', {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                const result = await res.json();
-                if (res.ok) {
-                    KapeKanto.toast(result.message, 'success');
-                    e.target.reset();
-                } else {
-                    KapeKanto.toast(result.error || 'Failed to update password.', 'error');
-                }
-            } catch (err) {
-                KapeKanto.toast('Connection error. Please try again.', 'error');
-            }
-        });
-
-        function toggleIdUpdate() {
-            const container = document.getElementById('id-upload-container');
-            if (container.style.display === 'none') {
-                container.style.display = 'block';
-                container.scrollIntoView({ behavior: 'smooth' });
-            } else {
-                container.style.display = 'none';
-            }
-        }
-
-        async function removeId() {
-            KapeKanto.confirm("Are you sure you want to remove your verified ID? You will lose your 20% discount until you verify again.", async () => {
-                try {
-                    const res = await fetch('/api/verify/remove-id', { method: 'POST' });
-                    if (res.ok) {
-                        KapeKanto.toast('ID removed successfully.');
-                        setTimeout(() => location.reload(), 1500);
-                    } else {
-                        KapeKanto.toast('Failed to remove ID.', 'error');
-                    }
-                } catch (err) {
-                    KapeKanto.toast('Connection error.', 'error');
-                }
-            }, { title: 'Remove ID', confirmText: 'Yes, Remove', type: 'danger' });
-        }
-
-        async function startVerification(event, email) {
-            const btn = event.target;
-            btn.disabled = true;
-            btn.innerText = 'Sending Code...';
-
-            try {
-                await fetch('/api/auth/resend-code', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email })
-                });
-                window.location.href = `/verify-email?email=${encodeURIComponent(email)}`;
-            } catch (err) {
-                window.location.href = `/verify-email?email=${encodeURIComponent(email)}`;
+                console.error(err);
             }
         }
 
         function handleFileSelect(input) {
             const preview = document.getElementById('file-preview');
             const fileNameText = document.getElementById('file-name-text');
-            const dropZone = document.getElementById('drop-zone');
-
             if (input.files && input.files[0]) {
                 fileNameText.innerText = `Selected: ${input.files[0].name}`;
                 preview.style.display = 'block';
-                dropZone.style.borderColor = 'var(--p-accent)';
-                dropZone.style.background = '#fff';
-            } else {
-                preview.style.display = 'none';
-                dropZone.style.borderColor = '#e0e0e0';
-                dropZone.style.background = '#fafafa';
             }
         }
 
-        // ID Upload Logic
         document.getElementById('id-upload-form')?.addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
             const btn = e.target.querySelector('button');
+            const statusArea = document.getElementById('id-verification-status-area');
+            const uploadContainer = document.getElementById('id-upload-container');
+            const idType = formData.get('id_type');
+            const idLabel = idType === 'senior' ? 'Senior Citizen' : 'PWD';
+
             btn.disabled = true;
-            btn.innerText = 'Submitting ID...';
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing...';
+            
+            // Temporary status update
+            statusArea.innerHTML = `
+                <p style="margin-bottom: 5px; font-weight: 600;">Current Status</p>
+                <span class="status-badge status-pending">Under Review</span>
+                <p style="font-size: 0.85rem; color: var(--text-light); margin-top: 10px;">
+                    <i class="fa-solid fa-spinner fa-spin"></i> AI is analyzing your ${idLabel} ID...
+                </p>
+            `;
 
             try {
-                const res = await fetch('/api/verify/upload-id', {
-                    method: 'POST',
-                    body: formData
-                });
-                const result = await res.json();
+                const res = await fetch('/api/verify/upload-id', { method: 'POST', body: formData });
+                const data = await res.json();
+                
                 if (res.ok) {
-                    KapeKanto.toast('ID submitted successfully!', 'success');
-                    setTimeout(() => location.reload(), 2000);
+                    const isVerified = data.status === 'verified';
+                    
+                    // Show a prominent Alert Modal instead of just a toast
+                    KapeKanto.alert(data.message, { 
+                        title: isVerified ? 'Verification Successful' : 'Verification Failed',
+                        type: isVerified ? 'success' : 'danger' 
+                    });
+
+                    // Update the status area LIVE without a page reload
+                    if (isVerified) {
+                        statusArea.innerHTML = `
+                            <p style="margin-bottom: 5px; font-weight: 600;">Current Status</p>
+                            <span class="status-badge status-verified">Verified ${idLabel} ID</span>
+                            <p style="font-size: 0.85rem; color: var(--success); margin-top: 10px; font-weight: 600;">
+                                <i class="fa-solid fa-circle-check"></i> ${data.message}
+                            </p>
+                            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                                <button onclick="requestAccountChange('update_id', null, this)" class="btn-save" style="padding: 8px 16px; font-size: 0.85rem; background: var(--p-primary); color: white; border: none; border-radius: 8px; cursor: pointer;">Update ID</button>
+                                <button onclick="requestAccountChange('remove_id', null, this)" class="btn-save" style="padding: 8px 16px; font-size: 0.85rem; background: white; color: var(--danger); border: 1px solid var(--danger); border-radius: 8px; cursor: pointer;">Remove ID</button>
+                            </div>
+                        `;
+                        uploadContainer.style.display = 'none';
+                    } else {
+                        statusArea.innerHTML = `
+                            <p style="margin-bottom: 5px; font-weight: 600;">Current Status</p>
+                            <span class="status-badge status-unverified" style="background: var(--danger); color: white;">Verification Failed</span>
+                            <p style="font-size: 0.85rem; color: var(--danger); margin-top: 10px; font-weight: 600; line-height: 1.5;">
+                                <i class="fa-solid fa-circle-xmark"></i> ${data.message}
+                            </p>
+                            <div style="margin-top: 12px; padding: 10px; background: #fff5f5; border-radius: 8px; border: 1px solid #ffcdd2;">
+                                <p style="margin:0; font-size: 0.8rem; color: #c62828;">
+                                    <strong>Note:</strong> Please ensure your ID is clearly visible, not expired, and matches the type you selected. You can try again below.
+                                </p>
+                            </div>
+                        `;
+                        uploadContainer.style.display = 'block';
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Submit for AI Analysis';
+                    }
                 } else {
-                    KapeKanto.toast(result.error, 'error');
+                    KapeKanto.toast(data.error, 'error');
                     btn.disabled = false;
-                    btn.innerText = 'Submit for Verification';
+                    btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Submit for AI Analysis';
                 }
             } catch (err) {
+                console.error(err);
                 KapeKanto.toast('Upload failed.', 'error');
                 btn.disabled = false;
-                btn.innerText = 'Submit for Verification';
+                btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Submit for AI Analysis';
             }
         });
 
-        // Delete Account Logic
-        function confirmDeleteAccount() {
-            const code = document.getElementById('delete-code').value;
-            if (!code) {
-                return KapeKanto.toast('Please request and enter a verification code to delete your account.', 'warning');
-            }
-
-            KapeKanto.confirm("Are you sure you want to permanently delete your account? This action cannot be undone.", async () => {
-                try {
-                    const res = await fetch('/api/auth/delete-account', {
-                        method: 'DELETE',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ code })
-                    });
-                    const result = await res.json();
-
-                    if (res.ok) {
-                        KapeKanto.toast("Your account has been successfully deleted.", 'success');
-                        setTimeout(() => window.location.href = '/login', 1500);
-                    } else {
-                        KapeKanto.toast(result.error, 'error');
-                    }
-                } catch (err) {
-                    KapeKanto.toast('Failed to delete account.', 'error');
+        async function startVerification(event, email) {
+            const btn = event.target;
+            const originalHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+            try {
+                const res = await fetch('/api/auth/resend-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                if (res.ok) {
+                    window.location.href = `/verify-email?email=${encodeURIComponent(email)}`;
+                } else {
+                    KapeKanto.toast('Failed to send code.', 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = originalHTML;
                 }
-            }, { title: 'Delete Account', confirmText: 'Yes, Delete', type: 'danger' });
+            } catch (err) {
+                window.location.href = `/verify-email?email=${encodeURIComponent(email)}`;
+            }
         }
     </script>
 

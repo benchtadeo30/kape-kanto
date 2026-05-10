@@ -19,7 +19,7 @@
             </div>
             
             <div class="form-group" style="margin-bottom: 1rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <div class="flex-stack-mobile" style="margin-bottom: 0.5rem;">
                     <label style="font-weight: 600; color: var(--primary-dark);">Password</label>
                     <a href="/forgot-password" style="font-size: 0.85rem; color: var(--primary); font-weight: 600;">Forgot password?</a>
                 </div>
@@ -69,11 +69,14 @@
                 if (typeof KKIntro !== 'undefined') KKIntro.trigger();
 
                 if (data.unverified) {
-                    KapeKanto.toast('Welcome back! Please verify your email in your profile.', 'success');
-                } else {
-                    KapeKanto.toast('Welcome back!', 'success');
+                    KapeKanto.toast('Welcome back! Please verify your email first.', 'warning');
+                    setTimeout(() => {
+                        window.location.href = `/verify-email?email=${encodeURIComponent(data.email)}`;
+                    }, 2000);
+                    return;
                 }
 
+                KapeKanto.toast('Welcome back!', 'success');
                 setTimeout(() => {
                     if (data.role === 'admin') window.location.href = '/admin/dashboard';
                     else if (data.role === 'staff') window.location.href = '/staff/dashboard';

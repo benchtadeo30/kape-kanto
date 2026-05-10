@@ -242,6 +242,72 @@
     #cat-filter-menu::-webkit-scrollbar-thumb:hover {
         background: #bca08d;
     }
+    /* RESPONSIVE OVERRIDES */
+    .admin-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-bottom: 2rem;
+    }
+
+    @media (max-width: 900px) {
+        .admin-header-row {
+            flex-direction: column;
+            align-items: stretch !important;
+            gap: 1.5rem;
+        }
+        .admin-header-row h1 {
+            font-size: 2.2rem !important;
+            text-align: center;
+        }
+        .admin-header-row .btn {
+            width: 100%;
+            justify-content: center;
+        }
+        .control-bar {
+            flex-direction: column;
+            align-items: stretch !important;
+        }
+        .control-bar > div {
+            width: 100% !important;
+        }
+    }
+
+    @media (max-width: 600px) {
+        #menu-list > div,
+        #category-list > div {
+            flex-direction: column;
+            align-items: stretch !important;
+            padding: 1.2rem;
+            gap: 1.2rem !important;
+        }
+        #menu-list img {
+            width: 100% !important;
+            height: 180px !important;
+        }
+        .product-actions,
+        .category-actions {
+            flex-direction: row !important;
+            justify-content: flex-end;
+            gap: 10px;
+            border-top: 1px solid #f5f5f5;
+            padding-top: 1rem;
+            margin-top: 0.5rem;
+        }
+        .product-actions button,
+        .category-actions button {
+            flex: 1;
+            max-width: 120px;
+            height: 48px !important;
+        }
+    }
+
+    @media (max-width: 380px) {
+        .admin-modal { padding: 0.5rem; }
+        .modal-body { padding: 1.25rem !important; }
+        .modal-header, .modal-footer { padding: 1rem 1.25rem !important; }
+        .responsive-grid { grid-template-columns: 1fr !important; gap: 1rem !important; }
+    }
 </style>
 
 <div class="dashboard-layout">
@@ -251,32 +317,31 @@
     <main>
         <!-- Header Section -->
         <div style="margin-bottom: 2.5rem;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem;">
+            <div class="admin-header-row">
                 <div>
-                    <h1 style="margin: 0; font-size: 2.4rem; color: var(--admin-primary); font-weight: 800; letter-spacing: -0.5px;">Manage Menu Items</h1>
-                    <div style="height: 5px; width: 50px; background: #bca08d; border-radius: 10px; margin-top: 10px; opacity: 0.6;"></div>
+                    <h1 style="margin: 0; font-size: 2.8rem; color: var(--admin-primary); font-weight: 800; letter-spacing: -0.5px;">Manage Menu Items</h1>
                 </div>
-                <button class="btn btn-primary" onclick="openModal()" style="padding: 12px 1.8rem; border-radius: 16px; font-weight: 700; box-shadow: 0 10px 20px rgba(111, 78, 55, 0.15);">
-                    <i class="fa-solid fa-plus" style="margin-right: 8px;"></i>
+                <button class="btn btn-primary" onclick="openModal()" style="padding: 14px 2.2rem; border-radius: 16px; font-weight: 700; box-shadow: 0 10px 20px rgba(111, 78, 55, 0.15); font-size: 1.1rem;">
+                    <i class="fa-solid fa-plus" style="margin-right: 10px;"></i>
                     Add New Product
                 </button>
             </div>
 
             <!-- Enhanced Control Bar -->
-            <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
-                <div style="position: relative; flex: 1; min-width: 300px;">
-                    <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 1.2rem; top: 50%; transform: translateY(-50%); color: #bca08d; font-size: 1.1rem;"></i>
+            <div class="control-bar" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                <div style="position: relative; flex: 1; min-width: 0;">
+                    <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 1.5rem; top: 50%; transform: translateY(-50%); color: #bca08d; font-size: 1.25rem;"></i>
                     <input type="text" id="menu-search" placeholder="Search by product name..." 
                            oninput="debounceMenuSearch()"
-                           style="width: 100%; padding: 16px 1rem 16px 3.2rem; border-radius: 18px; border: 1px solid #f0e6e0; background: #fff; outline: none; transition: 0.3s; font-size: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.03); font-weight: 500;">
+                           style="width: 100%; padding: 18px 1rem 18px 3.5rem; border-radius: 18px; border: 1px solid #f0e6e0; background: #fff; outline: none; transition: 0.3s; font-size: 1.15rem; box-shadow: 0 4px 12px rgba(0,0,0,0.03); font-weight: 500;">
                 </div>
 
-                <div style="position: relative; width: 240px;">
+                <div style="position: relative; width: 100%; max-width: 260px;">
                     <div id="cat-filter-trigger" onclick="toggleCatDropdown()" 
-                         style="width: 100%; padding: 16px 1rem 16px 3.2rem; border-radius: 18px; border: 1px solid #f0e6e0; background: #fff; cursor: pointer; font-weight: 700; color: var(--admin-primary); transition: 0.3s; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(0,0,0,0.03); display: flex; align-items: center; justify-content: space-between;">
-                        <i class="fa-solid fa-filter" style="position: absolute; left: 1.2rem; top: 50%; transform: translateY(-50%); color: #bca08d; font-size: 1.1rem;"></i>
+                         style="width: 100%; padding: 18px 1.5rem 18px 3.5rem; border-radius: 18px; border: 1px solid #f0e6e0; background: #fff; cursor: pointer; font-weight: 700; color: var(--admin-primary); transition: 0.3s; font-size: 1.1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.03); display: flex; align-items: center; justify-content: space-between;">
+                        <i class="fa-solid fa-filter" style="position: absolute; left: 1.5rem; top: 50%; transform: translateY(-50%); color: #bca08d; font-size: 1.25rem;"></i>
                         <span id="current-cat-filter">All Categories</span>
-                        <i class="fa-solid fa-chevron-down" style="font-size: 0.8rem; color: #bca08d;"></i>
+                        <i class="fa-solid fa-chevron-down" style="font-size: 0.9rem; color: #bca08d;"></i>
                     </div>
                     
                     <div id="cat-filter-menu" style="display: none; position: absolute; top: calc(100% + 10px); left: 0; right: 0; background: #fff; border-radius: 18px; border: 1px solid #f0e6e0; box-shadow: 0 15px 35px rgba(0,0,0,0.1); z-index: 1000; overflow-y: auto; max-height: 320px; animation: dropdownIn 0.25s ease-out;">
@@ -293,7 +358,7 @@
             <div id="menu-pagination" style="display: flex; justify-content: center; gap: 1rem; align-items: center; padding-top: 1rem; border-top: 1px solid #eee;"></div>
         </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div class="admin-header-row" style="align-items: center;">
             <h1 class="section-title" style="margin: 0; text-align: left;">Manage Categories</h1>
             <button class="btn btn-primary" onclick="openCatModal()">+ Add Category</button>
         </div>
@@ -310,8 +375,8 @@
 <!-- Menu Modal -->
 <div id="menu-modal" class="admin-modal">
     <div class="modal-content" style="max-width: 700px; height: auto; max-height: 90vh;">
-        <div class="modal-header" style="background: linear-gradient(135deg, #fdfaf7 0%, #fff 100%); padding: 1.5rem 2.5rem; border-bottom: 1px solid #f0e6e0;">
-            <div style="display: flex; align-items: center; gap: 12px;">
+        <div class="modal-header flex-stack-mobile" style="background: linear-gradient(135deg, #fdfaf7 0%, #fff 100%); padding: 1.5rem 2.5rem; border-bottom: 1px solid #f0e6e0;">
+            <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
                 <div style="width: 40px; height: 40px; background: #f7f2ef; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--admin-primary);">
                     <i class="fa-solid fa-mug-hot" style="font-size: 1.2rem;"></i>
                 </div>
@@ -320,13 +385,13 @@
                     <p style="font-size: 0.8rem; color: #999; margin: 0;">Configure your menu item's appearance and settings.</p>
                 </div>
             </div>
-            <button onclick="closeModal()" style="background: #f5f5f5; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #666; transition: 0.2s;">&times;</button>
+            <button onclick="closeModal()" style="background: #f5f5f5; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #666; transition: 0.2s; margin-top: 1rem;">&times;</button>
         </div>
         <form id="menu-form" style="display: flex; flex-direction: column; height: 100%; overflow: hidden;">
             <div class="modal-body" style="padding: 2.5rem; background: #fff; flex: 1; overflow-y: auto;">
                 <input type="hidden" id="item-id">
                 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <div class="responsive-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
                     <!-- LEFT COLUMN: Basic Info -->
                     <div style="display: flex; flex-direction: column; gap: 1.5rem;">
                         <div class="form-group">
@@ -347,7 +412,7 @@
                             <input type="hidden" id="item-category" name="category_id" required>
                         </div>
 
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="responsive-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                             <div class="form-group">
                                 <label style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: #8b7355; margin-bottom: 8px; display: block;">Price (₱)</label>
                                 <input type="number" id="item-price" name="price" step="0.01" placeholder="0.00" required style="width: 100%; padding: 14px; border-radius: 14px; border: 1.5px solid #eee; font-weight: 700; color: var(--admin-primary);">
@@ -909,18 +974,18 @@
         let html = '';
         cats.forEach(c => {
             html += `
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.2rem; background: #fff; border: 1px solid #f0e6e0; border-radius: 16px; transition: all 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                    <div style="display: flex; align-items: center; gap: 1rem;">
+                <div class="flex-stack-mobile" style="padding: 1.2rem; background: #fff; border: 1px solid #f0e6e0; border-radius: 16px; transition: all 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                    <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
                         <div style="width: 40px; height: 40px; background: var(--admin-primary); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 10px rgba(111, 78, 55, 0.2);">
                             <i class="fa-solid fa-folder-tree"></i>
                         </div>
                         <h4 style="margin: 0; font-size: 1.1rem; color: var(--admin-primary);">${c.name}</h4>
                     </div>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <button class="btn btn-secondary" style="padding: 0.5rem 1rem; border-radius: 10px;" onclick='editCategory(${JSON.stringify(c).replace(/'/g, "&#39;")})'>
+                    <div class="category-actions" style="display: flex; gap: 0.5rem; width: 100%; margin-top: 1rem;">
+                        <button class="btn btn-secondary" style="padding: 0.5rem 1rem; border-radius: 10px; flex: 1;" onclick='editCategory(${JSON.stringify(c).replace(/'/g, "&#39;")})'>
                             <i class="fa-solid fa-pen-to-square"></i> Edit
                         </button>
-                        <button class="btn btn-danger" style="padding: 0.5rem 1rem; border-radius: 10px; background: #fff5f5; color: var(--danger); border: 1px solid #ffebee;" onclick="deleteCategory(${c.id})">
+                        <button class="btn btn-danger" style="padding: 0.5rem 1rem; border-radius: 10px; background: #fff5f5; color: var(--danger); border: 1px solid #ffebee; flex: 1;" onclick="deleteCategory(${c.id})">
                             <i class="fa-solid fa-trash"></i>
                         </button>
                     </div>
@@ -961,7 +1026,7 @@
                             </span>
                         </div>
                     </div>
-                    <div style="display: flex; gap: 0.6rem;">
+                    <div class="product-actions" style="display: flex; gap: 0.6rem;">
                         <button class="btn btn-secondary" style="padding: 0.6rem 1.2rem; border-radius: 12px;" onclick='editItem(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
                             <i class="fa-solid fa-pen"></i> Edit
                         </button>

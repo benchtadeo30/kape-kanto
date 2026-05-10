@@ -6,8 +6,13 @@ const { db } = require('../database/init');
 const { requireAuth } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 const { verifyIdCard } = require('../services/gemini');
-const { sendVerificationEmail, sendResetPasswordEmail } = require('../services/email');
+const { sendVerificationEmail, sendResetPasswordEmail, sendAccountDeletedEmail } = require('../services/email');
 const fs = require('fs');
+const path = require('path');
+
+// Debug Routes
+router.get('/ping', (req, res) => res.json({ message: 'Auth router is active' }));
+router.post('/test-post', (req, res) => res.json({ message: 'POST to Auth router is working' }));
 
 // POST /api/auth/register
 router.post('/register', upload.single('profile_image'), async (req, res) => {
@@ -18,11 +23,16 @@ router.post('/register', upload.single('profile_image'), async (req, res) => {
         return res.status(400).json({ error: 'Username, email, and password are required.' });
     }
 
+    // Domain Validation: Only @gmail.com allowed for customers
+    if (!email.endsWith('@gmail.com')) {
+        return res.status(400).json({ error: 'Kape Kanto Hub requires a valid @gmail.com address for customer accounts.' });
+    }
+
     // Password Complexity Validation
-    const passwordRegex = /^(?=.*[A-Z])(?=.*[0-9].*[0-9])(?=.*[!@#$%^&*])(?=.{5,})/;
+    const passwordRegex = /^(?=.*[A-Z])(?=.*[0-9].*[0-9])(?=.*[!@#$%^&*_])(?=.{5,})/;
     if (!passwordRegex.test(password)) {
         return res.status(400).json({ 
-            error: 'Password needs 5+ chars, 1 uppercase, 2 numbers, 1 special char.' 
+            error: 'Password needs 5+ chars, 1 uppercase, 2 numbers, 1 special char (including _).' 
         });
     }
 
@@ -48,24 +58,26 @@ router.post('/register', upload.single('profile_image'), async (req, res) => {
         );
         
         // Send Verification Email
-        let emailSent = true;
         try {
             await sendVerificationEmail(email, verificationCode);
         } catch (emailError) {
             console.error('Failed to send verification email:', emailError);
-            emailSent = false;
+            // Even if email fails, registration is technically successful, but user needs to know to resend
+            return res.status(500).json({ error: 'Registration successful, but failed to send verification email. Please try logging in to request a new code.' });
         }
 
         // Auto-login the user
         req.session.userId = info.lastInsertRowid;
         req.session.role = 'customer';
 
-        res.status(201).json({ 
-            message: 'Registration successful. Please verify your email.', 
-            email: email,
-            userId: info.lastInsertRowid,
-            emailSent: emailSent,
-            verificationStatus: 'none'
+        req.session.save((err) => {
+            if (err) console.error('Session save error:', err);
+            res.status(201).json({ 
+                message: 'Registration successful. Please verify your email.', 
+                email: email,
+                userId: info.lastInsertRowid,
+                unverified: true
+            });
         });
     } catch (error) {
         if (req.file) fs.unlinkSync(req.file.path);
@@ -86,10 +98,8 @@ router.post('/resend-code', async (req, res) => {
         const user = db.prepare(`SELECT id, is_verified, pending_email FROM users WHERE email = ? OR pending_email = ?`).get(email, email);
         if (!user) return res.status(404).json({ error: 'User not found.' });
         
-        // If they are verifying their primary email but it's already verified, AND they don't have a pending change
-        if (user.is_verified == 1 && user.pending_email !== email) {
-            return res.status(400).json({ error: 'Email already verified.' });
-        }
+        // Removed the check that blocked verified users from getting codes. 
+        // This allows verified users to receive codes for account changes (Username/Password/Delete).
 
         const newCode = Math.floor(100000 + Math.random() * 900000).toString();
         db.prepare(`UPDATE users SET verification_token = ? WHERE id = ?`).run(newCode, user.id);
@@ -138,8 +148,12 @@ router.post('/verify-email', (req, res) => {
         // Log user in automatically after verification
         req.session.userId = user.id;
         req.session.role = 'customer';
+        req.session.isVerifiedInSession = true; // Mark as verified for this session
 
-        res.json({ message: 'Email verified successfully.' });
+        req.session.save((err) => {
+            if (err) console.error('Session save error:', err);
+            res.json({ message: 'Email verified successfully.' });
+        });
     } catch (error) {
         res.status(500).json({ error: 'Internal server error.' });
     }
@@ -162,18 +176,36 @@ router.post('/login', async (req, res) => {
 
         req.session.userId = user.id;
         req.session.role = user.role;
+        // Admin and Staff do not need to verify email every session
+        req.session.isVerifiedInSession = (user.role === 'admin' || user.role === 'staff'); 
 
-        // Still send unverified info so frontend can decide if it wants to redirect to verify
-        if (user.role === 'customer' && user.is_verified != 1) {
-            return res.json({ 
-                message: 'Login successful, but unverified.',
-                role: user.role,
-                unverified: true,
-                email: user.email
-            });
-        }
+        req.session.save(async (err) => {
+            if (err) console.error('Session save error:', err);
 
-        res.json({ message: 'Login successful', role: user.role });
+            if (user.role === 'customer') {
+                // For customers, ensure they are NOT marked verified until they enter code
+                req.session.isVerifiedInSession = false;
+                
+                // AUTO-SEND CODE ON LOGIN EVERY TIME
+                try {
+                    const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+                    db.prepare(`UPDATE users SET verification_token = ? WHERE id = ?`).run(newCode, user.id);
+                    await sendVerificationEmail(user.email, newCode);
+                    console.log(`[AUTH] Auto-sent mandatory verification code to ${user.email} on login.`);
+                } catch (emailErr) {
+                    console.error('[AUTH ERROR] Failed to auto-send mandatory verification code on login:', emailErr);
+                }
+
+                return res.json({ 
+                    message: 'Login successful. A security verification code has been sent to your email.',
+                    role: user.role,
+                    unverified: true, // Frontend will redirect to /verify-email
+                    email: user.email
+                });
+            }
+
+            res.json({ message: 'Login successful', role: user.role });
+        });
     } catch (error) {
         res.status(500).json({ error: 'Internal server error.' });
     }
@@ -185,10 +217,9 @@ router.post('/forgot-password', async (req, res) => {
     if (!email) return res.status(400).json({ error: 'Email is required.' });
 
     try {
-        const user = db.prepare(`SELECT id FROM users WHERE email = ?`).get(email);
+        const user = db.prepare(`SELECT id FROM users WHERE email = ?`).get(email.trim().toLowerCase());
         if (!user) {
-            // Don't reveal if user exists or not for security
-            return res.json({ message: 'If an account exists with this email, a reset link has been sent.' });
+            return res.status(404).json({ error: 'User with this email not found.' });
         }
 
         const token = crypto.randomBytes(32).toString('hex');
@@ -200,10 +231,13 @@ router.post('/forgot-password', async (req, res) => {
             await sendResetPasswordEmail(email, token);
         } catch (e) {
             console.error('Reset email error:', e);
+            // Explicitly return error to user if email fails to send
+            return res.status(500).json({ error: 'Failed to send reset email. Please try again later.' });
         }
 
-        res.json({ message: 'If an account exists with this email, a reset link has been sent.' });
+        res.json({ message: 'Password reset link has been successfully sent to your email.' });
     } catch (error) {
+        console.error('Forgot password error:', error);
         res.status(500).json({ error: 'Internal server error.' });
     }
 });
@@ -212,6 +246,14 @@ router.post('/forgot-password', async (req, res) => {
 router.post('/reset-password', async (req, res) => {
     const { token, password } = req.body;
     if (!token || !password) return res.status(400).json({ error: 'Token and new password are required.' });
+
+    // Password Complexity Validation
+    const passwordRegex = /^(?=.*[A-Z])(?=.*[0-9].*[0-9])(?=.*[!@#$%^&*_])(?=.{5,})/;
+    if (!passwordRegex.test(password)) {
+        return res.status(400).json({ 
+            error: 'Password needs 5+ chars, 1 uppercase, 2 numbers, 1 special char (including _).' 
+        });
+    }
 
     try {
         const user = db.prepare(`SELECT id FROM users WHERE reset_token = ? AND reset_token_expiry > datetime('now')`).get(token);
@@ -244,10 +286,160 @@ router.post('/request-security-code', requireAuth, async (req, res) => {
         
         db.prepare('UPDATE users SET verification_token = ? WHERE id = ?').run(code, req.session.userId);
         
-        await sendVerificationEmail(user.email, code); // Reuse same email service for now
+        try {
+            await sendVerificationEmail(user.email, code);
+        } catch (e) {
+            console.error('Failed to send security code email:', e);
+            // Explicitly return error to user if email fails to send
+            return res.status(500).json({ error: 'Failed to send verification code. Please try again.' });
+        }
         res.json({ message: 'Verification code sent to your email.' });
     } catch (error) {
         res.status(500).json({ error: 'Failed to send verification code.' });
+    }
+});
+
+// POST /api/auth/request-account-change
+router.post('/request-account-change', requireAuth, async (req, res) => {
+    const { type, data } = req.body; // type: 'profile', 'password', 'delete', 'remove_email', 'update_id', 'remove_id'
+    
+    if (!type) return res.status(400).json({ error: 'Change type is required.' });
+
+    try {
+        const user = db.prepare('SELECT email, username, id_verification_status FROM users WHERE id = ?').get(req.session.userId);
+        
+        if (type === 'remove_email' && !user.email) {
+            return res.status(400).json({ error: 'There is no email address to remove.' });
+        }
+
+        if ((type === 'update_id' || type === 'remove_id') && user.id_verification_status !== 'verified') {
+            return res.status(400).json({ error: 'You do not have a verified ID to change.' });
+        }
+
+        if (type === 'profile' && data) {
+            if (data.username === user.username && data.email === user.email) {
+                return res.status(400).json({ error: 'No changes detected. Update cancelled.' });
+            }
+
+            // Domain Validation for customers
+            const role = db.prepare('SELECT role FROM users WHERE id = ?').get(req.session.userId).role;
+            if (role === 'customer' && data.email && !data.email.endsWith('@gmail.com')) {
+                return res.status(400).json({ error: 'Kape Kanto Hub requires a valid @gmail.com address for customer accounts.' });
+            }
+
+            // Direct update for Admin/Staff (Internal domain)
+            if (role === 'admin' || role === 'staff') {
+                db.prepare('UPDATE users SET username = ? WHERE id = ?').run(data.username, req.session.userId);
+                return res.json({ message: 'Profile updated successfully!', direct: true });
+            }
+        }
+
+        if (type === 'password' && data) {
+            const fullUser = db.prepare('SELECT password FROM users WHERE id = ?').get(req.session.userId);
+            const isSamePassword = await bcrypt.compare(data.new_password, fullUser.password);
+            if (isSamePassword) {
+                return res.status(400).json({ error: 'New password cannot be the same as your current password.' });
+            }
+        }
+
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        // Stage the changes in the session
+        req.session.pendingAccountChange = {
+            type,
+            data,
+            code,
+            expires: Date.now() + 600000 // 10 minutes
+        };
+
+        try {
+            await sendVerificationEmail(user.email, code);
+            res.json({ message: 'A verification code has been sent to your email to confirm these changes.' });
+        } catch (e) {
+            console.error('Failed to send account change email:', e);
+            return res.status(500).json({ error: 'Failed to send verification code. Please try again.' });
+        }
+    } catch (error) {
+        res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
+// POST /api/auth/resend-change-code
+router.post('/resend-change-code', requireAuth, async (req, res) => {
+    const pending = req.session.pendingAccountChange;
+    if (!pending) return res.status(400).json({ error: 'No active change request.' });
+
+    try {
+        const user = db.prepare('SELECT email FROM users WHERE id = ?').get(req.session.userId);
+        await sendVerificationEmail(user.email, pending.code);
+        res.json({ message: 'Security code resent successfully.' });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to resend code.' });
+    }
+});
+
+// POST /api/auth/confirm-account-change
+router.post('/confirm-account-change', requireAuth, async (req, res) => {
+    const { code } = req.body;
+    const pending = req.session.pendingAccountChange;
+
+    if (!pending || Date.now() > pending.expires) {
+        return res.status(400).json({ error: 'No active change request or code expired.' });
+    }
+
+    if (code !== pending.code) {
+        return res.status(400).json({ error: 'Invalid verification code.' });
+    }
+
+    try {
+        if (pending.type === 'profile') {
+            const { username, email } = pending.data;
+            const updates = [];
+            const params = [];
+            if (username) { updates.push('username = ?'); params.push(username); }
+            if (email) { updates.push('email = ?'); params.push(email); }
+            params.push(req.session.userId);
+            db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).run(...params);
+        } else if (pending.type === 'password') {
+            const { new_password } = pending.data;
+            
+            // Re-validate complexity on backend
+            const passwordRegex = /^(?=.*[A-Z])(?=.*[0-9].*[0-9])(?=.*[!@#$%^&*_])(?=.{5,})/;
+            if (!passwordRegex.test(new_password)) {
+                return res.status(400).json({ error: 'Password does not meet security requirements.' });
+            }
+
+            const hash = await bcrypt.hash(new_password, 10);
+            db.prepare(`UPDATE users SET password = ? WHERE id = ?`).run(hash, req.session.userId);
+        } else if (pending.type === 'remove_email') {
+            db.prepare(`UPDATE users SET email = NULL, pending_email = NULL, is_verified = 0 WHERE id = ?`).run(req.session.userId);
+        } else if (pending.type === 'remove_id') {
+            db.prepare(`
+                UPDATE users 
+                SET senior_id_image = NULL, 
+                    pwd_id_image = NULL, 
+                    id_verification_status = 'none',
+                    id_verification_notes = NULL,
+                    id_verification_message = NULL,
+                    is_senior = 0,
+                    is_pwd = 0
+                WHERE id = ?
+            `).run(req.session.userId);
+        } else if (pending.type === 'update_id') {
+            req.session.canUpdateID = true;
+        } else if (pending.type === 'delete') {
+            db.prepare('DELETE FROM users WHERE id = ?').run(req.session.userId);
+            req.session.destroy();
+            return res.json({ message: 'Account deleted successfully.', deleted: true });
+        }
+
+        delete req.session.pendingAccountChange;
+        res.json({ message: 'Changes applied successfully.' });
+    } catch (error) {
+        if (error.message.includes('UNIQUE constraint failed')) {
+            return res.status(400).json({ error: 'Username or email already in use.' });
+        }
+        res.status(500).json({ error: 'Failed to apply changes.' });
     }
 });
 
@@ -315,20 +507,19 @@ router.patch('/update-profile', requireAuth, async (req, res) => {
         if (info.changes === 0) return res.status(404).json({ error: 'User not found.' });
 
         if (emailChanged && newEmail) {
-            // Get the new code to send
             const updatedUser = db.prepare('SELECT verification_token FROM users WHERE id = ?').get(req.session.userId);
-            let emailSent = false;
             try {
                 await sendVerificationEmail(newEmail, updatedUser.verification_token);
-                emailSent = true;
             } catch (e) {
                 console.error('Failed to send re-verification email:', e);
+                // Explicitly return error to user if email fails to send
+                return res.status(500).json({ error: 'Failed to send verification email to new email address. Profile update cancelled.' });
             }
             return res.json({ 
                 message: 'Update request received. Please verify your new email address to complete the change.',
                 emailChanged: true,
                 newEmail: newEmail,
-                emailSent
+                emailSent: true
             });
         }
 
@@ -377,25 +568,32 @@ router.post('/cancel-email-change', requireAuth, (req, res) => {
 
 
 // DELETE /api/auth/delete-account
-router.delete('/delete-account', requireAuth, (req, res) => {
+router.delete('/delete-account', requireAuth, async (req, res) => {
     const { code } = req.body;
     if (!code) return res.status(400).json({ error: 'Verification code is required.' });
 
-    const user = db.prepare('SELECT is_verified, role, verification_token FROM users WHERE id = ?').get(req.session.userId);
+    const user = db.prepare('SELECT is_verified, role, verification_token, email FROM users WHERE id = ?').get(req.session.userId);
     
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
     if (code !== user.verification_token) {
         return res.status(400).json({ error: 'Invalid verification code.' });
     }
 
-    
-    // Admins shouldn't delete themselves via this customer endpoint
     if (user.role === 'admin') {
         return res.status(403).json({ error: 'Admins cannot delete their accounts here.' });
     }
 
     try {
-        const info = db.prepare('DELETE FROM users WHERE id = ?').run(req.session.userId);
-        if (info.changes === 0) return res.status(404).json({ error: 'User not found.' });
+        const userEmail = user.email;
+
+        db.prepare('DELETE FROM users WHERE id = ?').run(req.session.userId);
+
+        try {
+            await sendAccountDeletedEmail(userEmail);
+        } catch (e) {
+            console.error('Failed to send account deletion email:', e);
+        }
 
         req.session.destroy(err => {
             if (err) return res.status(500).json({ error: 'Failed to destroy session.' });
@@ -412,20 +610,30 @@ router.patch('/update-avatar', requireAuth, upload.single('profile_image'), asyn
     if (!req.file) return res.status(400).json({ error: 'No image uploaded.' });
 
     try {
-        const user = db.prepare('SELECT profile_image FROM users WHERE id = ?').get(req.session.userId);
-        
+        const userId = parseInt(req.session.userId);
+        const user = db.prepare('SELECT profile_image FROM users WHERE id = ?').get(userId);
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+
         // Delete old image if it exists
         if (user.profile_image) {
             const oldPath = path.join(__dirname, '..', 'public', 'uploads', 'profiles', user.profile_image);
-            if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+            if (fs.existsSync(oldPath)) {
+                try {
+                    fs.unlinkSync(oldPath);
+                } catch (e) {
+                    console.error('Failed to delete old avatar:', e);
+                }
+            }
         }
 
-        db.prepare('UPDATE users SET profile_image = ? WHERE id = ?').run(req.file.filename, req.session.userId);
+        db.prepare('UPDATE users SET profile_image = ? WHERE id = ?').run(req.file.filename, userId);
         res.json({ message: 'Profile picture updated successfully!', filename: req.file.filename });
     } catch (error) {
         console.error('Update avatar error:', error);
         res.status(500).json({ error: 'Failed to update profile picture.' });
     }
 });
-
 module.exports = router;

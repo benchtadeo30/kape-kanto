@@ -3,7 +3,16 @@
 <style>
     .staff-shell { display: grid; grid-template-columns: 260px 1fr; gap: 1.5rem; padding: 2rem 5%; max-width: 1500px; margin: 0 auto; }
     .staff-sidebar { position: sticky; top: 96px; align-self: start; background: rgba(255,255,255,0.92); border: 1px solid rgba(111,78,55,0.08); border-radius: 18px; padding: 1.25rem; box-shadow: var(--shadow-soft); }
-    .staff-sidebar h3 { font-size: 1rem; margin-bottom: 1rem; color: var(--primary-dark); }
+    .staff-sidebar h3 { 
+        font-size: 1.4rem; 
+        text-transform: uppercase; 
+        letter-spacing: 2px; 
+        color: var(--primary); 
+        margin-bottom: 2rem; 
+        font-weight: 900;
+        text-align: center;
+        padding: 0.5rem 0;
+    }
     .staff-sidebar a { display: flex; align-items: center; gap: 10px; padding: 0.85rem 0.95rem; border-radius: 12px; color: var(--text-light); font-weight: 700; margin-bottom: 0.35rem; }
     .staff-sidebar a:hover, .staff-sidebar a.active { background: var(--primary); color: white; transform: translateX(3px); }
     .staff-hero { background: linear-gradient(135deg, #2c1a0e 0%, #6f4e37 68%, #a0785d 100%); border-radius: 22px; padding: 1.5rem; color: white; box-shadow: var(--shadow-medium); margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
@@ -63,12 +72,12 @@
     </aside>
 
     <section>
-        <div class="staff-hero">
-            <div>
+        <div class="staff-hero flex-stack-mobile">
+            <div style="text-align: left; width: 100%;">
                 <h1>Order Management</h1>
                 <p>Move orders through prep, dispatch, completion, cancellation, and record cleanup.</p>
             </div>
-            <button class="so-btn so-btn-outline" onclick="loadOrders()" style="background:rgba(255,255,255,0.16);color:white;border-color:rgba(255,255,255,0.24);">
+            <button class="so-btn so-btn-outline" onclick="loadOrders()" style="background:rgba(255,255,255,0.16);color:white;border-color:rgba(255,255,255,0.24); margin-top: 1rem; width: 100%;">
                 <i class="fa-solid fa-rotate"></i> Refresh
             </button>
         </div>

@@ -33,7 +33,7 @@
                 <span></span>
             </button>
             
-            <% if (user) { %>
+            <% if (user && isVerifiedInSession) { %>
                 <div class="nav-profile-dropdown mobile-profile">
                     <div class="nav-avatar-btn">
                         <% if (user.profile_image) { %>
@@ -73,12 +73,14 @@
                             </a>
                         <% } %>
 
-                        <div class="dropdown-divider"></div>
-                        
-                        <a href="/profile#verification" class="dropdown-item">
-                            <i class="fa-solid fa-id-card-clip"></i>
-                            ID & Verification
-                        </a>
+                        <% if (user.role === 'customer') { %>
+                            <div class="dropdown-divider"></div>
+                            
+                            <a href="/profile#verification" class="dropdown-item">
+                                <i class="fa-solid fa-id-card-clip"></i>
+                                ID & Verification
+                            </a>
+                        <% } %>
                         
                         <div class="dropdown-divider"></div>
                         
@@ -95,7 +97,7 @@
                 <li><a href="/menu">Menu</a></li>
                 <li><a href="/help">Help Center</a></li>
                 
-                <% if (user) { %>
+                <% if (user && isVerifiedInSession) { %>
                     <% if (user.role === 'admin') { %>
                         <li><a href="/admin/dashboard">Admin Dashboard</a></li>
                     <% } else if (user.role === 'staff') { %>
@@ -106,7 +108,7 @@
                     <li><a href="/register">Register</a></li>
                 <% } %>
                 
-                <% if (!user || user.role === 'customer') { %>
+                <% if (!user || (user.role === 'customer' && isVerifiedInSession)) { %>
                     <li>
                                 <a href="/cart" class="cart-link" style="position: relative; color: var(--primary);">
                         <span class="cart-link-icon"><i class="fa-solid fa-cart-shopping"></i></span>
@@ -116,7 +118,7 @@
                     </li>
                 <% } %>
                 
-                <% if (user) { %>
+                <% if (user && isVerifiedInSession) { %>
                     <li class="nav-profile-dropdown desktop-profile">
                         <div class="nav-avatar-btn">
                             <% if (user.profile_image) { %>
@@ -156,12 +158,14 @@
                                 </a>
                             <% } %>
 
-                            <div class="dropdown-divider"></div>
-                            
-                            <a href="/profile#verification" class="dropdown-item">
-                                <i class="fa-solid fa-id-card-clip"></i>
-                                ID & Verification
-                            </a>
+                            <% if (user.role === 'customer') { %>
+                                <div class="dropdown-divider"></div>
+                                
+                                <a href="/profile#verification" class="dropdown-item">
+                                    <i class="fa-solid fa-id-card-clip"></i>
+                                    ID & Verification
+                                </a>
+                            <% } %>
                             
                             <div class="dropdown-divider"></div>
                             
@@ -176,7 +180,7 @@
         </nav>
         
         <!-- Mobile Cart Icon -->
-        <% if (!user || user.role === 'customer') { %>
+        <% if (!user || (user.role === 'customer' && isVerifiedInSession)) { %>
             <a href="/cart" class="mobile-cart-link" style="position: fixed; top: 1rem; right: 5rem; z-index: 103; display: none;">
                 <i class="fa-solid fa-cart-shopping" style="font-size: 1.5rem; color: var(--primary); background: white; border-radius: 50%; padding: 0.75rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></i>
                 <span id="mobile-cart-badge" class="cart-badge" style="position: absolute; top: -4px; right: -4px; background: var(--danger); color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.65rem; font-weight: 700; display: none; border: 2px solid white; min-width: 18px; text-align: center;">0</span>

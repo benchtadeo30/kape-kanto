@@ -48,12 +48,13 @@ function showConfirm(message, onConfirm, { title = 'Confirm Action', confirmText
     document.getElementById('kk-confirm-modal')?.remove();
 
     const icons = { warning: 'fa-triangle-exclamation', danger: 'fa-circle-xmark', info: 'fa-circle-info', success: 'fa-circle-check' };
-    const colors = { warning: '#f57f17', danger: '#c62828', info: '#1565c0', success: '#2e7d32' };
+    const colors = { warning: '#f57f17', danger: '#c62828', info: '#6F4E37', success: '#2e7d32' };
     const icon = icons[type] || icons.warning;
     const color = colors[type] || colors.warning;
 
     const modal = document.createElement('div');
     modal.id = 'kk-confirm-modal';
+    modal.className = 'kk-modal-overlay';
     modal.innerHTML = `
         <div class="kk-confirm-backdrop"></div>
         <div class="kk-confirm-box">
@@ -86,13 +87,13 @@ function showAlert(message, { title = 'Notice', okText = 'OK', type = 'info' } =
     document.getElementById('kk-alert-modal')?.remove();
 
     const icons = { info: 'fa-circle-info', success: 'fa-circle-check', warning: 'fa-triangle-exclamation', danger: 'fa-circle-xmark' };
-    const colors = { info: '#1565c0', success: '#2e7d32', warning: '#f57f17', danger: '#c62828' };
+    const colors = { info: '#6F4E37', success: '#2e7d32', warning: '#f57f17', danger: '#c62828' };
     const icon = icons[type] || icons.info;
     const color = colors[type] || colors.info;
 
     const modal = document.createElement('div');
     modal.id = 'kk-alert-modal';
-    modal.className = 'kk-confirm-modal'; // Reuse same overlay styles
+    modal.className = 'kk-modal-overlay';
     modal.innerHTML = `
         <div class="kk-confirm-backdrop"></div>
         <div class="kk-confirm-box">

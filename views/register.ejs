@@ -269,8 +269,20 @@
         e.preventDefault();
         
         const username = document.getElementById('username').value;
-        const email = document.getElementById('email').value;
+        const email = document.getElementById('email').value.trim().toLowerCase();
         const password = document.getElementById('password').value;
+
+        // Domain Validation: Only @gmail.com allowed for customers
+        if (!email.endsWith('@gmail.com')) {
+            return KapeKanto.toast('Kape Kanto Hub requires a valid @gmail.com address for customer accounts.', 'error');
+        }
+
+        // Frontend Password Complexity Check
+        const passwordRegex = /^(?=.*[A-Z])(?=.*[0-9].*[0-9])(?=.*[!@#$%^&*_])(?=.{5,})/;
+        if (!passwordRegex.test(password)) {
+            return KapeKanto.toast('Password needs 5+ chars, 1 uppercase, 2 numbers, 1 special char (including _).', 'error');
+        }
+
         const fileInput = document.getElementById('profile_image');
         const btn = e.target.querySelector('button');
         

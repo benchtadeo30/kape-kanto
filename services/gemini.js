@@ -4,25 +4,6 @@ const fs = require("fs");
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
-// Simple FAQ map for site‑specific queries
-const siteFaq = {
-  "login": "To log in, go to /login, enter the email you used to register and your password, then click the 'Sign In' button. If you forgot your password, click the 'Forgot password?' link to receive a reset email.",
-  "log in": "To log in, go to /login, enter your email and password, and click 'Sign In'. Use 'Forgot password?' if needed.",
-  "sign in": "Visit /login, input your email and password, then press 'Sign In'. Use the 'Forgot password?' link for resets.",
-  "register": "To create an account, visit /register, fill in your name, email, and a password, then submit. You'll receive a verification email.",
-  "sign up": "Go to /register, provide your name, email and password, then submit. Verify via the email we send you.",
-  "reset password": "On the login page, click 'Forgot password?', enter your email, and follow the link we send to set a new password.",
-  "forgot password": "Click 'Forgot password?' on the login page, enter your email, and follow the instructions in the email to reset your password."
-};
-
-function getSiteAnswer(message) {
-  const lower = message.toLowerCase();
-  for (const [key, answer] of Object.entries(siteFaq)) {
-    if (lower.includes(key)) return answer;
-  }
-  return null;
-}
-
 async function verifyIdCard(filePath, mimeType, expectedType) {
   try {
     // Read and encode image to base64
@@ -78,7 +59,7 @@ Respond strictly in JSON format with the following structure:
         "X-Title": "Kape Kanto Hub ID Verification"
       },
       body: JSON.stringify({
-        model: "openrouter/free", // Corrected to a VISION-capable free model
+        model: "google/gemini-2.0-flash-001", // Reverted to high-quality vision model
         messages: messages,
         max_tokens: 1000
       })
@@ -102,25 +83,30 @@ Respond strictly in JSON format with the following structure:
 
 async function generateChatResponse(message, history) {
   try {
-    // First, see if we have a site‑specific FAQ answer
-    const siteAnswer = getSiteAnswer(message);
-    if (siteAnswer) {
-      return siteAnswer;
-    }
+    // Build system instruction with full site knowledge
+    const systemInstruction = `You are the official AI Customer Service Assistant for Kape Kanto Hub. 
+Your primary goal is to help users navigate our website and answer questions about our shop.
 
-    // Build system instruction
-    const systemInstruction = `You are the official AI Customer Service Assistant for Kape Kanto Hub, a local coffee shop in the Philippines.
-You are helpful, polite, and concise.
+STRICT SCOPE:
+- Only answer questions related to Kape Kanto Hub.
+- If a user asks about general knowledge, other businesses, or unrelated topics, politely decline and steer them back to Kape Kanto Hub.
+- Do not provide code, medical advice, or personal opinions.
 
-Store Information:
-- Open Monday to Sunday, 7:00 AM to 10:00 PM.
+KAPE KANTO HUB FEATURES:
+1. Ordering: Customers can browse the /menu, add items to their Cart, and choose between Pickup or Delivery.
+2. 20% Discount: Senior Citizens and PWDs can upload their ID in the /profile page. Our AI verifies it instantly to apply a 20% discount.
+3. Security: All sensitive account changes (updating username, changing password, removing email) require a 6-digit security code sent to your Gmail for protection.
+4. Promos: Check the "Limited Time Events" on the Home page for active deals and live countdowns.
+5. Loyalty: Join "Loyalty Tasks" in your Profile to earn rewards by completing specific challenges.
+6. Support: For human assistance, email benchrafael2@gmail.com.
+
+SHOP INFO:
+- Hours: Mon-Sun, 7:00 AM - 10:00 PM.
 - Address: 123 Kanto St., Manila, Philippines.
-- We offer coffee (Hot & Iced), Pastries, Meals, and Frappes.
-- We accept Cash on Delivery (COD), GCash, and Credit/Debit Cards via PayRex.
-- We offer a 20% discount for registered Senior Citizens and PWDs (requires ID upload in profile).
+- Menu: Coffee (Hot/Iced), Pastries, Meals, and Frappes.
+- Payments: COD, GCash, and Credit/Debit Cards via PayRex.
 
-If you are asked a question you don't know the answer to, politely explain that you are an AI assistant and they can contact our human support at benchrafael2@gmail.com.
-Keep responses short and well-formatted.${siteAnswer ? "\nFAQ Answer: " + siteAnswer : ""}`;
+Keep your responses professional, friendly, and very concise. Use bullet points if listing steps.`;
 
     // Build messages for OpenRouter
     const messages = [
@@ -169,33 +155,17 @@ function getFallbackResponse(message) {
   const responses = {
     'hello': 'Hello! Welcome to Kape Kanto Hub. How may I help you today?',
     'hi': 'Hi there! Welcome to Kape Kanto Hub. What can I do for you?',
-    'hey': 'Hey! Welcome to our coffee shop. How can I assist you?',
-    'hours': 'We\'re open Monday to Sunday, 7:00 AM to 10:00 PM. Come visit us!',
-    'open': 'We\'re open Monday to Sunday, 7:00 AM to 10:00 PM. Come visit us!',
-    'time': 'We\'re open Monday to Sunday, 7:00 AM to 10:00 PM. Come visit us!',
-    'location': 'We\'re located at 123 Kanto St., Manila, Philippines. Find us on Google Maps!',
-    'address': 'Our address is 123 Kanto St., Manila, Philippines.',
-    'where': 'We\'re at 123 Kanto St., Manila, Philippines. Easy to find!',
-    'menu': 'We offer hot & iced coffee, pastries, meals, and delicious frappes. Check our menu page for full details!',
-    'coffee': 'We have amazing hot and iced coffee options including our signature Kanto Americano, lattes, cappuccinos, and more!',
-    'food': 'Our menu includes pastries like croissants and cookies, plus meals like beef tapa bowls and chicken adobo.',
-    'payment': 'We accept Cash on Delivery (COD), GCash, and Credit/Debit Cards via PayRex.',
-    'pay': 'We accept Cash on Delivery (COD), GCash, and Credit/Debit Cards via PayRex.',
-    'discount': 'We offer 20% discount for registered Senior Citizens and PWDs. Upload your ID in your profile to get verified!',
-    'senior': 'Senior Citizens get 20% discount! Upload your Senior Citizen ID in your profile to get verified.',
-    'pwd': 'PWD card holders get 20% discount! Upload your PWD ID in your profile to get verified.',
-    'contact': 'You can reach our human support at benchrafael2@gmail.com for any questions.',
-    'help': 'I\'m here to help! For complex questions, contact our human support at benchrafael2@gmail.com.',
-    'support': 'For additional support, please email benchrafael2@gmail.com.'
+    'help': 'I can help with questions about our menu, 20% Senior/PWD discounts, and account security. What would you like to know?',
+    'contact': 'You can reach our human support team at benchrafael2@gmail.com.',
+    'hours': 'We are open Monday to Sunday, 7:00 AM to 10:00 PM.'
   };
 
+  const lower = message.toLowerCase();
   for (const [keyword, response] of Object.entries(responses)) {
-    if (message.includes(keyword)) {
-      return response;
-    }
+    if (lower.includes(keyword)) return response;
   }
 
-  return "Thanks for your message! I'm a simple chatbot right now. For detailed assistance, please email benchrafael2@gmail.com or check our Help Center.";
+  return "I'm sorry, I'm having trouble connecting to my brain right now! Please email benchrafael2@gmail.com for assistance.";
 }
 
 module.exports = {

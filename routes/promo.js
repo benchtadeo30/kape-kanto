@@ -4,18 +4,45 @@ const { db } = require('../database/init');
 const { requireRole, requireAuth } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 
-// GET /api/promos (Public - Active only)
+// GET /api/promos (Public - Unified promos & tasks, with pagination)
 router.get('/', (req, res) => {
+    const limit = parseInt(req.query.limit) || 6;
+    const offset = parseInt(req.query.offset) || 0;
+
     try {
-        const promos = db.prepare(`
-            SELECT * FROM promos 
+        // More compatible date comparison using date strings
+        const promoQuery = `
+            SELECT id, title, description, discount_percent, discount_amount, image, 
+                   start_date, end_date, promo_code, 'promo' as event_type, created_at
+            FROM promos 
             WHERE is_active = 1 
-            AND (start_date IS NULL OR start_date = '' OR datetime(start_date) <= datetime('now', 'localtime'))
-            AND (end_date IS NULL OR end_date = '' OR datetime(end_date) >= datetime('now', 'localtime'))
-        `).all();
-        res.json(promos);
+            AND (start_date IS NULL OR start_date = '' OR start_date <= datetime('now', 'localtime'))
+            AND (end_date IS NULL OR end_date = '' OR end_date >= datetime('now', 'localtime'))
+        `;
+
+        const taskQuery = `
+            SELECT id, title, description, 0 as discount_percent, 0 as discount_amount, NULL as image,
+                   NULL as start_date, end_date, NULL as promo_code, 'task' as event_type, NULL as created_at
+            FROM promo_tasks
+            WHERE is_active = 1
+            AND (end_date IS NULL OR end_date = '' OR end_date >= datetime('now', 'localtime'))
+        `;
+
+        const unifiedQuery = `
+            SELECT * FROM (${promoQuery} UNION ALL ${taskQuery}) as combined
+            ORDER BY COALESCE(created_at, '0000-00-00') DESC, id DESC
+            LIMIT ? OFFSET ?
+        `;
+
+        const items = db.prepare(unifiedQuery).all(limit, offset);
+        const countQuery = `SELECT COUNT(*) as count FROM (${promoQuery} UNION ALL ${taskQuery}) as combined`;
+        const total = db.prepare(countQuery).get().count;
+
+        console.log(`[PROMO API] Found ${items.length} active items (Total: ${total})`);
+        res.json({ items, total, limit, offset });
     } catch (error) {
-        res.status(500).json({ error: 'Internal server error.' });
+        console.error('[PROMO LIST ERROR]:', error);
+        res.status(500).json({ error: 'Internal server error.', details: error.message });
     }
 });
 
@@ -110,16 +137,21 @@ router.post('/', requireRole('admin'), upload.single('image'), (req, res) => {
             INSERT INTO promos (
                 title, description, discount_percent, discount_amount, image, start_date, end_date, is_active, promo_code,
                 applicable_category_id, applicable_menu_item_id,
-                applicable_category_ids, applicable_menu_item_ids
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                applicable_category_ids, applicable_menu_item_ids,
+                event_type
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
 
         const info = insertPromo.run(
-            title, description, discount_percent || 0, discount_amount || 0, imagePath,
+            title, description, 
+            parseFloat(discount_percent) || 0, 
+            parseFloat(discount_amount) || 0, 
+            imagePath,
             start_date || null, end_date || null,
             is_active == '1' ? 1 : 0, promo_code || null,
             applicable_category_id || null, applicable_menu_item_id || null,
-            applicable_category_ids || '[]', applicable_menu_item_ids || '[]'
+            applicable_category_ids || '[]', applicable_menu_item_ids || '[]',
+            'promo'
         );
         const promoId = info.lastInsertRowid;
 
@@ -136,23 +168,24 @@ router.post('/', requireRole('admin'), upload.single('image'), (req, res) => {
                 description, 
                 task_type, 
                 description, 
-                required_menu_item_id || null, 
-                required_category_id || null, 
+                parseInt(required_menu_item_id) || null, 
+                parseInt(required_category_id) || null, 
                 parseInt(required_quantity) || 1, 
                 parseFloat(min_order_amount) || null, 
                 promoId, 
-                is_active == '1' ? 1 : 0,
+                1, // tasks created via this route are active by default
                 end_date || null
             );
         }
 
         res.status(201).json({ message: 'Campaign created successfully.', id: promoId });
     } catch (error) {
-        console.error(error);
-        if (error.message.includes('UNIQUE constraint failed')) {
-            return res.status(400).json({ error: 'Promo code must be unique.' });
-        }
-        res.status(500).json({ error: 'Internal server error.' });
+        console.error('[PROMO ERROR] Failed to create promo:', error);
+        res.status(500).json({ 
+            error: 'Internal server error.', 
+            details: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 });
 

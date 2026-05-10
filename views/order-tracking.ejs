@@ -1,5 +1,9 @@
 <%- include('partials/header') %>
 
+<% if (user && user.role !== 'customer') { %>
+    <script>window.location.href = '/<%= user.role %>/dashboard';</script>
+<% } %>
+
 <style>
 .ot-page { padding: 2.5rem 5%; max-width: 800px; margin: 0 auto; }
 .ot-page-title {

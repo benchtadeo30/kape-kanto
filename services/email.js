@@ -55,9 +55,9 @@ async function sendVerificationEmail(email, code) {
         console.log(`Email sent successfully: ${info.messageId}`);
         return info;
     } catch (error) {
-        console.error(`[TEST MODE] Failed to send email to ${email}. Check .env credentials.`);
-        console.error(`[TEST MODE] The verification code is: ${code}`);
-        return null;
+        console.error(`[EMAIL ERROR] Failed to send verification email to ${email}:`, error.message || error);
+        console.error(`[EMAIL DEBUG] EMAIL_USER: ${EMAIL_USER ? 'set' : 'MISSING'}`);
+        throw error;
     }
 }
 
@@ -99,13 +99,49 @@ async function sendResetPasswordEmail(email, token) {
         console.log(`Reset email sent successfully: ${info.messageId}`);
         return info;
     } catch (error) {
-        console.error(`[TEST MODE] Failed to send reset email to ${email}.`);
-        console.error(`[TEST MODE] The reset token is: ${token}`);
-        return null;
+        console.error(`[EMAIL ERROR] Failed to send reset email to ${email}:`, error.message || error);
+        throw error;
+    }
+}
+
+/**
+ * Sends a notification that the account has been deleted.
+ * @param {string} email - The user's email address.
+ */
+async function sendAccountDeletedEmail(email) {
+    console.log(`[EMAIL] Sending account deletion notification to: ${email}`);
+    const mailOptions = {
+        from: `"Kape Kanto Hub" <${EMAIL_USER}>`,
+        replyTo: EMAIL_USER,
+        to: email,
+        subject: 'Account Deleted - Kape Kanto Hub',
+        html: `
+            <div style="font-family: 'Poppins', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+                <h2 style="color: #6F4E37; text-align: center;">Account Deleted</h2>
+                <p>Hello,</p>
+                <p>Your Kape Kanto Hub account has been permanently deleted. We're sorry to see you go!</p>
+                <p>If you did not request this deletion, please contact us immediately at <a href="mailto:benchrafael2@gmail.com">benchrafael2@gmail.com</a>.</p>
+                <p>Thank you for being a part of Kape Kanto Hub.</p>
+                <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                <p style="font-size: 0.8rem; color: #888; text-align: center;">
+                    &copy; 2026 Kape Kanto Hub. All rights reserved.
+                </p>
+            </div>
+        `
+    };
+
+    try {
+        const info = await transporter.sendMail(mailOptions);
+        console.log(`Account deletion email sent: ${info.messageId}`);
+        return info;
+    } catch (error) {
+        console.error(`[EMAIL ERROR] Failed to send deletion email to ${email}:`, error.message || error);
+        throw error;
     }
 }
 
 module.exports = {
     sendVerificationEmail,
-    sendResetPasswordEmail
+    sendResetPasswordEmail,
+    sendAccountDeletedEmail
 };

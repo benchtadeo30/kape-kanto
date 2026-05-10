@@ -1,6 +1,7 @@
 <style>
     .sidebar { 
-        width: 280px; 
+        width: 100%;
+        max-width: 280px; 
         background: #fff; 
         border-right: 1px solid rgba(111, 78, 55, 0.1); 
         display: flex; 
@@ -11,14 +12,25 @@
         padding: 2.5rem 1.25rem;
         box-shadow: 10px 0 30px rgba(44, 26, 14, 0.02);
     }
+    @media (max-width: 992px) {
+        .sidebar {
+            max-width: 100%;
+            height: auto;
+            position: static;
+            border-right: none;
+            border-bottom: 1px solid rgba(111, 78, 55, 0.1);
+            padding: 2rem 1rem;
+        }
+    }
     .sidebar h3 { 
-        font-size: 0.7rem; 
+        font-size: 1.4rem; 
         text-transform: uppercase; 
-        letter-spacing: 2.5px; 
-        color: #bca08d; 
+        letter-spacing: 2px; 
+        color: var(--primary); 
         margin-bottom: 2.5rem; 
-        font-weight: 800;
-        padding-left: 15px;
+        font-weight: 900;
+        text-align: center;
+        padding: 0.5rem 0;
     }
     .sidebar-nav { display: flex; flex-direction: column; gap: 12px; }
     .sidebar-nav a { 
@@ -28,16 +40,16 @@
         padding: 14px 18px; 
         text-decoration: none; 
         color: #5c4033; 
-        font-weight: 600; 
+        font-weight: 700; 
         border-radius: 16px; 
         transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        font-size: 0.95rem;
+        font-size: 1.15rem;
         position: relative;
     }
     .sidebar-nav a i { 
-        font-size: 1.2rem; 
-        width: 42px; 
-        height: 42px; 
+        font-size: 1.35rem; 
+        width: 46px; 
+        height: 46px; 
         display: flex; 
         align-items: center; 
         justify-content: center; 

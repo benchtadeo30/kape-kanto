@@ -41,20 +41,20 @@
     </aside>
 
     <section>
-        <div class="staff-hero">
-            <div>
+        <div class="staff-hero flex-stack-mobile">
+            <div style="text-align: left; width: 100%;">
                 <h1>Stock Control</h1>
                 <p>Quickly adjust item inventory before orders are accepted.</p>
             </div>
-            <button class="staff-btn" onclick="loadMenu()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+            <button class="staff-btn" onclick="loadMenu()" style="margin-top: 1rem; width: 100%;"><i class="fa-solid fa-rotate"></i> Refresh</button>
         </div>
 
         <div class="staff-panel">
-            <div class="stock-toolbar">
-                <h2 style="margin:0;font-size:1.1rem;"><i class="fa-solid fa-boxes-stacked" style="color:var(--accent);"></i> Menu Inventory</h2>
-                <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
-                    <input class="stock-search" id="stock-search" type="text" placeholder="Search item, category, stock..." oninput="setStockSearch(this.value)">
-                    <span class="stock-count" id="stock-count">Loading items...</span>
+            <div class="stock-toolbar flex-stack-mobile">
+                <h2 style="margin:0;font-size:1.1rem; width: 100%;"><i class="fa-solid fa-boxes-stacked" style="color:var(--accent);"></i> Menu Inventory</h2>
+                <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap; width: 100%;">
+                    <input class="stock-search" id="stock-search" type="text" placeholder="Search item, category, stock..." oninput="setStockSearch(this.value)" style="flex: 1;">
+                    <span class="stock-count" id="stock-count" style="white-space: nowrap;">Loading items...</span>
                 </div>
             </div>
             <div id="stock-list" class="stock-list">

@@ -3,10 +3,10 @@
 <style>
     .stat-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid #f0e6e0; overflow: hidden; position: relative; }
     .stat-card:hover { transform: translateY(-5px); box-shadow: 0 12px 25px rgba(111, 78, 55, 0.1); border-color: var(--primary-light); }
-    .stat-icon { box-shadow: 0 8px 15px rgba(0,0,0,0.1); width: 54px; height: 54px; font-size: 1.3rem; }
+    .stat-icon { box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
     .stat-info p { margin: 0; line-height: 1.2; }
     .table-container { border: 1px solid #f0e6e0; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
-    .badge { border-radius: 8px; padding: 6px 12px; font-size: 0.75rem; letter-spacing: 0.5px; }
+    .badge { border-radius: 8px; padding: 6px 12px; font-size: 0.85rem; letter-spacing: 0.5px; }
 </style>
 
 <div class="dashboard-layout">
@@ -15,9 +15,9 @@
 
     <!-- Main Content -->
     <main>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div class="admin-header-row">
             <h1 style="margin: 0;">Dashboard Overview</h1>
-            <div style="color: var(--text-light); font-weight: 500;">
+            <div style="color: var(--text-light); font-weight: 600; font-size: 1.1rem; white-space: nowrap;">
                 <i class="fa-solid fa-calendar-day"></i> <%= new Date().toLocaleDateString() %>
             </div>
         </div>
@@ -53,7 +53,7 @@
         </div>
 
         <div class="table-container">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding: 0 0.5rem;">
+            <div class="table-header-row">
                 <h3 style="margin: 0;">Recent Orders</h3>
                 <a href="/admin/orders" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">View All</a>
             </div>
@@ -114,11 +114,11 @@
 
             html += `
                 <tr>
-                    <td><strong>#${o.id}</strong></td>
-                    <td>${o.username}</td>
-                    <td>₱${o.total.toFixed(2)}</td>
-                    <td><span class="badge" style="background: ${statusColor}; color: white;">${o.status.replace('_', ' ')}</span></td>
-                    <td>${o.order_type.charAt(0).toUpperCase() + o.order_type.slice(1)}</td>
+                    <td data-label="Order ID"><strong>#${o.id}</strong></td>
+                    <td data-label="Customer">${o.username}</td>
+                    <td data-label="Total">₱${o.total.toFixed(2)}</td>
+                    <td data-label="Status"><span class="badge" style="background: ${statusColor}; color: white;">${o.status.replace('_', ' ')}</span></td>
+                    <td data-label="Type">${o.order_type.charAt(0).toUpperCase() + o.order_type.slice(1)}</td>
                 </tr>
             `;
         });
