@@ -33,7 +33,7 @@ function initDb() {
     db.prepare(`
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
+            username TEXT NOT NULL,
             email TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL,
             role TEXT NOT NULL CHECK(role IN ('customer', 'admin', 'staff')),
@@ -238,6 +238,19 @@ function initDb() {
         )
     `).run();
 
+    // 12. Pending Users table (for delayed insertion)
+    db.prepare(`
+        CREATE TABLE IF NOT EXISTS pending_users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL,
+            email TEXT NOT NULL UNIQUE,
+            password TEXT NOT NULL,
+            verification_token TEXT NOT NULL,
+            profile_image TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `).run();
+
     // Migration: Add new columns if they don't exist
     const userCols = db.prepare("PRAGMA table_info(users)").all();
     const colNames = userCols.map(c => c.name);
@@ -260,6 +273,10 @@ function initDb() {
     if (!colNames.includes('id_verification_message')) {
         db.prepare('ALTER TABLE users ADD COLUMN id_verification_message TEXT').run();
         console.log("Migration: Added id_verification_message column to users.");
+    }
+    if (!colNames.includes('pending_email')) {
+        db.prepare('ALTER TABLE users ADD COLUMN pending_email TEXT').run();
+        console.log("Migration: Added pending_email column to users.");
     }
 
     // Migration: Check if order_items has customizations column

@@ -108,7 +108,7 @@ router.post('/', async (req, res) => {
         res.status(201).json({ message: 'User created. Verification email sent.', id: info.lastInsertRowid });
     } catch (error) {
         if (error.message.includes('UNIQUE constraint failed')) {
-            return res.status(400).json({ error: 'Username or email already exists.' });
+            return res.status(400).json({ error: 'This email address is already in use.' });
         }
         res.status(500).json({ error: 'Internal server error.' });
     }
@@ -153,7 +153,7 @@ router.put('/:id', async (req, res) => {
         res.json({ message: 'User updated.' });
     } catch (error) {
         if (error.message.includes('UNIQUE constraint failed')) {
-            return res.status(400).json({ error: 'Username or email already exists.' });
+            return res.status(400).json({ error: 'This email address is already in use.' });
         }
         res.status(500).json({ error: 'Internal server error.' });
     }

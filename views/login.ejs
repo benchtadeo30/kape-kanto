@@ -50,7 +50,7 @@
         
         const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
-        const btn = e.target.querySelector('button');
+        const btn = e.target.querySelector('button[type="submit"]');
         
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Signing in...';

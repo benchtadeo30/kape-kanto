@@ -37,47 +37,38 @@ router.post('/register', upload.single('profile_image'), async (req, res) => {
     }
 
     try {
+        // Check uniqueness on main users table (Email only)
+        const existingUser = db.prepare('SELECT id FROM users WHERE LOWER(email) = LOWER(?)').get(email);
+        if (existingUser) {
+            return res.status(400).json({ error: 'This email address is already registered.' });
+        }
+
         const hash = await bcrypt.hash(password, 10);
         
         // Generate verification code
         const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-        const stmt = db.prepare(`
-            INSERT INTO users (username, email, password, role, is_senior, is_pwd, id_verification_status, id_verification_notes, senior_id_image, pwd_id_image, profile_image, verification_token, is_verified)
-            VALUES (?, ?, ?, 'customer', 0, 0, 'none', NULL, NULL, NULL, ?, ?, 0)
-        `);
-        
         const profileImage = req.file ? req.file.filename : null;
 
-        const info = stmt.run(
-            username, 
-            email, 
-            hash, 
-            profileImage,
-            verificationCode
-        );
+        // Store in pending_users instead of users
+        // We use REPLACE to allow users to retry registration if they made a mistake or didn't get the code
+        db.prepare(`
+            INSERT OR REPLACE INTO pending_users (username, email, password, profile_image, verification_token)
+            VALUES (?, ?, ?, ?, ?)
+        `).run(username, email, hash, profileImage, verificationCode);
         
         // Send Verification Email
         try {
             await sendVerificationEmail(email, verificationCode);
         } catch (emailError) {
             console.error('Failed to send verification email:', emailError);
-            // Even if email fails, registration is technically successful, but user needs to know to resend
-            return res.status(500).json({ error: 'Registration successful, but failed to send verification email. Please try logging in to request a new code.' });
+            return res.status(500).json({ error: 'Registration failed to send verification email. Please try again.' });
         }
 
-        // Auto-login the user
-        req.session.userId = info.lastInsertRowid;
-        req.session.role = 'customer';
-
-        req.session.save((err) => {
-            if (err) console.error('Session save error:', err);
-            res.status(201).json({ 
-                message: 'Registration successful. Please verify your email.', 
-                email: email,
-                userId: info.lastInsertRowid,
-                unverified: true
-            });
+        res.status(201).json({ 
+            message: 'Registration data saved. Please verify your email to complete registration.', 
+            email: email,
+            unverified: true
         });
     } catch (error) {
         if (req.file) {
@@ -85,13 +76,10 @@ router.post('/register', upload.single('profile_image'), async (req, res) => {
         }
         
         if (error.message.includes('UNIQUE constraint failed')) {
-            if (error.message.includes('users.username')) {
-                return res.status(400).json({ error: 'This username is already taken. Please choose another.' });
-            }
             if (error.message.includes('users.email')) {
                 return res.status(400).json({ error: 'This email address is already registered.' });
             }
-            return res.status(400).json({ error: 'Username or email already exists.' });
+            return res.status(400).json({ error: 'Email already exists.' });
         }
         console.error('Registration error:', error);
         res.status(500).json({ error: 'Internal server error.' });
@@ -104,17 +92,25 @@ router.post('/resend-code', async (req, res) => {
     if (!email) return res.status(400).json({ error: 'Email is required.' });
 
     try {
-        const user = db.prepare(`SELECT id, is_verified, pending_email FROM users WHERE email = ? OR pending_email = ?`).get(email, email);
-        if (!user) return res.status(404).json({ error: 'User not found.' });
-        
-        // Removed the check that blocked verified users from getting codes. 
-        // This allows verified users to receive codes for account changes (Username/Password/Delete).
-
         const newCode = Math.floor(100000 + Math.random() * 900000).toString();
-        db.prepare(`UPDATE users SET verification_token = ? WHERE id = ?`).run(newCode, user.id);
 
-        await sendVerificationEmail(email, newCode);
-        res.json({ message: 'New verification code sent.' });
+        // 1. Check existing users
+        const user = db.prepare(`SELECT id, is_verified, pending_email FROM users WHERE email = ? OR pending_email = ?`).get(email, email);
+        if (user) {
+            db.prepare(`UPDATE users SET verification_token = ? WHERE id = ?`).run(newCode, user.id);
+            await sendVerificationEmail(email, newCode);
+            return res.json({ message: 'New verification code sent.' });
+        }
+
+        // 2. Check pending_users
+        const pending = db.prepare(`SELECT id FROM pending_users WHERE email = ?`).get(email);
+        if (pending) {
+            db.prepare(`UPDATE pending_users SET verification_token = ? WHERE id = ?`).run(newCode, pending.id);
+            await sendVerificationEmail(email, newCode);
+            return res.json({ message: 'New verification code sent.' });
+        }
+
+        return res.status(404).json({ error: 'User not found.' });
     } catch (error) {
         console.error('Resend code error:', error);
         res.status(500).json({ error: 'Failed to resend code.' });
@@ -127,15 +123,35 @@ router.post('/verify-email', (req, res) => {
     if (!email || !code) return res.status(400).json({ error: 'Email and code are required.' });
 
     try {
-        const user = db.prepare(`SELECT id, email, pending_email FROM users WHERE (email = ? OR pending_email = ?) AND verification_token = ?`).get(email, email, code);
-        if (!user) return res.status(400).json({ error: 'Invalid verification code.' });
-
-        if (user.pending_email === email) {
-            // This was an email change
-            db.prepare(`UPDATE users SET email = ?, pending_email = NULL, is_verified = 1, verification_token = NULL WHERE id = ?`).run(email, user.id);
+        // 1. Check if email change/re-verification for existing user
+        let user = db.prepare(`SELECT id, email, pending_email, role FROM users WHERE (email = ? OR pending_email = ?) AND verification_token = ?`).get(email, email, code);
+        
+        if (user) {
+            if (user.pending_email === email) {
+                db.prepare(`UPDATE users SET email = ?, pending_email = NULL, is_verified = 1, verification_token = NULL WHERE id = ?`).run(email, user.id);
+            } else {
+                db.prepare(`UPDATE users SET is_verified = 1, verification_token = NULL WHERE id = ?`).run(user.id);
+            }
         } else {
-            // This was a standard registration verification
-            db.prepare(`UPDATE users SET is_verified = 1, verification_token = NULL WHERE id = ?`).run(user.id);
+            // 2. Check pending_users (New Registration)
+            const pending = db.prepare(`SELECT * FROM pending_users WHERE email = ? AND verification_token = ?`).get(email, code);
+            if (!pending) return res.status(400).json({ error: 'Invalid verification code.' });
+
+            // Final check: did someone take the email in the meantime?
+            const conflict = db.prepare('SELECT id FROM users WHERE LOWER(email) = LOWER(?)').get(email);
+            if (conflict) {
+                db.prepare('DELETE FROM pending_users WHERE id = ?').run(pending.id);
+                return res.status(400).json({ error: 'This email address was taken while you were verifying. Please register again.' });
+            }
+
+            // Move to main users table
+            const info = db.prepare(`
+                INSERT INTO users (username, email, password, role, profile_image, is_verified)
+                VALUES (?, ?, ?, 'customer', ?, 1)
+            `).run(pending.username, pending.email, pending.password, pending.profile_image);
+
+            user = { id: info.lastInsertRowid, role: 'customer' };
+            db.prepare('DELETE FROM pending_users WHERE id = ?').run(pending.id);
         }
         
         // Evaluate verify_email promo tasks
@@ -156,7 +172,7 @@ router.post('/verify-email', (req, res) => {
 
         // Log user in automatically after verification
         req.session.userId = user.id;
-        req.session.role = 'customer';
+        req.session.role = user.role;
         req.session.isVerifiedInSession = true; // Mark as verified for this session
 
         req.session.save((err) => {

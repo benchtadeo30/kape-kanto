@@ -170,6 +170,9 @@
                             <i class="fa-solid fa-eye" style="font-size: 1.1rem;"></i>
                         </div>
                     </div>
+                    <p style="font-size: 0.75rem; color: #8D6E63; margin-top: 8px; line-height: 1.4;">
+                        <i class="fa-solid fa-circle-info"></i> Must be 5+ characters, include 1 uppercase, 2 numbers, and 1 special character (e.g., !@#$%^&*).
+                    </p>
                 </div>
 
                 <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 16px; border-radius: 14px; font-weight: 700; font-size: 1rem; box-shadow: 0 10px 20px rgba(111, 78, 55, 0.2);">Create Account</button>
@@ -284,7 +287,7 @@
         }
 
         const fileInput = document.getElementById('profile_image');
-        const btn = e.target.querySelector('button');
+        const btn = e.target.querySelector('button[type="submit"]');
         
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Creating account...';

@@ -783,7 +783,7 @@
         document.getElementById('id-upload-form')?.addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
-            const btn = e.target.querySelector('button');
+            const btn = e.target.querySelector('button[type="submit"]');
             const statusArea = document.getElementById('id-verification-status-area');
             const uploadContainer = document.getElementById('id-upload-container');
             const idType = formData.get('id_type');
