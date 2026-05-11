@@ -1,5 +1,6 @@
 node_modules
 .env
+kape-kanto.env
 database/*.db
 *.sqlite
 public/uploads/ids/

@@ -1,13 +1,13 @@
 const nodemailer = require('nodemailer');
 
-// Helper to clean credentials (removes whitespace and surrounding quotes)
+// Helper to clean credentials copied from dashboards or Gmail app passwords.
 function cleanCredential(val) {
     if (!val) return '';
     let cleaned = val.trim();
-    if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
+    if ((cleaned.startsWith('"') && cleaned.endsWith('"')) || (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
         cleaned = cleaned.slice(1, -1);
     }
-    return cleaned;
+    return cleaned.replace(/\s+/g, '');
 }
 
 const EMAIL_USER = cleanCredential(process.env.EMAIL_USER);
