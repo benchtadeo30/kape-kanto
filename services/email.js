@@ -26,19 +26,26 @@ if (!EMAIL_USER || !EMAIL_PASS) {
     });
 }
 
-const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, // use TLS
-    family: 4,
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
-    auth: {
-        user: EMAIL_USER,
-        pass: EMAIL_PASS
-    }
-});
+const transportConfigs = [
+    { name: 'gmail-starttls-587', port: 587, secure: false },
+    { name: 'gmail-ssl-465', port: 465, secure: true }
+];
+
+function createTransport(config) {
+    return nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: config.port,
+        secure: config.secure,
+        family: 4,
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000,
+        auth: {
+            user: EMAIL_USER,
+            pass: EMAIL_PASS
+        }
+    });
+}
 
 function assertEmailConfigured() {
     if (!EMAIL_USER || !EMAIL_PASS) {
@@ -54,10 +61,34 @@ function logEmailError(context, email, error) {
         emailUserSet: Boolean(EMAIL_USER),
         emailPassSet: Boolean(EMAIL_PASS),
         emailPassLength: EMAIL_PASS ? EMAIL_PASS.length : 0,
+        transport: error.transport,
         code: error.code,
         command: error.command,
         responseCode: error.responseCode
     });
+}
+
+async function sendMailWithFallback(mailOptions, context, email) {
+    let lastError;
+
+    for (const config of transportConfigs) {
+        try {
+            console.log(`[EMAIL] Trying ${config.name} for ${email}`);
+            const info = await createTransport(config).sendMail(mailOptions);
+            console.log(`[EMAIL] ${context} sent via ${config.name}: ${info.messageId}`);
+            return info;
+        } catch (error) {
+            error.transport = config.name;
+            lastError = error;
+            logEmailError(`${context} via ${config.name}`, email, error);
+
+            if (error.code === 'EAUTH' || error.responseCode === 535) {
+                throw error;
+            }
+        }
+    }
+
+    throw lastError;
 }
 
 /**
@@ -93,14 +124,7 @@ async function sendVerificationEmail(email, code) {
         `
     };
 
-    try {
-        const info = await transporter.sendMail(mailOptions);
-        console.log(`Email sent successfully: ${info.messageId}`);
-        return info;
-    } catch (error) {
-        logEmailError('Verification email', email, error);
-        throw error;
-    }
+    return sendMailWithFallback(mailOptions, 'Verification email', email);
 }
 
 /**
@@ -137,14 +161,7 @@ async function sendResetPasswordEmail(email, token) {
         `
     };
 
-    try {
-        const info = await transporter.sendMail(mailOptions);
-        console.log(`Reset email sent successfully: ${info.messageId}`);
-        return info;
-    } catch (error) {
-        logEmailError('Reset email', email, error);
-        throw error;
-    }
+    return sendMailWithFallback(mailOptions, 'Reset email', email);
 }
 
 /**
@@ -174,14 +191,7 @@ async function sendAccountDeletedEmail(email) {
         `
     };
 
-    try {
-        const info = await transporter.sendMail(mailOptions);
-        console.log(`Account deletion email sent: ${info.messageId}`);
-        return info;
-    } catch (error) {
-        logEmailError('Account deletion email', email, error);
-        throw error;
-    }
+    return sendMailWithFallback(mailOptions, 'Account deletion email', email);
 }
 
 module.exports = {
