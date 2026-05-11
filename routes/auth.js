@@ -62,6 +62,9 @@ router.post('/register', upload.single('profile_image'), async (req, res) => {
             await sendVerificationEmail(email, verificationCode);
         } catch (emailError) {
             console.error('Failed to send verification email:', emailError);
+            if (emailError.code === 'EMAIL_CONFIG_MISSING') {
+                return res.status(500).json({ error: 'Email service is not configured on the server. Please contact support.' });
+            }
             return res.status(500).json({ error: 'Registration failed to send verification email. Please try again.' });
         }
 

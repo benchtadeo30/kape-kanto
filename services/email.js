@@ -12,20 +12,44 @@ function cleanCredential(val) {
 
 const EMAIL_USER = cleanCredential(process.env.EMAIL_USER);
 const EMAIL_PASS = cleanCredential(process.env.EMAIL_PASS);
+const EMAIL_FROM_NAME = process.env.EMAIL_FROM_NAME || 'Kape Kanto Hub';
 
 if (!EMAIL_USER || !EMAIL_PASS) {
-    console.warn('[EMAIL] WARNING: EMAIL_USER or EMAIL_PASS is not set in .env');
+    console.warn('[EMAIL] WARNING: EMAIL_USER or EMAIL_PASS is not set');
 }
 
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 587,
     secure: false, // use TLS
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
     auth: {
         user: EMAIL_USER,
         pass: EMAIL_PASS
     }
 });
+
+function assertEmailConfigured() {
+    if (!EMAIL_USER || !EMAIL_PASS) {
+        const error = new Error('Email service is not configured. Set EMAIL_USER and EMAIL_PASS in Render environment variables.');
+        error.code = 'EMAIL_CONFIG_MISSING';
+        throw error;
+    }
+}
+
+function logEmailError(context, email, error) {
+    console.error(`[EMAIL ERROR] ${context} failed for ${email}:`, error.message || error);
+    console.error('[EMAIL DEBUG]', {
+        emailUserSet: Boolean(EMAIL_USER),
+        emailPassSet: Boolean(EMAIL_PASS),
+        emailPassLength: EMAIL_PASS ? EMAIL_PASS.length : 0,
+        code: error.code,
+        command: error.command,
+        responseCode: error.responseCode
+    });
+}
 
 /**
  * Sends a verification email to the user.
@@ -33,9 +57,10 @@ const transporter = nodemailer.createTransport({
  * @param {string} code - The verification code.
  */
 async function sendVerificationEmail(email, code) {
+    assertEmailConfigured();
     console.log(`[EMAIL] Sending verification email to: ${email} from: ${EMAIL_USER}`);
     const mailOptions = {
-        from: `"Kape Kanto Hub" <${EMAIL_USER}>`,
+        from: `"${EMAIL_FROM_NAME}" <${EMAIL_USER}>`,
         replyTo: EMAIL_USER,
         to: email,
         subject: 'Verify Your Email - Kape Kanto Hub',
@@ -64,8 +89,7 @@ async function sendVerificationEmail(email, code) {
         console.log(`Email sent successfully: ${info.messageId}`);
         return info;
     } catch (error) {
-        console.error(`[EMAIL ERROR] Failed to send verification email to ${email}:`, error.message || error);
-        console.error(`[EMAIL DEBUG] EMAIL_USER: ${EMAIL_USER ? 'set' : 'MISSING'}`);
+        logEmailError('Verification email', email, error);
         throw error;
     }
 }
@@ -76,10 +100,11 @@ async function sendVerificationEmail(email, code) {
  * @param {string} token - The reset token.
  */
 async function sendResetPasswordEmail(email, token) {
+    assertEmailConfigured();
     const resetUrl = `${(process.env.BASE_URL || 'http://localhost:3000').trim()}/reset-password?token=${token}`;
     console.log(`[EMAIL] Sending reset email to: ${email}`);
     const mailOptions = {
-        from: `"Kape Kanto Hub" <${EMAIL_USER}>`,
+        from: `"${EMAIL_FROM_NAME}" <${EMAIL_USER}>`,
         replyTo: EMAIL_USER,
         to: email,
         subject: 'Reset Your Password - Kape Kanto Hub',
@@ -108,7 +133,7 @@ async function sendResetPasswordEmail(email, token) {
         console.log(`Reset email sent successfully: ${info.messageId}`);
         return info;
     } catch (error) {
-        console.error(`[EMAIL ERROR] Failed to send reset email to ${email}:`, error.message || error);
+        logEmailError('Reset email', email, error);
         throw error;
     }
 }
@@ -118,9 +143,10 @@ async function sendResetPasswordEmail(email, token) {
  * @param {string} email - The user's email address.
  */
 async function sendAccountDeletedEmail(email) {
+    assertEmailConfigured();
     console.log(`[EMAIL] Sending account deletion notification to: ${email}`);
     const mailOptions = {
-        from: `"Kape Kanto Hub" <${EMAIL_USER}>`,
+        from: `"${EMAIL_FROM_NAME}" <${EMAIL_USER}>`,
         replyTo: EMAIL_USER,
         to: email,
         subject: 'Account Deleted - Kape Kanto Hub',
@@ -144,7 +170,7 @@ async function sendAccountDeletedEmail(email) {
         console.log(`Account deletion email sent: ${info.messageId}`);
         return info;
     } catch (error) {
-        console.error(`[EMAIL ERROR] Failed to send deletion email to ${email}:`, error.message || error);
+        logEmailError('Account deletion email', email, error);
         throw error;
     }
 }
