@@ -14,6 +14,34 @@ const path = require('path');
 router.get('/ping', (req, res) => res.json({ message: 'Auth router is active' }));
 router.post('/test-post', (req, res) => res.json({ message: 'POST to Auth router is working' }));
 
+function getEmailFailureResponse(error) {
+    if (error.code === 'EMAIL_CONFIG_MISSING') {
+        return {
+            code: 'EMAIL_CONFIG_MISSING',
+            error: 'Email service is not configured on the server. Please contact support.'
+        };
+    }
+
+    if (error.code === 'EAUTH' || error.responseCode === 535) {
+        return {
+            code: 'EMAIL_AUTH_FAILED',
+            error: 'Email sender login failed. Please check the Gmail app password configured on the server.'
+        };
+    }
+
+    if (error.code === 'ESOCKET' || error.code === 'ETIMEDOUT' || error.command === 'CONN') {
+        return {
+            code: 'EMAIL_SMTP_CONNECTION_FAILED',
+            error: 'Server could not connect to Gmail SMTP. Please try again in a moment.'
+        };
+    }
+
+    return {
+        code: 'EMAIL_SEND_FAILED',
+        error: 'Registration failed to send verification email. Please try again.'
+    };
+}
+
 // POST /api/auth/register
 router.post('/register', upload.single('profile_image'), async (req, res) => {
     const { username, email: rawEmail, password } = req.body;
@@ -62,10 +90,7 @@ router.post('/register', upload.single('profile_image'), async (req, res) => {
             await sendVerificationEmail(email, verificationCode);
         } catch (emailError) {
             console.error('Failed to send verification email:', emailError);
-            if (emailError.code === 'EMAIL_CONFIG_MISSING') {
-                return res.status(500).json({ error: 'Email service is not configured on the server. Please contact support.' });
-            }
-            return res.status(500).json({ error: 'Registration failed to send verification email. Please try again.' });
+            return res.status(500).json(getEmailFailureResponse(emailError));
         }
 
         res.status(201).json({ 

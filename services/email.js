@@ -1,4 +1,7 @@
 const nodemailer = require('nodemailer');
+const dns = require('dns');
+
+dns.setDefaultResultOrder('ipv4first');
 
 // Helper to clean credentials copied from dashboards or Gmail app passwords.
 function cleanCredential(val) {
