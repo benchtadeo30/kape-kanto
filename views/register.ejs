@@ -309,6 +309,7 @@
             const regData = await regRes.json();
             
             if (!regRes.ok) {
+                console.error('Registration error:', regData.error);
                 KapeKanto.toast(regData.error || 'Registration failed', 'error');
                 btn.disabled = false;
                 btn.innerHTML = 'Create Account';
