@@ -1,3 +1,5 @@
+const nodemailer = require('nodemailer');
+
 // Helper to clean credentials (removes whitespace and surrounding quotes)
 function cleanCredential(val) {
     if (!val) return '';
