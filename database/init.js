@@ -102,26 +102,23 @@ function initDb() {
 
     // Migration: Add columns for promo system upgrades if they don't exist
     const promoCols = db.prepare("PRAGMA table_info(promos)").all().map(c => c.name);
-    if (!promoCols.includes('discount_amount')) {
-        db.prepare('ALTER TABLE promos ADD COLUMN discount_amount REAL DEFAULT 0').run();
-        console.log("Migration: Added discount_amount to promos.");
-    }
-    if (!promoCols.includes('applicable_category_id')) {
-        db.prepare('ALTER TABLE promos ADD COLUMN applicable_category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL').run();
-        console.log("Migration: Added applicable_category_id to promos.");
-    }
-    if (!promoCols.includes('applicable_menu_item_id')) {
-        db.prepare('ALTER TABLE promos ADD COLUMN applicable_menu_item_id INTEGER REFERENCES menu_items(id) ON DELETE SET NULL').run();
-        console.log("Migration: Added applicable_menu_item_id to promos.");
-    }
-    if (!promoCols.includes('applicable_category_ids')) {
-        db.prepare("ALTER TABLE promos ADD COLUMN applicable_category_ids TEXT DEFAULT '[]'").run();
-        console.log("Migration: Added applicable_category_ids (JSON) to promos.");
-    }
-    if (!promoCols.includes('applicable_menu_item_ids')) {
-        db.prepare("ALTER TABLE promos ADD COLUMN applicable_menu_item_ids TEXT DEFAULT '[]'").run();
-        console.log("Migration: Added applicable_menu_item_ids (JSON) to promos.");
-    }
+    
+    const migrate = (col, sql) => {
+        if (!promoCols.includes(col)) {
+            try {
+                db.prepare(sql).run();
+                console.log(`Migration: Added ${col} to promos.`);
+            } catch (e) {
+                console.log(`Migration: Skipping ${col} (likely already exists).`);
+            }
+        }
+    };
+
+    migrate('discount_amount', 'ALTER TABLE promos ADD COLUMN discount_amount REAL DEFAULT 0');
+    migrate('applicable_category_id', 'ALTER TABLE promos ADD COLUMN applicable_category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL');
+    migrate('applicable_menu_item_id', 'ALTER TABLE promos ADD COLUMN applicable_menu_item_id INTEGER REFERENCES menu_items(id) ON DELETE SET NULL');
+    migrate('applicable_category_ids', "ALTER TABLE promos ADD COLUMN applicable_category_ids TEXT DEFAULT '[]'");
+    migrate('applicable_menu_item_ids', "ALTER TABLE promos ADD COLUMN applicable_menu_item_ids TEXT DEFAULT '[]'");
 
     // 5. Promo Items (Join table for Promo -> Menu Items)
     db.prepare(`
@@ -295,22 +292,7 @@ function initDb() {
     }
 
     // Migration: Add columns for promo system upgrades if they don't exist
-    if (!promoCols.includes('applicable_category_id')) {
-        db.prepare('ALTER TABLE promos ADD COLUMN applicable_category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL').run();
-        console.log("Migration: Added applicable_category_id to promos.");
-    }
-    if (!promoCols.includes('applicable_menu_item_id')) {
-        db.prepare('ALTER TABLE promos ADD COLUMN applicable_menu_item_id INTEGER REFERENCES menu_items(id) ON DELETE SET NULL').run();
-        console.log("Migration: Added applicable_menu_item_id to promos.");
-    }
-    if (!promoCols.includes('applicable_category_ids')) {
-        db.prepare("ALTER TABLE promos ADD COLUMN applicable_category_ids TEXT DEFAULT '[]'").run();
-        console.log("Migration: Added applicable_category_ids (JSON) to promos.");
-    }
-    if (!promoCols.includes('applicable_menu_item_ids')) {
-        db.prepare("ALTER TABLE promos ADD COLUMN applicable_menu_item_ids TEXT DEFAULT '[]'").run();
-        console.log("Migration: Added applicable_menu_item_ids (JSON) to promos.");
-    }
+    // (Consolidated in the main migration block above)
 
     const taskCols = db.prepare("PRAGMA table_info(promo_tasks)").all().map(c => c.name);
     if (!taskCols.includes('required_category_id')) {
