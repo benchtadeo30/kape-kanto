@@ -1,8 +1,15 @@
-const nodemailer = require('nodemailer');
+// Helper to clean credentials (removes whitespace and surrounding quotes)
+function cleanCredential(val) {
+    if (!val) return '';
+    let cleaned = val.trim();
+    if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
+        cleaned = cleaned.slice(1, -1);
+    }
+    return cleaned;
+}
 
-// Trim credentials to remove any hidden \r from Windows line endings
-const EMAIL_USER = (process.env.EMAIL_USER || '').trim();
-const EMAIL_PASS = (process.env.EMAIL_PASS || '').trim();
+const EMAIL_USER = cleanCredential(process.env.EMAIL_USER);
+const EMAIL_PASS = cleanCredential(process.env.EMAIL_PASS);
 
 if (!EMAIL_USER || !EMAIL_PASS) {
     console.warn('[EMAIL] WARNING: EMAIL_USER or EMAIL_PASS is not set in .env');
@@ -10,8 +17,8 @@ if (!EMAIL_USER || !EMAIL_PASS) {
 
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true, // use SSL
+    port: 587,
+    secure: false, // use TLS
     auth: {
         user: EMAIL_USER,
         pass: EMAIL_PASS
