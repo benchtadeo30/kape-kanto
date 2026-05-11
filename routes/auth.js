@@ -80,8 +80,17 @@ router.post('/register', upload.single('profile_image'), async (req, res) => {
             });
         });
     } catch (error) {
-        if (req.file) fs.unlinkSync(req.file.path);
+        if (req.file) {
+            try { fs.unlinkSync(req.file.path); } catch(e) {}
+        }
+        
         if (error.message.includes('UNIQUE constraint failed')) {
+            if (error.message.includes('users.username')) {
+                return res.status(400).json({ error: 'This username is already taken. Please choose another.' });
+            }
+            if (error.message.includes('users.email')) {
+                return res.status(400).json({ error: 'This email address is already registered.' });
+            }
             return res.status(400).json({ error: 'Username or email already exists.' });
         }
         console.error('Registration error:', error);
