@@ -168,7 +168,12 @@ router.post('/login', async (req, res) => {
     }
 
     try {
-        const user = db.prepare(`SELECT * FROM users WHERE email = ?`).get(email.trim().toLowerCase());
+        // Support login by either email or username
+        const identifier = email.trim();
+        const user = db.prepare(`
+            SELECT * FROM users 
+            WHERE LOWER(email) = LOWER(?) OR LOWER(username) = LOWER(?)
+        `).get(identifier, identifier);
 
         if (!user || !(await bcrypt.compare(password, user.password))) {
             return res.status(401).json({ error: 'Invalid email or password.' });

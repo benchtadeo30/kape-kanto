@@ -287,7 +287,7 @@
         const btn = e.target.querySelector('button');
         
         btn.disabled = true;
-        btn.innerText = 'Creating account...';
+        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Creating account...';
 
         const formData = new FormData();
         formData.append('username', username);
@@ -311,7 +311,7 @@
             if (!regRes.ok) {
                 KapeKanto.toast(regData.error || 'Registration failed', 'error');
                 btn.disabled = false;
-                btn.innerText = 'Register';
+                btn.innerHTML = 'Create Account';
                 return;
             }
 
@@ -321,7 +321,7 @@
             console.error(error);
             KapeKanto.toast('An error occurred during registration.', 'error');
             btn.disabled = false;
-            btn.innerText = 'Register';
+            btn.innerHTML = 'Create Account';
         }
     });
 </script>

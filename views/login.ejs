@@ -13,8 +13,8 @@
         
         <form id="login-form">
             <div class="form-group" style="margin-bottom: 1.5rem;">
-                <label style="font-weight: 600; color: var(--primary-dark); margin-bottom: 0.5rem; display: block;">Email Address</label>
-                <input type="email" id="email" placeholder="Enter your email address" required autocomplete="email"
+                <label style="font-weight: 600; color: var(--primary-dark); margin-bottom: 0.5rem; display: block;">Email or Username</label>
+                <input type="text" id="email" placeholder="Enter your email or username" required 
                     style="width: 100%; padding: 1rem; border-radius: 12px; border: 1.5px solid #eee; outline: none; transition: border-color 0.2s;">
             </div>
             
@@ -48,7 +48,7 @@
     document.getElementById('login-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        const email = document.getElementById('email').value.trim().toLowerCase();
+        const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
         const btn = e.target.querySelector('button');
         
