@@ -36,6 +36,13 @@ function getEmailFailureResponse(error) {
         };
     }
 
+    if (error.code === 'EMAIL_API_FAILED') {
+        return {
+            code: 'EMAIL_API_FAILED',
+            error: 'Email API failed to send the verification email. Please check the email provider settings.'
+        };
+    }
+
     return {
         code: 'EMAIL_SEND_FAILED',
         error: 'Registration failed to send verification email. Please try again.'
