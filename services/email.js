@@ -16,6 +16,11 @@ const EMAIL_FROM_NAME = process.env.EMAIL_FROM_NAME || 'Kape Kanto Hub';
 
 if (!EMAIL_USER || !EMAIL_PASS) {
     console.warn('[EMAIL] WARNING: EMAIL_USER or EMAIL_PASS is not set');
+} else {
+    console.log('[EMAIL] Config loaded', {
+        emailUserSet: true,
+        emailPassLength: EMAIL_PASS.length
+    });
 }
 
 const transporter = nodemailer.createTransport({
