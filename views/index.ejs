@@ -682,11 +682,23 @@
                                 </div>
                             </div>` : ''}
                             ${countdownTarget ? `
-                            <div class="countdown" data-target="${countdownTarget}" data-is-upcoming="${isUpcoming}" style="margin-bottom: 1.5rem; display: flex; gap: 8px; flex-wrap: wrap;">
-                                <div class="countdown-item" style="flex: 1; min-width: 50px; background: rgba(255,255,255,0.05); padding: 8px 4px; border-radius: 8px; text-align: center;"><div class="countdown-value days" style="font-weight: 800; font-size: 1rem;">00</div><div class="countdown-label" style="font-size: 0.6rem; text-transform: uppercase; opacity: 0.5;">Days</div></div>
-                                <div class="countdown-item" style="flex: 1; background: rgba(255,255,255,0.05); padding: 8px 4px; border-radius: 8px; text-align: center;"><div class="countdown-value hours" style="font-weight: 800; font-size: 1rem;">00</div><div class="countdown-label" style="font-size: 0.6rem; text-transform: uppercase; opacity: 0.5;">Hours</div></div>
-                                <div class="countdown-item" style="flex: 1; background: rgba(255,255,255,0.05); padding: 8px 4px; border-radius: 8px; text-align: center;"><div class="countdown-value minutes" style="font-weight: 800; font-size: 1rem;">00</div><div class="countdown-label" style="font-size: 0.6rem; text-transform: uppercase; opacity: 0.5;">Mins</div></div>
-                                <div class="countdown-item" style="flex: 1; background: rgba(255,255,255,0.05); padding: 8px 4px; border-radius: 8px; text-align: center;"><div class="countdown-value seconds" style="font-weight: 800; font-size: 1rem;">00</div><div class="countdown-label" style="font-size: 0.6rem; text-transform: uppercase; opacity: 0.5;">Secs</div></div>
+                            <div class="countdown" data-target="${countdownTarget}" data-is-upcoming="${isUpcoming}" style="margin-bottom: 1.5rem; display: flex; gap: 6px; justify-content: space-between;">
+                                <div class="countdown-item" style="flex: 1; background: rgba(255,255,255,0.05); padding: 8px 2px; border-radius: 8px; text-align: center; min-width: 0; white-space: nowrap;">
+                                    <div class="countdown-value days" style="font-weight: 800; font-size: 1rem;">00</div>
+                                    <div class="countdown-label" style="font-size: 0.55rem; text-transform: uppercase; opacity: 0.5;">Days</div>
+                                </div>
+                                <div class="countdown-item" style="flex: 1; background: rgba(255,255,255,0.05); padding: 8px 2px; border-radius: 8px; text-align: center; min-width: 0; white-space: nowrap;">
+                                    <div class="countdown-value hours" style="font-weight: 800; font-size: 1rem;">00</div>
+                                    <div class="countdown-label" style="font-size: 0.55rem; text-transform: uppercase; opacity: 0.5;">Hours</div>
+                                </div>
+                                <div class="countdown-item" style="flex: 1; background: rgba(255,255,255,0.05); padding: 8px 2px; border-radius: 8px; text-align: center; min-width: 0; white-space: nowrap;">
+                                    <div class="countdown-value minutes" style="font-weight: 800; font-size: 1rem;">00</div>
+                                    <div class="countdown-label" style="font-size: 0.55rem; text-transform: uppercase; opacity: 0.5;">Mins</div>
+                                </div>
+                                <div class="countdown-item" style="flex: 1; background: rgba(255,255,255,0.05); padding: 8px 2px; border-radius: 8px; text-align: center; min-width: 0; white-space: nowrap;">
+                                    <div class="countdown-value seconds" style="font-weight: 800; font-size: 1rem;">00</div>
+                                    <div class="countdown-label" style="font-size: 0.55rem; text-transform: uppercase; opacity: 0.5;">Secs</div>
+                                </div>
                             </div>` : ''}
                             <div class="event-card-footer" style="margin-top: auto;">
                                 ${(!isTask && promo.promo_code) ? `
