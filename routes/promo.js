@@ -15,7 +15,7 @@ router.get('/', async (req, res) => {
                    start_date, end_date, promo_code, 'promo' as event_type, created_at
             FROM promos 
             WHERE is_active = 1 
-            AND (end_date IS NULL OR end_date = '' OR datetime(end_date) >= datetime('now', 'localtime'))
+            AND (end_date IS NULL OR end_date = '' OR datetime(end_date) >= datetime('now', '+8 hours'))
         `;
 
         const taskQuery = `
@@ -24,14 +24,14 @@ router.get('/', async (req, res) => {
             FROM promo_tasks pt
             LEFT JOIN promos p ON pt.reward_promo_id = p.id
             WHERE pt.is_active = 1
-            AND (pt.end_date IS NULL OR pt.end_date = '' OR datetime(pt.end_date) >= datetime('now', 'localtime'))
+            AND (pt.end_date IS NULL OR pt.end_date = '' OR datetime(pt.end_date) >= datetime('now', '+8 hours'))
         `;
 
         const unifiedQuery = `
             SELECT * FROM (${promoQuery} UNION ALL ${taskQuery}) as combined
             ORDER BY 
                 CASE 
-                    WHEN start_date IS NOT NULL AND datetime(start_date) > datetime('now', 'localtime') THEN 1 
+                    WHEN start_date IS NOT NULL AND datetime(start_date) > datetime('now', '+8 hours') THEN 1 
                     ELSE 0 
                 END ASC,
                 COALESCE(created_at, '0000-00-00') DESC, 
@@ -99,7 +99,7 @@ router.get('/tasks/my-progress', requireAuth, async (req, res) => {
             LEFT JOIN user_promo_progress up ON pt.id = up.promo_task_id AND up.user_id = ?
             LEFT JOIN promos p ON pt.reward_promo_id = p.id
             WHERE pt.is_active = 1
-            AND (pt.end_date IS NULL OR pt.end_date = '' OR datetime(pt.end_date) >= datetime('now', 'localtime'))
+            AND (pt.end_date IS NULL OR pt.end_date = '' OR datetime(pt.end_date) >= datetime('now', '+8 hours'))
             ORDER BY COALESCE(up.is_completed, 0) ASC, pt.id DESC
         `).all(req.session.userId);
         res.json(tasks);
@@ -121,8 +121,8 @@ router.post('/validate', async (req, res) => {
             FROM promos p
             WHERE UPPER(p.promo_code) = UPPER(?) 
             AND p.is_active = 1 
-            AND (p.start_date IS NULL OR p.start_date = '' OR datetime(p.start_date) <= datetime('now', 'localtime'))
-            AND (p.end_date IS NULL OR p.end_date = '' OR datetime(p.end_date) >= datetime('now', 'localtime'))
+            AND (p.start_date IS NULL OR p.start_date = '' OR datetime(p.start_date) <= datetime('now', '+8 hours'))
+            AND (p.end_date IS NULL OR p.end_date = '' OR datetime(p.end_date) >= datetime('now', '+8 hours'))
         `).get(code);
 
         if (!promo) {
@@ -320,7 +320,7 @@ router.delete('/cleanup', requireRole('admin'), async (req, res) => {
     try {
         const expiredTasks = await db.prepare(`
             SELECT id, reward_promo_id FROM promo_tasks 
-            WHERE (end_date IS NOT NULL AND datetime(end_date) < datetime('now', 'localtime')) 
+            WHERE (end_date IS NOT NULL AND datetime(end_date) < datetime('now', '+8 hours')) 
             OR is_active = 0
         `).all();
         let deletedCount = 0;
@@ -336,7 +336,7 @@ router.delete('/cleanup', requireRole('admin'), async (req, res) => {
 
         const resPromos = await db.prepare(`
             DELETE FROM promos 
-            WHERE (end_date IS NOT NULL AND datetime(end_date) < datetime('now', 'localtime')) 
+            WHERE (end_date IS NOT NULL AND datetime(end_date) < datetime('now', '+8 hours')) 
             OR is_active = 0
         `).run();
         deletedCount += resPromos.changes;

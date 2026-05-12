@@ -97,8 +97,8 @@ router.post('/', requireAuth, async (req, res) => {
                        (SELECT id FROM promo_tasks WHERE reward_promo_id = p.id LIMIT 1) as is_loyalty_reward
                 FROM promos p
                 WHERE UPPER(p.promo_code) = UPPER(?) AND p.is_active = 1
-                AND (p.start_date IS NULL OR p.start_date = '' OR datetime(p.start_date) <= datetime('now', 'localtime'))
-                AND (p.end_date IS NULL OR p.end_date = '' OR datetime(p.end_date) >= datetime('now', 'localtime'))
+                AND (p.start_date IS NULL OR p.start_date = '' OR datetime(p.start_date) <= datetime('now', '+8 hours'))
+                AND (p.end_date IS NULL OR p.end_date = '' OR datetime(p.end_date) >= datetime('now', '+8 hours'))
             `).get(promo_code);
 
             if (promo) {

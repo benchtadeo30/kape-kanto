@@ -39,13 +39,13 @@ router.get('/', async (req, res) => {
         const promos = await db.prepare(`
             SELECT *, 'promo' as event_type FROM promos 
             WHERE is_active = 1 
-            AND (end_date IS NULL OR end_date = '' OR datetime(end_date) >= datetime('now', 'localtime'))
+            AND (end_date IS NULL OR end_date = '' OR datetime(end_date) >= datetime('now', '+8 hours'))
         `).all();
 
         const tasks = await db.prepare(`
             SELECT *, 'task' as event_type FROM promo_tasks 
             WHERE is_active = 1 
-            AND (end_date IS NULL OR end_date = '' OR datetime(end_date) >= datetime('now', 'localtime'))
+            AND (end_date IS NULL OR end_date = '' OR datetime(end_date) >= datetime('now', '+8 hours'))
         `).all();
 
         const activePromos = [...promos, ...tasks].sort((a, b) => {
@@ -129,7 +129,7 @@ router.get('/profile', pageRequireAuth, async (req, res) => {
             IFNULL(p.is_completed, 0) as is_completed
         FROM promo_tasks t
         LEFT JOIN user_promo_progress p ON t.id = p.promo_task_id AND p.user_id = ?
-        WHERE (t.is_active = 1 AND (t.end_date IS NULL OR datetime(t.end_date) >= datetime('now', 'localtime')))
+        WHERE (t.is_active = 1 AND (t.end_date IS NULL OR datetime(t.end_date) >= datetime('now', '+8 hours')))
     `).all(req.session.userId);
 
     const coupons = await db.prepare(`
@@ -138,7 +138,7 @@ router.get('/profile', pageRequireAuth, async (req, res) => {
         JOIN promos p ON c.promo_id = p.id
         WHERE c.user_id = ? AND c.is_used = 0
         AND p.is_active = 1
-        AND (p.end_date IS NULL OR datetime(p.end_date) >= datetime('now', 'localtime'))
+        AND (p.end_date IS NULL OR datetime(p.end_date) >= datetime('now', '+8 hours'))
     `).all(req.session.userId);
 
     res.render('profile', { 
