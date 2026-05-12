@@ -409,6 +409,7 @@ async function applyPromo() {
 
     if (!code) { showToast('Please enter a promo code.', 'warning'); return; }
 
+    console.log('[PROMO] Sending POST request to validate code:', code);
     try {
         const res = await fetch('/api/promos/validate', {
             method: 'POST',
