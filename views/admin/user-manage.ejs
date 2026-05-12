@@ -75,6 +75,51 @@
             <button class="btn btn-primary" onclick="openCreateModal()" style="font-weight: 700; font-size: 1.1rem; padding: 14px 2rem; border-radius: 16px;">+ New Account</button>
         </div>
 
+        <!-- Pending ID Verifications Section -->
+        <div class="card" id="id-verifications-card" style="padding: 0; overflow: hidden; border: 1px solid #f0e6e0; margin-bottom: 2rem; display: none;">
+            <div style="padding: 1.5rem 2rem; background: linear-gradient(135deg, #fff8e1, #fff3e0); border-bottom: 1px solid #ffe082; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 40px; height: 40px; border-radius: 12px; background: #f57f17; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+                        <i class="fa-solid fa-id-card-clip"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0; color: #e65100; font-size: 1.3rem;">Pending ID Verifications</h3>
+                        <p style="margin: 0; font-size: 0.85rem; color: #bf360c;" id="pending-count-text">Loading...</p>
+                    </div>
+                </div>
+                <button onclick="loadPendingVerifications()" style="background: none; border: 1px solid #ffcc80; padding: 8px 16px; border-radius: 10px; cursor: pointer; color: #e65100; font-weight: 600; font-size: 0.85rem;">
+                    <i class="fa-solid fa-arrows-rotate"></i> Refresh
+                </button>
+            </div>
+            <div id="pending-verifications-list" style="padding: 1.5rem;">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
+        <!-- Image Lightbox -->
+        <div id="image-lightbox" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; cursor: zoom-out;" onclick="this.style.display='none'">
+            <img id="lightbox-img" src="" style="max-width: 90vw; max-height: 90vh; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
+        </div>
+
+        <!-- Reject / Resubmit Reason Modal -->
+        <div id="reason-modal" class="admin-modal">
+            <div class="modal-content" style="max-width: 450px;">
+                <div class="modal-header">
+                    <h3 id="reason-modal-title"><i class="fa-solid fa-comment-dots" style="margin-right: 10px; color: var(--primary);"></i> Provide Reason</h3>
+                    <button onclick="closeReasonModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #999;">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Reason / Message to User</label>
+                    <textarea id="reason-text" rows="4" placeholder="Explain why the ID was rejected or what needs to be resubmitted..."
+                        style="width: 100%; padding: 12px 16px; border: 1px solid #e0d4c8; border-radius: 12px; font-size: 0.95rem; resize: vertical; outline: none; font-family: inherit;"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button onclick="closeReasonModal()" style="padding: 10px 20px; border-radius: 10px; border: 1px solid #ddd; background: white; cursor: pointer; font-weight: 600;">Cancel</button>
+                    <button id="reason-submit-btn" onclick="submitReason()" style="padding: 10px 20px; border-radius: 10px; border: none; color: white; cursor: pointer; font-weight: 700;">Submit</button>
+                </div>
+            </div>
+        </div>
+
         <div class="card" style="padding: 0; overflow: hidden; border: 1px solid #f0e6e0;">
             <div class="table-header-row" style="padding: 1.5rem; background: #fdfaf7; border-bottom: 1px solid #f0e6e0; margin-bottom: 0;">
                 <h3 style="margin: 0;">System Accounts</h3>
@@ -481,7 +526,175 @@
         }, { title: 'Delete User', confirmText: 'Yes, Delete', type: 'danger' });
     }
 
-    document.addEventListener('DOMContentLoaded', loadData);
+    // ── ID Verification Admin Logic ─────────────────────────────────
+
+    let reasonAction = null;
+    let reasonUserId = null;
+
+    async function loadPendingVerifications() {
+        try {
+            const res = await fetch('/api/users/id-verifications/pending');
+            const data = await res.json();
+            const card = document.getElementById('id-verifications-card');
+            const list = document.getElementById('pending-verifications-list');
+            const countText = document.getElementById('pending-count-text');
+
+            if (!data || data.length === 0) {
+                card.style.display = 'none';
+                return;
+            }
+
+            card.style.display = 'block';
+            countText.textContent = `${data.length} submission${data.length > 1 ? 's' : ''} awaiting review`;
+
+            list.innerHTML = data.map(u => {
+                let notes = {};
+                try { notes = JSON.parse(u.id_verification_notes || '{}'); } catch(e) {}
+                const idType = notes.id_type || (u.senior_id_image ? 'senior' : 'pwd');
+                const idLabel = idType === 'senior' ? 'Senior Citizen' : 'PWD';
+                const idImage = u.senior_id_image || u.pwd_id_image;
+                const submittedAt = notes.submitted_at ? new Date(notes.submitted_at).toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Unknown';
+
+                return `
+                <div style="border: 1px solid #f0e6e0; border-radius: 16px; padding: 1.5rem; margin-bottom: 1rem; background: white; transition: box-shadow 0.3s;" onmouseover="this.style.boxShadow='0 4px 20px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'">
+                    <div style="display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: flex-start;">
+                        
+                        <!-- User Info -->
+                        <div style="flex: 1; min-width: 200px;">
+                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                                <div style="width: 44px; height: 44px; border-radius: 12px; background: #f7f2ef; display: flex; align-items: center; justify-content: center; color: var(--primary); font-weight: 800; font-size: 1.1rem;">
+                                    ${(u.username || 'U').charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <div style="font-weight: 700; font-size: 1.1rem; color: #333;">${u.username}</div>
+                                    <div style="font-size: 0.85rem; color: #999;">${u.email}</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+                                <span style="padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 700; background: ${idType === 'senior' ? '#e3f2fd' : '#f3e5f5'}; color: ${idType === 'senior' ? '#1565c0' : '#7b1fa2'};">
+                                    <i class="fa-solid fa-${idType === 'senior' ? 'person-cane' : 'wheelchair'}"></i> ${idLabel} ID
+                                </span>
+                                ${u.id_number ? `<span style="padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 600; background: #f5f5f5; color: #666; font-family: monospace;">ID# ${u.id_number}</span>` : ''}
+                            </div>
+                            <div style="font-size: 0.8rem; color: #aaa;">
+                                <i class="fa-regular fa-clock"></i> Submitted: ${submittedAt}
+                            </div>
+                            ${u.duplicate_warning ? `
+                            <div style="margin-top: 10px; padding: 8px 12px; background: #fff3e0; border: 1px solid #ffcc80; border-radius: 10px;">
+                                <p style="margin: 0; font-size: 0.8rem; color: #e65100; font-weight: 600;">
+                                    <i class="fa-solid fa-triangle-exclamation"></i> ${u.duplicate_warning}
+                                </p>
+                            </div>` : ''}
+                        </div>
+
+                        <!-- ID Image -->
+                        <div style="text-align: center;">
+                            <p style="margin: 0 0 6px 0; font-size: 0.7rem; text-transform: uppercase; color: #999; font-weight: 600; letter-spacing: 0.5px;">ID Photo</p>
+                            ${idImage ? `<img src="${idImage}" style="width: 130px; height: 90px; object-fit: cover; border-radius: 10px; border: 2px solid #f0e6e0; cursor: pointer; transition: transform 0.2s;" onclick="openLightbox('${idImage}')" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">` : '<div style="width: 130px; height: 90px; background: #f5f5f5; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #ccc;"><i class="fa-solid fa-image" style="font-size: 1.5rem;"></i></div>'}
+                        </div>
+
+                        <!-- Selfie Image -->
+                        <div style="text-align: center;">
+                            <p style="margin: 0 0 6px 0; font-size: 0.7rem; text-transform: uppercase; color: #999; font-weight: 600; letter-spacing: 0.5px;">Selfie</p>
+                            ${u.selfie_image ? `<img src="${u.selfie_image}" style="width: 130px; height: 90px; object-fit: cover; border-radius: 10px; border: 2px solid #f0e6e0; cursor: pointer; transition: transform 0.2s;" onclick="openLightbox('${u.selfie_image}')" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">` : '<div style="width: 130px; height: 90px; background: #f5f5f5; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #ccc;"><i class="fa-solid fa-image" style="font-size: 1.5rem;"></i></div>'}
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div style="display: flex; flex-direction: column; gap: 8px; min-width: 140px;">
+                            <button onclick="approveId(${u.id})" style="padding: 10px 16px; border-radius: 10px; border: none; background: #2e7d32; color: white; font-weight: 700; cursor: pointer; font-size: 0.85rem; transition: background 0.2s;" onmouseover="this.style.background='#1b5e20'" onmouseout="this.style.background='#2e7d32'">
+                                <i class="fa-solid fa-check"></i> Approve
+                            </button>
+                            <button onclick="openReasonModal(${u.id}, 'reject')" style="padding: 10px 16px; border-radius: 10px; border: 1px solid #ef5350; background: white; color: #c62828; font-weight: 700; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" onmouseover="this.style.background='#ffebee'" onmouseout="this.style.background='white'">
+                                <i class="fa-solid fa-xmark"></i> Reject
+                            </button>
+                            <button onclick="openReasonModal(${u.id}, 'resubmit')" style="padding: 10px 16px; border-radius: 10px; border: 1px solid #ff9800; background: white; color: #e65100; font-weight: 700; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" onmouseover="this.style.background='#fff3e0'" onmouseout="this.style.background='white'">
+                                <i class="fa-solid fa-rotate-right"></i> Resubmit
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        } catch (err) {
+            console.error('Failed to load pending verifications:', err);
+        }
+    }
+
+    function openLightbox(src) {
+        const lb = document.getElementById('image-lightbox');
+        document.getElementById('lightbox-img').src = src;
+        lb.style.display = 'flex';
+    }
+
+    async function approveId(userId) {
+        KapeKanto.confirm('Are you sure you want to approve this ID? The user will receive a 20% discount.', async () => {
+            try {
+                const res = await fetch(`/api/users/${userId}/approve-id`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+                const data = await res.json();
+                if (res.ok) {
+                    KapeKanto.toast(data.message, 'success');
+                    loadPendingVerifications();
+                } else {
+                    KapeKanto.toast(data.error, 'error');
+                }
+            } catch(e) { KapeKanto.toast('Server error', 'error'); }
+        }, { title: 'Approve ID', confirmText: 'Yes, Approve', type: 'success' });
+    }
+
+    function openReasonModal(userId, action) {
+        reasonUserId = userId;
+        reasonAction = action;
+        const modal = document.getElementById('reason-modal');
+        const title = document.getElementById('reason-modal-title');
+        const btn = document.getElementById('reason-submit-btn');
+        document.getElementById('reason-text').value = '';
+
+        if (action === 'reject') {
+            title.innerHTML = '<i class="fa-solid fa-ban" style="margin-right: 10px; color: #c62828;"></i> Reject Verification';
+            btn.style.background = '#c62828';
+            btn.textContent = 'Reject';
+        } else {
+            title.innerHTML = '<i class="fa-solid fa-rotate-right" style="margin-right: 10px; color: #e65100;"></i> Request Resubmission';
+            btn.style.background = '#e65100';
+            btn.textContent = 'Request Resubmission';
+        }
+        modal.style.display = 'flex';
+    }
+
+    function closeReasonModal() {
+        document.getElementById('reason-modal').style.display = 'none';
+        reasonUserId = null;
+        reasonAction = null;
+    }
+
+    async function submitReason() {
+        const reason = document.getElementById('reason-text').value.trim();
+        if (!reason) {
+            KapeKanto.toast('Please provide a reason.', 'warning');
+            return;
+        }
+
+        try {
+            const endpoint = reasonAction === 'reject' ? 'reject-id' : 'resubmit-id';
+            const res = await fetch(`/api/users/${reasonUserId}/${endpoint}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reason })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                KapeKanto.toast(data.message, 'success');
+                closeReasonModal();
+                loadPendingVerifications();
+            } else {
+                KapeKanto.toast(data.error, 'error');
+            }
+        } catch(e) { KapeKanto.toast('Server error', 'error'); }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadData();
+        loadPendingVerifications();
+    });
 </script>
 
 <%- include('../partials/footer') %>

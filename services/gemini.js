@@ -4,82 +4,6 @@ const fs = require("fs");
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
-async function verifyIdCard(filePath, mimeType, expectedType) {
-  try {
-    // Read and encode image to base64
-    const imageBuffer = fs.readFileSync(filePath);
-    const base64Image = imageBuffer.toString('base64');
-    const mimeTypeStr = mimeType || 'image/jpeg';
-    const base64Data = `data:${mimeTypeStr};base64,${base64Image}`;
-
-    const typeLabel = expectedType === 'senior' ? 'Philippine Senior Citizen ID' : 'Philippine PWD ID';
-
-    const prompt = `Analyze this image and determine if it is a valid ${typeLabel}.
-Check for the following:
-1. Is this a photo of a physical ID card?
-2. Does it contain a person's name, photo, and ID number?
-3. Does it mention the issuing government agency (e.g., OSCA, NCDA)?
-4. Does it appear to be genuine and not digitally fabricated?
-5. Most importantly: Is it specifically a ${typeLabel}?
-
-Respond strictly in JSON format with the following structure:
-{
-  "isValid": true/false,
-  "confidence": "high"/"medium"/"low",
-  "detectedCardType": "senior_citizen_id"/"pwd_id"/"unknown",
-  "isExpectedType": true/false,
-  "reason": "A clear, polite message explaining why the ID was accepted or rejected. If rejected, specifically mention that the ${typeLabel} verification failed."
-}`;
-
-    // Following OpenRouter multi-part message format
-    const messages = [
-      {
-        role: "user",
-        content: [
-          {
-            type: "text",
-            text: prompt
-          },
-          {
-            type: "image_url",
-            image_url: {
-              url: base64Data
-            }
-          }
-        ]
-      }
-    ];
-
-    const response = await fetch(OPENROUTER_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-        "HTTP-Referer": process.env.BASE_URL || "https://kapekantohub.com",
-        "X-Title": "Kape Kanto Hub ID Verification"
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.0-flash-001", // Reverted to high-quality vision model
-        messages: messages,
-        max_tokens: 1000
-      })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`OpenRouter API error: ${response.status} - ${errorText}`);
-    }
-
-    const data = await response.json();
-    const text = data.choices[0].message.content;
-    const cleanJson = text.replace(/```json\n?|\n?```/g, '').trim();
-    return JSON.parse(cleanJson);
-
-  } catch (error) {
-    console.error("OpenRouter Vision ID verification error:", error);
-    throw new Error("ID verification AI failed. Please ensure the image is clear and try again.");
-  }
-}
 
 async function generateChatResponse(message, history) {
   try {
@@ -94,7 +18,7 @@ STRICT SCOPE:
 
 KAPE KANTO HUB FEATURES:
 1. Ordering: Customers can browse the /menu, add items to their Cart, and choose between Pickup or Delivery.
-2. 20% Discount: Senior Citizens and PWDs can upload their ID in the /profile page. Our AI verifies it instantly to apply a 20% discount.
+2. 20% Discount: Senior Citizens and PWDs can upload their ID and selfie in the /profile page. Our staff will manually verify it to apply a 20% discount.
 3. Security: All sensitive account changes (updating username, changing password, removing email) require a 6-digit security code sent to your Gmail for protection.
 4. Promos: Check the "Limited Time Events" on the Home page for active deals and live countdowns.
 5. Loyalty: Join "Loyalty Tasks" in your Profile to earn rewards by completing specific challenges.
@@ -169,6 +93,5 @@ function getFallbackResponse(message) {
 }
 
 module.exports = {
-  verifyIdCard,
   generateChatResponse
 };

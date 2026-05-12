@@ -504,9 +504,9 @@
                                                             Discount</h4>
                                                         <p
                                                             style="margin: 0; font-size: 0.85rem; color: #856404; line-height: 1.5;">
-                                                            Upload your valid Philippine Senior Citizen or PWD ID. Our
-                                                            AI will verify it
-                                                            instantly to apply your discount.
+                                                            Upload your valid Philippine Senior Citizen or PWD ID along
+                                                            with a selfie holding your ID. Our team will review and
+                                                            verify it to apply your discount.
                                                         </p>
                                                     </div>
                                                 </div>
@@ -551,9 +551,9 @@
                                                                     Review</span>
                                                                 <p
                                                                     style="font-size: 0.85rem; color: var(--text-light); margin-top: 10px;">
-                                                                    <i class="fa-solid fa-spinner fa-spin"></i>
+                                                                    <i class="fa-solid fa-clock"></i>
                                                                     <%= user.id_verification_message
-                                                                        || 'Our AI is currently analyzing your ID...' %>
+                                                                        || 'Your ID is under review by our team. You will be notified once verified.' %>
                                                                 </p>
                                                                 <% } else if (user.id_verification_status==='rejected' )
                                                                     { %>
@@ -630,16 +630,16 @@
                                                                             style="display: block; margin-bottom: 0.5rem; font-weight: 600;">ID
                                                                             Document Photo</label>
                                                                         <div class="upload-zone" id="drop-zone">
-                                                                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                                                                            <i class="fa-solid fa-id-card"></i>
                                                                             <p style="margin: 0; font-weight: 600;">
-                                                                                Click to upload or drag & drop</p>
+                                                                                Click to upload your ID</p>
                                                                             <p
                                                                                 style="margin: 5px 0 0 0; font-size: 0.8rem; color: #888;">
                                                                                 PNG, JPG or JPEG (Max 5MB)</p>
                                                                             <input type="file" id="id-file"
                                                                                 name="id_image" accept="image/*"
                                                                                 required
-                                                                                onchange="handleFileSelect(this)">
+                                                                                onchange="handleFileSelect(this, 'file-name-text')">
                                                                         </div>
                                                                         <div id="file-preview" class="file-preview">
                                                                             <i class="fa-solid fa-file-image"></i>
@@ -647,10 +647,41 @@
                                                                         </div>
                                                                     </div>
 
+                                                                    <div class="form-group" style="margin-top: 1.5rem;">
+                                                                        <label
+                                                                            style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Selfie
+                                                                            Holding Your ID</label>
+                                                                        <div class="upload-zone" id="selfie-drop-zone" style="border-color: #e0d4c8;">
+                                                                            <i class="fa-solid fa-camera"></i>
+                                                                            <p style="margin: 0; font-weight: 600;">
+                                                                                Click to upload your selfie</p>
+                                                                            <p
+                                                                                style="margin: 5px 0 0 0; font-size: 0.8rem; color: #888;">
+                                                                                Hold your ID next to your face</p>
+                                                                            <input type="file" id="selfie-file"
+                                                                                name="selfie_image" accept="image/*"
+                                                                                required
+                                                                                onchange="handleFileSelect(this, 'selfie-name-text')">
+                                                                        </div>
+                                                                        <div id="selfie-preview" class="file-preview">
+                                                                            <i class="fa-solid fa-file-image"></i>
+                                                                            <span id="selfie-name-text"></span>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div class="form-group" style="margin-top: 1.5rem;">
+                                                                        <label
+                                                                            style="display: block; margin-bottom: 0.5rem; font-weight: 600;">ID
+                                                                            Number</label>
+                                                                        <input type="text" name="id_number" id="id-number-input"
+                                                                            placeholder="Enter the ID number printed on your card"
+                                                                            required
+                                                                            style="width: 100%; padding: 12px 16px; border: 1px solid #e0d4c8; border-radius: 12px; font-size: 1rem; outline: none; transition: border-color 0.3s;">
+                                                                    </div>
+
                                                                     <button type="submit" class="btn-save"
                                                                         style="width: 100%; margin-top: 2rem;">
-                                                                        <i class="fa-solid fa-bolt"></i> Submit for AI
-                                                                        Analysis
+                                                                        <i class="fa-solid fa-paper-plane"></i> Submit for Admin Review
                                                                     </button>
                                                                 </form>
                                                     </div>
@@ -884,12 +915,12 @@
             }
         }
 
-        function handleFileSelect(input) {
-            const preview = document.getElementById('file-preview');
-            const fileNameText = document.getElementById('file-name-text');
+        function handleFileSelect(input, textId) {
+            const fileNameText = document.getElementById(textId);
+            const preview = fileNameText?.closest('.file-preview');
             if (input.files && input.files[0]) {
                 fileNameText.innerText = `Selected: ${input.files[0].name}`;
-                preview.style.display = 'block';
+                if (preview) preview.style.display = 'block';
             }
         }
 
@@ -902,15 +933,33 @@
             const idType = formData.get('id_type');
             const idLabel = idType === 'senior' ? 'Senior Citizen' : 'PWD';
 
+            // Validate both files exist
+            const idFile = document.getElementById('id-file');
+            const selfieFile = document.getElementById('selfie-file');
+            const idNumber = document.getElementById('id-number-input');
+
+            if (!idFile?.files?.length) {
+                KapeKanto.toast('Please upload your ID photo.', 'warning');
+                return;
+            }
+            if (!selfieFile?.files?.length) {
+                KapeKanto.toast('Please upload a selfie holding your ID.', 'warning');
+                return;
+            }
+            if (!idNumber?.value?.trim() || idNumber.value.trim().length < 3) {
+                KapeKanto.toast('Please enter a valid ID number.', 'warning');
+                return;
+            }
+
             btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing...';
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
 
             // Temporary status update
             statusArea.innerHTML = `
                 <p style="margin-bottom: 5px; font-weight: 600;">Current Status</p>
-                <span class="status-badge status-pending">Under Review</span>
+                <span class="status-badge status-pending">Submitting</span>
                 <p style="font-size: 0.85rem; color: var(--text-light); margin-top: 10px;">
-                    <i class="fa-solid fa-spinner fa-spin"></i> AI is analyzing your ${idLabel} ID...
+                    <i class="fa-solid fa-spinner fa-spin"></i> Uploading your documents...
                 </p>
             `;
 
@@ -919,55 +968,36 @@
                 const data = await res.json();
 
                 if (res.ok) {
-                    const isVerified = data.status === 'verified';
-
-                    // Show a prominent Alert Modal instead of just a toast
                     KapeKanto.alert(data.message, {
-                        title: isVerified ? 'Verification Successful' : 'Verification Failed',
-                        type: isVerified ? 'success' : 'danger'
+                        title: 'Submitted for Review',
+                        type: 'success'
                     });
 
-                    // Update the status area LIVE without a page reload
-                    if (isVerified) {
-                        statusArea.innerHTML = `
-                            <p style="margin-bottom: 5px; font-weight: 600;">Current Status</p>
-                            <span class="status-badge status-verified">Verified ${idLabel} ID</span>
-                            <p style="font-size: 0.85rem; color: var(--success); margin-top: 10px; font-weight: 600;">
-                                <i class="fa-solid fa-circle-check"></i> ${data.message}
-                            </p>
-                            <div style="margin-top: 15px; display: flex; gap: 10px;">
-                                <button onclick="requestAccountChange('update_id', null, this)" class="btn-save" style="padding: 8px 16px; font-size: 0.85rem; background: var(--p-primary); color: white; border: none; border-radius: 8px; cursor: pointer;">Update ID</button>
-                                <button onclick="requestAccountChange('remove_id', null, this)" class="btn-save" style="padding: 8px 16px; font-size: 0.85rem; background: white; color: var(--danger); border: 1px solid var(--danger); border-radius: 8px; cursor: pointer;">Remove ID</button>
-                            </div>
-                        `;
-                        uploadContainer.style.display = 'none';
-                    } else {
-                        statusArea.innerHTML = `
-                            <p style="margin-bottom: 5px; font-weight: 600;">Current Status</p>
-                            <span class="status-badge status-unverified" style="background: var(--danger); color: white;">Verification Failed</span>
-                            <p style="font-size: 0.85rem; color: var(--danger); margin-top: 10px; font-weight: 600; line-height: 1.5;">
-                                <i class="fa-solid fa-circle-xmark"></i> ${data.message}
-                            </p>
-                            <div style="margin-top: 12px; padding: 10px; background: #fff5f5; border-radius: 8px; border: 1px solid #ffcdd2;">
-                                <p style="margin:0; font-size: 0.8rem; color: #c62828;">
-                                    <strong>Note:</strong> Please ensure your ID is clearly visible, not expired, and matches the type you selected. You can try again below.
-                                </p>
-                            </div>
-                        `;
-                        uploadContainer.style.display = 'block';
-                        btn.disabled = false;
-                        btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Submit for AI Analysis';
-                    }
+                    statusArea.innerHTML = `
+                        <p style="margin-bottom: 5px; font-weight: 600;">Current Status</p>
+                        <span class="status-badge status-pending">Under Review</span>
+                        <p style="font-size: 0.85rem; color: var(--text-light); margin-top: 10px;">
+                            <i class="fa-solid fa-clock"></i> ${data.message}
+                        </p>
+                    `;
+                    uploadContainer.style.display = 'none';
                 } else {
                     KapeKanto.toast(data.error, 'error');
                     btn.disabled = false;
-                    btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Submit for AI Analysis';
+                    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit for Admin Review';
+
+                    statusArea.innerHTML = `
+                        <p style="margin-bottom: 5px; font-weight: 600;">Current Status</p>
+                        <span class="status-badge" style="background: #eee;">Not Submitted</span>
+                        <p style="font-size: 0.85rem; color: var(--text-light); margin-top: 10px;">
+                            Please fix the issue and try again.</p>
+                    `;
                 }
             } catch (err) {
                 console.error(err);
-                KapeKanto.toast('Upload failed.', 'error');
+                KapeKanto.toast('Upload failed. Please try again.', 'error');
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Submit for AI Analysis';
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit for Admin Review';
             }
         });
 

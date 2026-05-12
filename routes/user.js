@@ -48,6 +48,41 @@ router.get('/', async (req, res) => {
     }
 });
 
+// ── ID Verification Admin Endpoints (must be before /:id) ───────────
+
+// GET /api/users/id-verifications/pending
+router.get('/id-verifications/pending', async (req, res) => {
+    try {
+        const pending = await db.prepare(`
+            SELECT id, username, email, is_senior, is_pwd, 
+                   senior_id_image, pwd_id_image, selfie_image, id_number,
+                   id_verification_status, id_verification_message, id_verification_notes,
+                   created_at
+            FROM users 
+            WHERE id_verification_status IN ('pending', 'resubmit')
+            ORDER BY 
+                CASE WHEN id_verification_status = 'pending' THEN 0 ELSE 1 END,
+                created_at DESC
+        `).all();
+
+        // Check for duplicate ID numbers
+        for (const user of pending) {
+            if (user.id_number) {
+                const dup = await db.prepare(`
+                    SELECT id, username FROM users 
+                    WHERE id_number = ? AND id != ? AND id_verification_status = 'verified'
+                `).get(user.id_number, user.id);
+                user.duplicate_warning = dup ? `This ID number is already used by ${dup.username} (ID: ${dup.id})` : null;
+            }
+        }
+
+        res.json(pending);
+    } catch (error) {
+        console.error('Pending verifications error:', error);
+        res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
 // GET /api/users/:id
 router.get('/:id', async (req, res) => {
     try {
@@ -167,4 +202,114 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
+// ── ID Verification Admin Actions ───────────────────────────────────────
+
+// POST /api/users/:id/approve-id
+router.post('/:id/approve-id', async (req, res) => {
+    try {
+        const userId = parseInt(req.params.id);
+        const adminId = req.session.userId;
+
+        const user = await db.prepare(`
+            SELECT id, id_number, id_verification_notes, senior_id_image, pwd_id_image
+            FROM users WHERE id = ?
+        `).get(userId);
+
+        if (!user) return res.status(404).json({ error: 'User not found.' });
+
+        // Determine ID type from notes or uploaded images
+        let notes = {};
+        try { notes = JSON.parse(user.id_verification_notes || '{}'); } catch(e) {}
+        const idType = notes.id_type || (user.senior_id_image ? 'senior' : 'pwd');
+
+        // Check for duplicate ID number one final time
+        if (user.id_number) {
+            const dup = await db.prepare(`
+                SELECT id FROM users 
+                WHERE id_number = ? AND id != ? AND id_verification_status = 'verified'
+            `).get(user.id_number, userId);
+            if (dup) {
+                return res.status(400).json({ error: 'Cannot approve: this ID number is already verified on another account.' });
+            }
+        }
+
+        const isSenior = idType === 'senior' ? 1 : 0;
+        const isPwd = idType === 'pwd' ? 1 : 0;
+        const now = new Date().toISOString();
+
+        await db.prepare(`
+            UPDATE users 
+            SET id_verification_status = 'verified',
+                id_verification_message = 'Your ID has been verified by our team. You now enjoy a 20% discount!',
+                is_senior = ?,
+                is_pwd = ?,
+                verified_by = ?,
+                verified_at = ?
+            WHERE id = ?
+        `).run(isSenior, isPwd, adminId, now, userId);
+
+        console.log(`[ID Verification] Admin ${adminId} APPROVED user ${userId} as ${idType}`);
+        res.json({ message: `User verified as ${idType === 'senior' ? 'Senior Citizen' : 'PWD'} successfully.` });
+    } catch (error) {
+        console.error('Approve ID error:', error);
+        res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
+// POST /api/users/:id/reject-id
+router.post('/:id/reject-id', async (req, res) => {
+    try {
+        const userId = parseInt(req.params.id);
+        const { reason } = req.body;
+
+        const user = await db.prepare('SELECT id FROM users WHERE id = ?').get(userId);
+        if (!user) return res.status(404).json({ error: 'User not found.' });
+
+        await db.prepare(`
+            UPDATE users 
+            SET id_verification_status = 'rejected',
+                id_verification_message = ?,
+                is_senior = 0,
+                is_pwd = 0,
+                verified_by = NULL,
+                verified_at = NULL
+            WHERE id = ?
+        `).run(reason || 'Your ID verification was rejected. Please contact support for more details.', userId);
+
+        console.log(`[ID Verification] Admin ${req.session.userId} REJECTED user ${userId}`);
+        res.json({ message: 'User ID verification rejected.' });
+    } catch (error) {
+        console.error('Reject ID error:', error);
+        res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
+// POST /api/users/:id/resubmit-id
+router.post('/:id/resubmit-id', async (req, res) => {
+    try {
+        const userId = parseInt(req.params.id);
+        const { reason } = req.body;
+
+        const user = await db.prepare('SELECT id FROM users WHERE id = ?').get(userId);
+        if (!user) return res.status(404).json({ error: 'User not found.' });
+
+        await db.prepare(`
+            UPDATE users 
+            SET id_verification_status = 'rejected',
+                id_verification_message = ?,
+                senior_id_image = NULL,
+                pwd_id_image = NULL,
+                selfie_image = NULL
+            WHERE id = ?
+        `).run(reason || 'Please resubmit clearer photos of your ID and selfie.', userId);
+
+        console.log(`[ID Verification] Admin ${req.session.userId} requested RESUBMISSION from user ${userId}`);
+        res.json({ message: 'Resubmission request sent to user.' });
+    } catch (error) {
+        console.error('Resubmit ID error:', error);
+        res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
 module.exports = router;
+

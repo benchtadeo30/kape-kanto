@@ -330,6 +330,10 @@ async function initDb() {
     await safeAddColumn('users', 'profile_image', 'TEXT');
     await safeAddColumn('users', 'id_verification_message', 'TEXT');
     await safeAddColumn('users', 'pending_email', 'TEXT');
+    await safeAddColumn('users', 'selfie_image', 'TEXT');
+    await safeAddColumn('users', 'id_number', 'TEXT');
+    await safeAddColumn('users', 'verified_by', 'INTEGER');
+    await safeAddColumn('users', 'verified_at', 'DATETIME');
 
     // Promos migrations
     await safeAddColumn('promos', 'discount_amount', 'REAL DEFAULT 0');

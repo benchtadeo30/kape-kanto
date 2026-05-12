@@ -5,7 +5,6 @@ const crypto = require('crypto');
 const { db } = require('../database/init');
 const { requireAuth } = require('../middleware/auth');
 const upload = require('../middleware/upload');
-const { verifyIdCard } = require('../services/gemini');
 const { sendVerificationEmail, sendResetPasswordEmail, sendAccountDeletedEmail } = require('../services/email');
 const fs = require('fs');
 const path = require('path');

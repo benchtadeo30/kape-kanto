@@ -51,7 +51,7 @@ app.use(async (req, res, next) => {
     if (req.session && req.session.userId) {
         console.log(`[SESSION] User ${req.session.userId} | Verified this session: ${res.locals.isVerifiedInSession}`);
         try {
-            res.locals.user = await db.prepare(`SELECT id, username, email, pending_email, role, is_senior, is_pwd, is_verified, id_verification_status, id_verification_notes, id_verification_message, profile_image FROM users WHERE id = ?`).get(req.session.userId);
+            res.locals.user = await db.prepare(`SELECT id, username, email, pending_email, role, is_senior, is_pwd, is_verified, id_verification_status, id_verification_notes, id_verification_message, profile_image, selfie_image, id_number, verified_by, verified_at FROM users WHERE id = ?`).get(req.session.userId);
         } catch (e) {
             console.error("Session User Middleware Error:", e);
         }

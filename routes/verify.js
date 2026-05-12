@@ -3,85 +3,79 @@ const router = express.Router();
 const { db } = require('../database/init');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const upload = require('../middleware/upload');
-const { verifyIdCard } = require('../services/gemini');
 const path = require('path');
 const fs = require('fs');
 
-// POST /api/verify/upload-id
-router.post('/upload-id', requireAuth, upload.single('id_image'), async (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ error: 'No image uploaded.' });
+// POST /api/verify/upload-id — Submit ID + Selfie for Admin Review
+router.post('/upload-id', requireAuth, upload.fields([
+    { name: 'id_image', maxCount: 1 },
+    { name: 'selfie_image', maxCount: 1 }
+]), async (req, res) => {
+    const idFile = req.files?.id_image?.[0];
+    const selfieFile = req.files?.selfie_image?.[0];
+
+    if (!idFile) {
+        return res.status(400).json({ error: 'ID image is required.' });
+    }
+    if (!selfieFile) {
+        if (idFile) fs.unlinkSync(idFile.path);
+        return res.status(400).json({ error: 'Selfie holding your ID is required.' });
     }
 
-    const { id_type } = req.body;
+    const { id_type, id_number } = req.body;
     const userId = parseInt(req.session.userId);
     
     if (!['senior', 'pwd'].includes(id_type)) {
-        fs.unlinkSync(req.file.path);
+        fs.unlinkSync(idFile.path);
+        fs.unlinkSync(selfieFile.path);
         return res.status(400).json({ error: 'Invalid ID type. Must be senior or pwd.' });
     }
 
+    if (!id_number || id_number.trim().length < 3) {
+        fs.unlinkSync(idFile.path);
+        fs.unlinkSync(selfieFile.path);
+        return res.status(400).json({ error: 'Please enter a valid ID number.' });
+    }
+
     try {
-        const imagePath = `/uploads/ids/${req.file.filename}`;
-        console.log(`[ID Verification] Starting for user ${userId}, type: ${id_type}`);
+        // Check for duplicate ID numbers on OTHER accounts
+        const duplicate = await db.prepare(`
+            SELECT id, username FROM users 
+            WHERE id_number = ? AND id != ? AND id_verification_status = 'verified'
+        `).get(id_number.trim(), userId);
+
+        if (duplicate) {
+            fs.unlinkSync(idFile.path);
+            fs.unlinkSync(selfieFile.path);
+            return res.status(400).json({ 
+                error: 'This ID number is already registered to another verified account. If this is an error, please contact support.' 
+            });
+        }
+
+        const idImagePath = `/uploads/ids/${idFile.filename}`;
+        const selfieImagePath = `/uploads/ids/${selfieFile.filename}`;
+
+        console.log(`[ID Verification] Submission for user ${userId}, type: ${id_type}, ID#: ${id_number}`);
         
         await db.prepare(`
             UPDATE users 
             SET ${id_type === 'senior' ? 'senior_id_image' : 'pwd_id_image'} = ?, 
+                selfie_image = ?,
+                id_number = ?,
                 id_verification_status = 'pending',
-                id_verification_message = 'AI is analyzing your ID...'
+                id_verification_message = 'Your ID has been submitted and is under review by our team. You will be notified once verified.',
+                id_verification_notes = ?
             WHERE id = ?
-        `).run(imagePath, userId);
-
-        const mimeType = req.file.mimetype;
-        const aiResult = await verifyIdCard(req.file.path, mimeType, id_type);
-        console.log(`[ID Verification] AI Result for user ${userId}:`, aiResult);
-
-        let finalStatus = 'rejected';
-        let isSenior = 0;
-        let isPwd = 0;
-
-        if (aiResult.isValid && aiResult.isExpectedType && (aiResult.confidence === 'high' || aiResult.confidence === 'medium')) {
-            finalStatus = 'verified';
-            if (id_type === 'senior') isSenior = 1;
-            if (id_type === 'pwd') isPwd = 1;
-        }
-
-        const displayMessage = aiResult.reason || (finalStatus === 'verified' ? 'ID Verified successfully!' : 'ID verification failed.');
-
-        await db.prepare(`
-            UPDATE users 
-            SET id_verification_status = ?,
-                id_verification_message = ?,
-                id_verification_notes = ?,
-                is_senior = CASE WHEN ? = 1 THEN 1 ELSE is_senior END,
-                is_pwd = CASE WHEN ? = 1 THEN 1 ELSE is_pwd END
-            WHERE id = ?
-        `).run(finalStatus, displayMessage, JSON.stringify(aiResult), isSenior, isPwd, userId);
-
-        if (finalStatus === 'verified') {
-            req.session.canUpdateID = false;
-        }
-
-        console.log(`[ID Verification] Completed for user ${userId}. Status: ${finalStatus}`);
+        `).run(idImagePath, selfieImagePath, id_number.trim(), JSON.stringify({ id_type, submitted_at: new Date().toISOString() }), userId);
 
         res.json({
-            message: displayMessage,
-            status: finalStatus,
-            details: aiResult
+            message: 'Your ID and selfie have been submitted for review. Our team will verify your identity shortly.',
+            status: 'pending'
         });
 
     } catch (error) {
         console.error('[ID Verification] Error:', error);
-        
-        await db.prepare(`
-            UPDATE users 
-            SET id_verification_status = 'rejected', 
-                id_verification_message = 'The AI service is currently busy or unavailable. Please try again in a few moments.' 
-            WHERE id = ?
-        `).run(userId);
-
-        res.status(500).json({ error: 'Failed to analyze ID. AI service may be busy, please try again.' });
+        res.status(500).json({ error: 'Failed to submit ID for verification. Please try again.' });
     }
 });
 
@@ -130,11 +124,15 @@ router.post('/confirm-id-change', requireAuth, async (req, res) => {
             UPDATE users 
             SET senior_id_image = NULL, 
                 pwd_id_image = NULL, 
+                selfie_image = NULL,
+                id_number = NULL,
                 id_verification_status = 'none',
                 id_verification_notes = NULL,
                 id_verification_message = NULL,
                 is_senior = 0,
                 is_pwd = 0,
+                verified_by = NULL,
+                verified_at = NULL,
                 verification_token = NULL
             WHERE id = ?
         `).run(userId);
@@ -154,10 +152,15 @@ router.post('/remove-id', requireAuth, async (req, res) => {
             UPDATE users 
             SET senior_id_image = NULL, 
                 pwd_id_image = NULL, 
+                selfie_image = NULL,
+                id_number = NULL,
                 id_verification_status = 'none',
                 id_verification_notes = NULL,
+                id_verification_message = NULL,
                 is_senior = 0,
-                is_pwd = 0
+                is_pwd = 0,
+                verified_by = NULL,
+                verified_at = NULL
             WHERE id = ?
         `).run(userId);
         res.json({ message: 'ID removed successfully.' });
