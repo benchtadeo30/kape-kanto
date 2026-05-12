@@ -1162,11 +1162,17 @@
                         <h4 style="margin: 0 0 6px 0; font-size: 1.3rem; color: var(--primary-dark);">${item.title}</h4>
                         ${(item.description || item.customer_description) ? `<p style="margin: 0 0 12px 0; color: var(--text-light); font-size: 1.05rem; line-height: 1.5;">${item.description || item.customer_description}</p>` : ''}
                         
-                        <div class="campaign-meta-row" style="display: flex; align-items: center; gap: 20px; flex-wrap: nowrap; font-size: 0.85rem; color: #555; font-weight: 600; background: #f8f8f8; padding: 10px 16px; border-radius: 8px; width: fit-content; max-width: 100%; overflow-x: auto; scrollbar-width: none;">
-                            <span style="white-space: nowrap;"><i class="fa-solid fa-tag" style="color: var(--primary);"></i> ${item.discount_percent > 0 ? (item.discount_percent + '%') : ('₱' + (item.discount_amount || 0))} OFF</span>
-                            <span style="white-space: nowrap;"><i class="fa-solid fa-ticket" style="color: var(--primary);"></i> ${item.promo_code || 'No Code'}</span>
-                            ${startTime ? `<span style="white-space: nowrap;"><i class="fa-solid fa-calendar-days" style="color: var(--success);"></i> Starts: ${startTime.toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>` : ''}
-                            ${deadline ? `<span style="white-space: nowrap;"><i class="fa-solid fa-clock" style="color: var(--danger);"></i> Ends: ${deadline.toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>` : ''}
+                        <div class="campaign-meta-row" style="display: flex; align-items: center; gap: 25px; flex-wrap: nowrap; font-size: 0.85rem; color: #555; font-weight: 600; background: #f8f8f8; padding: 12px 20px; border-radius: 12px; width: fit-content; max-width: 100%; overflow-x: auto; scrollbar-width: none;">
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <span style="white-space: nowrap;"><i class="fa-solid fa-tag" style="color: var(--primary);"></i> ${item.discount_percent > 0 ? (item.discount_percent + '%') : ('₱' + (item.discount_amount || 0))} OFF</span>
+                                <span style="white-space: nowrap;"><i class="fa-solid fa-ticket" style="color: var(--primary);"></i> ${item.promo_code || 'No Code'}</span>
+                            </div>
+
+                            ${(startTime || deadline) ? `
+                            <div style="display: flex; flex-direction: column; gap: 4px; border-left: 2px solid #e0e0e0; padding-left: 15px; min-width: 250px;">
+                                ${startTime ? `<span style="white-space: nowrap; font-size: 0.75rem;"><i class="fa-solid fa-calendar-days" style="color: var(--success); width: 16px;"></i> Starts: ${startTime.toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>` : ''}
+                                ${deadline ? `<span style="white-space: nowrap; font-size: 0.75rem;"><i class="fa-solid fa-clock" style="color: var(--danger); width: 16px;"></i> Ends: ${deadline.toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>` : ''}
+                            </div>` : ''}
                         </div>
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 8px; justify-content: center;">
