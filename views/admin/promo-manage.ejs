@@ -488,6 +488,23 @@
     .flatpickr-time input:focus {
         background: rgba(111, 78, 55, 0.05);
     }
+    .flatpickr-monthDropdown-months, .numInputWrapper input {
+        background: transparent !important;
+        color: var(--primary-dark) !important;
+        font-weight: 700 !important;
+        border: none !important;
+    }
+    .flatpickr-monthDropdown-month {
+        background: #fff !important;
+        color: #333 !important;
+    }
+    .flatpickr-calendar.hasTime .flatpickr-time {
+        border-top: 1px solid #f0f0f0 !important;
+    }
+    .flatpickr-time .flatpickr-am-pm {
+        color: var(--primary) !important;
+        font-weight: 700 !important;
+    }
     .campaign-card {
         background: white;
         border: 1px solid #f0f0f0;
@@ -1538,6 +1555,7 @@
             dateFormat: "Y-m-d H:i",
             time_24hr: false,
             minDate: "today",
+            disableMobile: "true",
             locale: {
                 firstDayOfWeek: 1
             }
