@@ -1160,7 +1160,7 @@
                             <span class="badge ${badgeClass}" style="font-size: 0.75rem;">${statusText}</span>
                         </div>
                         <h4 style="margin: 0 0 6px 0; font-size: 1.3rem; color: var(--primary-dark);">${item.title}</h4>
-                        <p style="margin: 0 0 12px 0; color: var(--text-light); font-size: 1.05rem; line-height: 1.5;">${item.description || item.customer_description || ''}</p>
+                        ${(item.description || item.customer_description) ? `<p style="margin: 0 0 12px 0; color: var(--text-light); font-size: 1.05rem; line-height: 1.5;">${item.description || item.customer_description}</p>` : ''}
                         
                         <div class="campaign-meta-row" style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap; font-size: 0.95rem; color: #555; font-weight: 600; background: #f8f8f8; padding: 8px 16px; border-radius: 8px; width: fit-content; max-width: 100%;">
                             <span style="white-space: nowrap;"><i class="fa-solid fa-tag"></i> ${item.discount_percent > 0 ? (item.discount_percent + '%') : ('₱' + (item.discount_amount || 0))} OFF</span>
