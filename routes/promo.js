@@ -230,6 +230,9 @@ router.post('/', requireRole('admin'), upload.single('image'), async (req, res) 
         res.status(201).json({ message: 'Campaign created successfully.', id: promoId });
     } catch (error) {
         console.error('[PROMO ERROR] Failed to create promo:', error);
+        if (error.message && error.message.includes('UNIQUE constraint failed')) {
+            return res.status(400).json({ error: 'This promo code already exists. Please use a unique code.' });
+        }
         res.status(500).json({ error: 'Internal server error.', details: error.message });
     }
 });
