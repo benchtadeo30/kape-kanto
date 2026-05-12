@@ -164,13 +164,22 @@
             </div>
         </div>
 
-        <div class="ao-tabs">            <button class="ao-tab active" onclick="filterOrders('all', this)"><i class="fa-solid fa-list"></i> All</button>
+        <div class="ao-tabs">
+            <button class="ao-tab active" onclick="filterOrders('all', this)"><i class="fa-solid fa-list"></i> All Statuses</button>
             <button class="ao-tab" onclick="filterOrders('pending', this)"><i class="fa-solid fa-clock"></i> Pending</button>
             <button class="ao-tab" onclick="filterOrders('preparing', this)"><i class="fa-solid fa-fire"></i> Preparing</button>
             <button class="ao-tab" onclick="filterOrders('ready', this)"><i class="fa-solid fa-circle-check"></i> Ready</button>
             <button class="ao-tab" onclick="filterOrders('out_for_delivery', this)"><i class="fa-solid fa-truck-fast"></i> Out for Delivery</button>
             <button class="ao-tab" onclick="filterOrders('completed', this)"><i class="fa-solid fa-flag-checkered"></i> Completed</button>
-            <button class="ao-tab" onclick="filterOrders('cancelled', this)"><i class="fa-solid fa-circle-xmark"></i> Cancelled</button>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; background: white; padding: 1rem 1.5rem; border-radius: 16px; border: 1px solid #f0e6e0;">
+            <span style="font-weight: 800; color: var(--primary-dark); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">Filter by Type:</span>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn btn-outline" id="type-all" onclick="filterType('all')" style="padding: 8px 16px; border-radius: 50px; font-size: 0.85rem; font-weight: 700; border-color: var(--primary); background: var(--primary); color: white;">All Types</button>
+                <button class="btn btn-outline" id="type-delivery" onclick="filterType('delivery')" style="padding: 8px 16px; border-radius: 50px; font-size: 0.85rem; font-weight: 700;">Delivery Only</button>
+                <button class="btn btn-outline" id="type-pickup" onclick="filterType('pickup')" style="padding: 8px 16px; border-radius: 50px; font-size: 0.85rem; font-weight: 700;">Pickup Only</button>
+            </div>
         </div>
 
         <div style="font-size:0.85rem;color:var(--text-light);margin-bottom:1rem;" id="ao-count">Loading…</div>
@@ -193,6 +202,7 @@
 <script>
     let allOrders = [];
     let currentFilter = 'all';
+    let currentType = 'all';
     let currentPage = 1;
     const PAGE_LIMIT = 10;
 
@@ -211,10 +221,37 @@
             const res = await fetch(`/api/orders/all?limit=${PAGE_LIMIT}&offset=${offset}&status=${currentFilter}`);
             if (res.ok) { 
                 const data = await res.json();
-                allOrders = data.items;
-                renderOrders(allOrders, data.total);
+                let filtered = data.items;
+                
+                if (currentType !== 'all') {
+                    filtered = filtered.filter(o => o.order_type === currentType);
+                }
+
+                allOrders = data.items; // Store original for details
+                renderOrders(filtered, currentType === 'all' ? data.total : filtered.length);
             }
         } catch(e) { console.error(e); }
+    }
+
+    function filterType(type) {
+        currentType = type;
+        currentPage = 1;
+        
+        // Update UI
+        ['all', 'delivery', 'pickup'].forEach(t => {
+            const btn = document.getElementById(`type-${t}`);
+            if (t === type) {
+                btn.style.background = 'var(--primary)';
+                btn.style.color = 'white';
+                btn.style.borderColor = 'var(--primary)';
+            } else {
+                btn.style.background = 'white';
+                btn.style.color = 'var(--primary-dark)';
+                btn.style.borderColor = '#eee';
+            }
+        });
+        
+        loadOrders();
     }
 
     function filterOrders(status, btn) {

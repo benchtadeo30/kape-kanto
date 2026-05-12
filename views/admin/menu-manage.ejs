@@ -308,6 +308,10 @@
         .modal-header, .modal-footer { padding: 1rem 1.25rem !important; }
         .responsive-grid { grid-template-columns: 1fr !important; gap: 1rem !important; }
     }
+    .category-actions button {
+        flex: 0 1 auto !important;
+        min-width: 100px;
+    }
 </style>
 
 <div class="dashboard-layout">
@@ -358,9 +362,9 @@
             <div id="menu-pagination" style="display: flex; justify-content: center; gap: 1rem; align-items: center; padding-top: 1rem; border-top: 1px solid #eee;"></div>
         </div>
 
-        <div class="admin-header-row" style="align-items: center;">
-            <h1 class="section-title" style="margin: 0; text-align: left;">Manage Categories</h1>
-            <button class="btn btn-primary" onclick="openCatModal()">+ Add Category</button>
+        <div class="admin-header-row" style="align-items: center; margin-top: 2rem; border-top: 1px solid #f0e6e0; padding-top: 3rem;">
+            <h2 style="margin: 0; font-size: 2.2rem; color: var(--admin-primary); font-weight: 800;">Manage Categories</h2>
+            <button class="btn btn-primary" onclick="openCatModal()" style="border-radius: 14px; padding: 12px 1.8rem;">+ Add Category</button>
         </div>
 
         <div class="card">
@@ -981,11 +985,11 @@
                         </div>
                         <h4 style="margin: 0; font-size: 1.1rem; color: var(--admin-primary);">${c.name}</h4>
                     </div>
-                    <div class="category-actions" style="display: flex; gap: 0.5rem; width: 100%; margin-top: 1rem;">
-                        <button class="btn btn-secondary" style="padding: 0.5rem 1rem; border-radius: 10px; flex: 1;" onclick='editCategory(${JSON.stringify(c).replace(/'/g, "&#39;")})'>
+                    <div class="category-actions" style="display: flex; gap: 0.5rem; margin-top: 1rem; justify-content: flex-end;">
+                        <button class="btn btn-secondary" style="padding: 0.6rem 1.2rem; border-radius: 10px;" onclick='editCategory(${JSON.stringify(c).replace(/'/g, "&#39;")})'>
                             <i class="fa-solid fa-pen-to-square"></i> Edit
                         </button>
-                        <button class="btn btn-danger" style="padding: 0.5rem 1rem; border-radius: 10px; background: #fff5f5; color: var(--danger); border: 1px solid #ffebee; flex: 1;" onclick="deleteCategory(${c.id})">
+                        <button class="btn btn-danger" style="padding: 0.6rem 1rem; border-radius: 10px; background: #fff5f5; color: var(--danger); border: 1px solid #ffebee;" onclick="deleteCategory(${c.id})">
                             <i class="fa-solid fa-trash"></i>
                         </button>
                     </div>

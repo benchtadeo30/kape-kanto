@@ -84,13 +84,21 @@
 
         <div class="staff-panel">
             <div class="so-tabs">
-                <button class="so-tab active" onclick="filterOrders('all', this)"><i class="fa-solid fa-layer-group"></i> All</button>
+                <button class="so-tab active" onclick="filterOrders('all', this)"><i class="fa-solid fa-layer-group"></i> All Statuses</button>
                 <button class="so-tab" onclick="filterOrders('pending', this)"><i class="fa-regular fa-clock"></i> Pending</button>
                 <button class="so-tab" onclick="filterOrders('preparing', this)"><i class="fa-solid fa-fire"></i> Preparing</button>
                 <button class="so-tab" onclick="filterOrders('ready', this)"><i class="fa-solid fa-check-double"></i> Ready</button>
                 <button class="so-tab" onclick="filterOrders('out_for_delivery', this)"><i class="fa-solid fa-truck-fast"></i> Out for Delivery</button>
                 <button class="so-tab" onclick="filterOrders('completed', this)"><i class="fa-solid fa-flag-checkered"></i> Completed</button>
-                <button class="so-tab" onclick="filterOrders('cancelled', this)"><i class="fa-solid fa-ban"></i> Cancelled</button>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; background: #fdfaf7; padding: 0.75rem 1.25rem; border-radius: 50px; border: 1px solid #f0e6e0;">
+                <span style="font-weight: 800; color: var(--primary-dark); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">Type:</span>
+                <div style="display: flex; gap: 6px;">
+                    <button class="so-tab active" id="type-all" onclick="filterType('all')" style="padding: 6px 14px; font-size: 0.75rem;">All Types</button>
+                    <button class="so-tab" id="type-delivery" onclick="filterType('delivery')" style="padding: 6px 14px; font-size: 0.75rem;">Delivery</button>
+                    <button class="so-tab" id="type-pickup" onclick="filterType('pickup')" style="padding: 6px 14px; font-size: 0.75rem;">Pickup</button>
+                </div>
             </div>
 
             <div class="so-tools">
@@ -138,6 +146,7 @@
     let pendingDispatchId = null;
     let currentPage = 1;
     let orderSearchTerm = '';
+    let currentType = 'all';
     let bulkMode = false;
     const selectedOrderIds = new Set();
     const PAGE_LIMIT = 10;
@@ -205,6 +214,10 @@
         return allOrders.filter(o => {
             const matchesStatus = currentFilter === 'all' || o.status === currentFilter;
             if (!matchesStatus) return false;
+
+            const matchesType = currentType === 'all' || o.order_type === currentType;
+            if (!matchesType) return false;
+
             if (!orderSearchTerm) return true;
 
             const haystack = [
@@ -219,6 +232,20 @@
 
             return haystack.includes(orderSearchTerm);
         });
+    }
+
+    function filterType(type) {
+        currentType = type;
+        currentPage = 1;
+        
+        // Update UI
+        ['all', 'delivery', 'pickup'].forEach(t => {
+            const btn = document.getElementById(`type-${t}`);
+            if (t === type) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+        
+        renderOrders();
     }
 
     function renderOrders() {
