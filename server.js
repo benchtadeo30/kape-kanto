@@ -85,6 +85,13 @@ app.use((req, res, next) => {
         const isPathAllowed = allowedPaths.some(path => req.path.startsWith(path));
         
         if (!isPathAllowed) {
+            if (req.path.startsWith('/api/')) {
+                return res.status(403).json({ 
+                    error: 'You must verify your email before using this action.',
+                    unverified: true,
+                    email: res.locals.user.email
+                });
+            }
             return res.redirect(`/verify-email?email=${encodeURIComponent(res.locals.user.email)}`);
         }
     }

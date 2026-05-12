@@ -307,6 +307,18 @@ function initDb() {
         db.prepare('ALTER TABLE orders ADD COLUMN rider_contact TEXT').run();
         console.log("Migration: Added rider_contact column to orders.");
     }
+    if (!orderCols.includes('sc_discount_amount')) {
+        db.prepare('ALTER TABLE orders ADD COLUMN sc_discount_amount REAL DEFAULT 0').run();
+        console.log("Migration: Added sc_discount_amount column to orders.");
+    }
+    if (!orderCols.includes('promo_discount_amount')) {
+        db.prepare('ALTER TABLE orders ADD COLUMN promo_discount_amount REAL DEFAULT 0').run();
+        console.log("Migration: Added promo_discount_amount column to orders.");
+    }
+    if (!orderCols.includes('promo_id')) {
+        db.prepare('ALTER TABLE orders ADD COLUMN promo_id INTEGER REFERENCES promos(id) ON DELETE SET NULL').run();
+        console.log("Migration: Added promo_id column to orders.");
+    }
 
     // Migration: Add columns for promo system upgrades if they don't exist
     // (Consolidated in the main migration block above)
