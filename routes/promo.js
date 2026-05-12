@@ -103,6 +103,8 @@ router.get('/tasks/my-progress', requireAuth, async (req, res) => {
             ORDER BY COALESCE(up.is_completed, 0) ASC, pt.id DESC
         `).all(req.session.userId);
         res.json(tasks);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal server error.' });
     }
 });
 
