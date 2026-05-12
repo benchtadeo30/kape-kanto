@@ -15,21 +15,27 @@ router.get('/', async (req, res) => {
                    start_date, end_date, promo_code, 'promo' as event_type, created_at
             FROM promos 
             WHERE is_active = 1 
-            AND (start_date IS NULL OR start_date = '' OR start_date <= datetime('now', 'localtime'))
-            AND (end_date IS NULL OR end_date = '' OR end_date >= datetime('now', 'localtime'))
+            AND (end_date IS NULL OR end_date = '' OR datetime(end_date) >= datetime('now', 'localtime'))
         `;
 
         const taskQuery = `
-            SELECT id, title, description, 0 as discount_percent, 0 as discount_amount, NULL as image,
-                   NULL as start_date, end_date, NULL as promo_code, 'task' as event_type, NULL as created_at
-            FROM promo_tasks
-            WHERE is_active = 1
-            AND (end_date IS NULL OR end_date = '' OR end_date >= datetime('now', 'localtime'))
+            SELECT pt.id, pt.title, pt.description, 0 as discount_percent, 0 as discount_amount, p.image,
+                   p.start_date, pt.end_date, NULL as promo_code, 'task' as event_type, p.created_at
+            FROM promo_tasks pt
+            LEFT JOIN promos p ON pt.reward_promo_id = p.id
+            WHERE pt.is_active = 1
+            AND (pt.end_date IS NULL OR pt.end_date = '' OR datetime(pt.end_date) >= datetime('now', 'localtime'))
         `;
 
         const unifiedQuery = `
             SELECT * FROM (${promoQuery} UNION ALL ${taskQuery}) as combined
-            ORDER BY COALESCE(created_at, '0000-00-00') DESC, id DESC
+            ORDER BY 
+                CASE 
+                    WHEN start_date IS NOT NULL AND datetime(start_date) > datetime('now', 'localtime') THEN 1 
+                    ELSE 0 
+                END ASC,
+                COALESCE(created_at, '0000-00-00') DESC, 
+                id DESC
             LIMIT ? OFFSET ?
         `;
 
@@ -154,15 +160,15 @@ router.post('/', requireRole('admin'), upload.single('image'), async (req, res) 
                 INSERT INTO promo_tasks (
                     title, description, task_type, customer_description, 
                     required_menu_item_id, required_category_id, required_quantity, 
-                    min_order_amount, reward_promo_id, is_active, end_date
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    min_order_amount, reward_promo_id, is_active, start_date, end_date
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `).run(
                 title, description, task_type, description, 
                 parseInt(required_menu_item_id) || null, 
                 parseInt(required_category_id) || null, 
                 parseInt(required_quantity) || 1, 
                 parseFloat(min_order_amount) || null, 
-                promoId, 1, end_date || null
+                promoId, 1, start_date || null, end_date || null
             );
         }
 
@@ -192,13 +198,13 @@ router.put('/:id', requireRole('admin'), upload.single('image'), async (req, res
                 UPDATE promo_tasks SET 
                     title=?, description=?, task_type=?, customer_description=?,
                     required_menu_item_id=?, required_category_id=?, required_quantity=?,
-                    min_order_amount=?, is_active=?, end_date=?
+                    min_order_amount=?, is_active=?, start_date=?, end_date=?
                 WHERE id=?
             `).run(
                 title, description, task_type, description,
                 required_menu_item_id || null, required_category_id || null,
                 parseInt(required_quantity) || 1, parseFloat(min_order_amount) || null,
-                is_active == '1' ? 1 : 0, end_date || null, campaignId
+                is_active == '1' ? 1 : 0, start_date || null, end_date || null, campaignId
             );
 
             const promoId = task.reward_promo_id;

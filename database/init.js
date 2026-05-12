@@ -358,6 +358,7 @@ async function initDb() {
     await safeAddColumn('promo_tasks', 'rule_json', 'TEXT');
     await safeAddColumn('promo_tasks', 'customer_description', 'TEXT');
     await safeAddColumn('promo_tasks', 'min_order_amount', 'REAL');
+    await safeAddColumn('promo_tasks', 'start_date', 'DATETIME');
     await safeAddColumn('promo_tasks', 'end_date', 'DATETIME');
 
     console.log("[DB] Database schema initialized.");
