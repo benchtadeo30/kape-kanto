@@ -1416,8 +1416,22 @@ footer a {
 /* â”€â”€ Menu Item Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .menu-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(5, 1fr); /* Fixed 5 columns on desktop */
     gap: 1.5rem;
+}
+
+/* Tablet & Large Mobile Scaling for Fixed Columns */
+@media (max-width: 1200px) {
+    .menu-grid { grid-template-columns: repeat(4, 1fr); }
+}
+@media (max-width: 992px) {
+    .menu-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 768px) {
+    .menu-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+}
+@media (max-width: 480px) {
+    .menu-grid { grid-template-columns: 1fr; }
 }
 
 .menu-item-card {
@@ -2085,11 +2099,6 @@ footer a {
 }
 
 @media (max-width: 520px) {
-    .menu-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1rem;
-    }
-
     .mic-image-wrap {
         height: 150px;
     }
@@ -3787,7 +3796,6 @@ button,
     max-width: 100%;
 }
 
-.menu-grid,
 .grid-container {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)) !important;
 }
@@ -3845,7 +3853,7 @@ button,
 
     .grid-container,
     .menu-grid {
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+        grid-template-columns: repeat(5, 1fr) !important; /* Keep fixed 5 columns on ultra-wide */
     }
 
     .carousel-container {
@@ -4947,7 +4955,6 @@ button,
 
     /* Fix flex/grid gaps that might be too large */
     .stat-grid,
-    .menu-grid,
     .cart-layout,
     .profile-layout,
     .grid-container,
@@ -4957,7 +4964,6 @@ button,
 
     .grid-container,
     .event-grid,
-    .menu-grid,
     .countdown {
         grid-template-columns: 1fr !important;
     }
