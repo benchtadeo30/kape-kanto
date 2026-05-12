@@ -141,6 +141,8 @@ function initDb() {
             vat_amount REAL DEFAULT 0,
             discount_amount REAL DEFAULT 0,
             discount_type TEXT DEFAULT 'none' CHECK(discount_type IN ('senior', 'pwd', 'promo', 'none')),
+            sc_discount_amount REAL DEFAULT 0,
+            promo_discount_amount REAL DEFAULT 0,
             delivery_fee REAL DEFAULT 0,
             total REAL NOT NULL,
             payment_method TEXT,
@@ -149,12 +151,18 @@ function initDb() {
             payrex_payment_id TEXT,
             order_type TEXT NOT NULL CHECK(order_type IN ('delivery', 'pickup')),
             delivery_address TEXT,
+            promo_id INTEGER,
+            schedule_mode TEXT DEFAULT 'scheduled',
             scheduled_date TEXT,
             scheduled_time TEXT,
+            estimated_ready_time DATETIME,
             notes TEXT,
+            rider_name TEXT,
+            rider_contact TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL
+            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL,
+            FOREIGN KEY(promo_id) REFERENCES promos(id) ON DELETE SET NULL
         )
     `).run();
 
@@ -289,36 +297,24 @@ function initDb() {
         }
     }
 
-    // Migration: Check if orders has vat_amount and delivery_fee
-    const orderCols = db.prepare("PRAGMA table_info(orders)").all().map(c => c.name);
-    if (!orderCols.includes('vat_amount')) {
-        db.prepare('ALTER TABLE orders ADD COLUMN vat_amount REAL DEFAULT 0').run();
-        console.log("Migration: Added vat_amount column to orders.");
-    }
-    if (!orderCols.includes('delivery_fee')) {
-        db.prepare('ALTER TABLE orders ADD COLUMN delivery_fee REAL DEFAULT 0').run();
-        console.log("Migration: Added delivery_fee column to orders.");
-    }
-    if (!orderCols.includes('rider_name')) {
-        db.prepare('ALTER TABLE orders ADD COLUMN rider_name TEXT').run();
-        console.log("Migration: Added rider_name column to orders.");
-    }
-    if (!orderCols.includes('rider_contact')) {
-        db.prepare('ALTER TABLE orders ADD COLUMN rider_contact TEXT').run();
-        console.log("Migration: Added rider_contact column to orders.");
-    }
-    if (!orderCols.includes('sc_discount_amount')) {
-        db.prepare('ALTER TABLE orders ADD COLUMN sc_discount_amount REAL DEFAULT 0').run();
-        console.log("Migration: Added sc_discount_amount column to orders.");
-    }
-    if (!orderCols.includes('promo_discount_amount')) {
-        db.prepare('ALTER TABLE orders ADD COLUMN promo_discount_amount REAL DEFAULT 0').run();
-        console.log("Migration: Added promo_discount_amount column to orders.");
-    }
-    if (!orderCols.includes('promo_id')) {
-        db.prepare('ALTER TABLE orders ADD COLUMN promo_id INTEGER REFERENCES promos(id) ON DELETE SET NULL').run();
-        console.log("Migration: Added promo_id column to orders.");
-    }
+    // Migration: Add order columns used by checkout, payment, scheduling, and staff delivery flows.
+    const addOrderColumn = (column, definition) => {
+        const cols = db.prepare("PRAGMA table_info(orders)").all().map(c => c.name);
+        if (!cols.includes(column)) {
+            db.prepare(`ALTER TABLE orders ADD COLUMN ${column} ${definition}`).run();
+            console.log(`Migration: Added ${column} column to orders.`);
+        }
+    };
+
+    addOrderColumn('vat_amount', 'REAL DEFAULT 0');
+    addOrderColumn('delivery_fee', 'REAL DEFAULT 0');
+    addOrderColumn('rider_name', 'TEXT');
+    addOrderColumn('rider_contact', 'TEXT');
+    addOrderColumn('sc_discount_amount', 'REAL DEFAULT 0');
+    addOrderColumn('promo_discount_amount', 'REAL DEFAULT 0');
+    addOrderColumn('promo_id', 'INTEGER REFERENCES promos(id) ON DELETE SET NULL');
+    addOrderColumn('schedule_mode', "TEXT DEFAULT 'scheduled'");
+    addOrderColumn('estimated_ready_time', 'DATETIME');
 
     // Migration: Add columns for promo system upgrades if they don't exist
     // (Consolidated in the main migration block above)
@@ -347,17 +343,6 @@ function initDb() {
     if (!taskCols.includes('end_date')) {
         db.prepare('ALTER TABLE promo_tasks ADD COLUMN end_date DATETIME').run();
         console.log("Migration: Added end_date to promo_tasks.");
-    }
-
-    // Migration: Add scheduling columns to orders
-    const orderColsRefresh = db.prepare("PRAGMA table_info(orders)").all().map(c => c.name);
-    if (!orderColsRefresh.includes('schedule_mode')) {
-        db.prepare("ALTER TABLE orders ADD COLUMN schedule_mode TEXT DEFAULT 'scheduled'").run();
-        console.log("Migration: Added schedule_mode column to orders.");
-    }
-    if (!orderColsRefresh.includes('estimated_ready_time')) {
-        db.prepare('ALTER TABLE orders ADD COLUMN estimated_ready_time DATETIME').run();
-        console.log("Migration: Added estimated_ready_time column to orders.");
     }
 
     console.log("Database schema initialized.");
