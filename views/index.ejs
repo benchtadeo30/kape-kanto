@@ -574,10 +574,17 @@
                     timer.querySelector('.minutes').innerText = minutes.toString().padStart(2, '0');
                     timer.querySelector('.seconds').innerText = seconds.toString().padStart(2, '0');
                 } else {
-                    if (isUpcoming) {
-                        location.reload();
                     } else {
-                        timer.innerHTML = '<div style="color: var(--danger); font-weight: bold;">EVENT ENDED</div>';
+                        if (!isUpcoming) {
+                            const card = timer.closest('.event-card');
+                            if (card) {
+                                card.style.opacity = '0';
+                                card.style.transform = 'scale(0.9)';
+                                setTimeout(() => card.remove(), 500);
+                            }
+                        } else {
+                            location.reload();
+                        }
                     }
                 }
             });
