@@ -16,6 +16,9 @@ function cleanCredential(val) {
 const EMAIL_USER = cleanCredential(process.env.EMAIL_USER);
 const EMAIL_PASS = cleanCredential(process.env.EMAIL_PASS);
 const EMAIL_FROM_NAME = process.env.EMAIL_FROM_NAME || 'Kape Kanto Hub';
+const MAILJET_API_KEY = cleanCredential(process.env.MAILJET_API_KEY);
+const MAILJET_SECRET_KEY = cleanCredential(process.env.MAILJET_SECRET_KEY);
+const MAILJET_FROM = process.env.MAILJET_FROM || process.env.EMAIL_FROM;
 const RESEND_API_KEY = cleanCredential(process.env.RESEND_API_KEY);
 const RESEND_FROM = process.env.RESEND_FROM || process.env.EMAIL_FROM;
 
@@ -30,6 +33,10 @@ if (!EMAIL_USER || !EMAIL_PASS) {
 
 if (RESEND_API_KEY) {
     console.log('[EMAIL] Resend API provider enabled');
+}
+
+if (MAILJET_API_KEY && MAILJET_SECRET_KEY) {
+    console.log('[EMAIL] Mailjet API provider enabled');
 }
 
 const transportConfigs = [
@@ -67,6 +74,7 @@ function logEmailError(context, email, error) {
         emailUserSet: Boolean(EMAIL_USER),
         emailPassSet: Boolean(EMAIL_PASS),
         emailPassLength: EMAIL_PASS ? EMAIL_PASS.length : 0,
+        mailjetApiKeySet: Boolean(MAILJET_API_KEY),
         resendApiKeySet: Boolean(RESEND_API_KEY),
         provider: error.provider,
         transport: error.transport,
@@ -74,6 +82,80 @@ function logEmailError(context, email, error) {
         command: error.command,
         responseCode: error.responseCode
     });
+}
+
+function parseEmailAddress(value) {
+    const fallback = { email: EMAIL_USER, name: EMAIL_FROM_NAME };
+    if (!value) return fallback;
+
+    const match = value.match(/^\s*(.*?)\s*<([^>]+)>\s*$/);
+    if (match) {
+        return {
+            name: match[1].replace(/^"|"$/g, '').trim() || EMAIL_FROM_NAME,
+            email: match[2].trim()
+        };
+    }
+
+    return {
+        email: value.trim(),
+        name: EMAIL_FROM_NAME
+    };
+}
+
+async function sendMailWithMailjet(mailOptions, context, email) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    const from = parseEmailAddress(MAILJET_FROM || mailOptions.from);
+    const auth = Buffer.from(`${MAILJET_API_KEY}:${MAILJET_SECRET_KEY}`).toString('base64');
+
+    try {
+        const response = await fetch('https://api.mailjet.com/v3.1/send', {
+            method: 'POST',
+            headers: {
+                Authorization: `Basic ${auth}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                Messages: [
+                    {
+                        From: {
+                            Email: from.email,
+                            Name: from.name
+                        },
+                        To: [
+                            {
+                                Email: email
+                            }
+                        ],
+                        Subject: mailOptions.subject,
+                        HTMLPart: mailOptions.html
+                    }
+                ]
+            }),
+            signal: controller.signal
+        });
+
+        const payload = await response.json().catch(() => ({}));
+        const message = payload.Messages && payload.Messages[0];
+
+        if (!response.ok || (message && message.Status === 'error')) {
+            const apiError = message && message.Errors && message.Errors[0];
+            const error = new Error(
+                (apiError && (apiError.ErrorMessage || apiError.ErrorIdentifier)) ||
+                payload.ErrorMessage ||
+                `Mailjet API failed with status ${response.status}`
+            );
+            error.code = 'EMAIL_API_FAILED';
+            error.provider = 'mailjet';
+            error.responseCode = response.status;
+            throw error;
+        }
+
+        console.log(`[EMAIL] ${context} sent via mailjet: ${message && message.To && message.To[0] ? message.To[0].MessageID : 'queued'}`);
+        return payload;
+    } finally {
+        clearTimeout(timeout);
+    }
 }
 
 async function sendMailWithResend(mailOptions, context, email) {
@@ -115,6 +197,20 @@ async function sendMailWithResend(mailOptions, context, email) {
 
 async function sendMailWithFallback(mailOptions, context, email) {
     let lastError;
+
+    if (MAILJET_API_KEY && MAILJET_SECRET_KEY) {
+        try {
+            console.log(`[EMAIL] Trying mailjet API for ${email}`);
+            return await sendMailWithMailjet(mailOptions, context, email);
+        } catch (error) {
+            lastError = error;
+            logEmailError(`${context} via mailjet`, email, error);
+
+            if (error.responseCode === 401 || error.responseCode === 403 || error.responseCode === 422) {
+                throw error;
+            }
+        }
+    }
 
     if (RESEND_API_KEY) {
         try {
