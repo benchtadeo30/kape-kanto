@@ -52,18 +52,36 @@ router.get('/', async (req, res) => {
 
 // GET /api/users/id-verifications/pending
 router.get('/id-verifications/pending', async (req, res) => {
+    const limit = parseInt(req.query.limit) || 5;
+    const offset = parseInt(req.query.offset) || 0;
+    const search = req.query.search || '';
+
     try {
-        const pending = await db.prepare(`
+        let baseQuery = `FROM users WHERE id_verification_status IN ('pending', 'resubmit')`;
+        const params = [];
+
+        if (search) {
+            baseQuery += ` AND (id_number LIKE ? OR username LIKE ? OR email LIKE ?)`;
+            const searchVal = `%${search}%`;
+            params.push(searchVal, searchVal, searchVal);
+        }
+
+        const countQuery = `SELECT COUNT(*) as total ${baseQuery}`;
+        const total = (await db.prepare(countQuery).get(...params)).total;
+
+        const selectQuery = `
             SELECT id, username, email, is_senior, is_pwd, 
                    senior_id_image, pwd_id_image, selfie_image, id_number,
                    id_verification_status, id_verification_message, id_verification_notes,
                    created_at
-            FROM users 
-            WHERE id_verification_status IN ('pending', 'resubmit')
+            ${baseQuery}
             ORDER BY 
                 CASE WHEN id_verification_status = 'pending' THEN 0 ELSE 1 END,
                 created_at DESC
-        `).all();
+            LIMIT ? OFFSET ?
+        `;
+        
+        const pending = await db.prepare(selectQuery).all(...params, limit, offset);
 
         // Check for duplicate ID numbers
         for (const user of pending) {
@@ -76,7 +94,7 @@ router.get('/id-verifications/pending', async (req, res) => {
             }
         }
 
-        res.json(pending);
+        res.json({ items: pending, total });
     } catch (error) {
         console.error('Pending verifications error:', error);
         res.status(500).json({ error: 'Internal server error.' });

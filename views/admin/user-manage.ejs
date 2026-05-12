@@ -62,8 +62,26 @@
         .user-controls > div {
             width: 100% !important;
         }
+        .hide-mobile {
+            display: none;
+        }
+        .verification-header {
+            flex-direction: column;
+            align-items: stretch !important;
+        }
+        .verification-header > div {
+            justify-content: flex-start !important;
+            width: 100%;
+        }
+        .verification-header input {
+            max-width: none !important;
+        }
     }
-</style>
+    @media (min-width: 901px) {
+        .hide-mobile {
+            display: inline;
+        }
+    }
 <div class="dashboard-layout">
     <%- include('../partials/admin-sidebar', { activePage: 'user' }) %>
     <main>
@@ -77,7 +95,7 @@
 
         <!-- Pending ID Verifications Section -->
         <div class="card" id="id-verifications-card" style="padding: 0; overflow: hidden; border: 1px solid #f0e6e0; margin-bottom: 2rem; display: none;">
-            <div style="padding: 1.5rem 2rem; background: linear-gradient(135deg, #fff8e1, #fff3e0); border-bottom: 1px solid #ffe082; display: flex; justify-content: space-between; align-items: center;">
+            <div class="verification-header" style="padding: 1.5rem 2rem; background: linear-gradient(135deg, #fff8e1, #fff3e0); border-bottom: 1px solid #ffe082; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <div style="width: 40px; height: 40px; border-radius: 12px; background: #f57f17; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
                         <i class="fa-solid fa-id-card-clip"></i>
@@ -87,12 +105,22 @@
                         <p style="margin: 0; font-size: 0.85rem; color: #bf360c;" id="pending-count-text">Loading...</p>
                     </div>
                 </div>
-                <button onclick="loadPendingVerifications()" style="background: none; border: 1px solid #ffcc80; padding: 8px 16px; border-radius: 10px; cursor: pointer; color: #e65100; font-weight: 600; font-size: 0.85rem;">
-                    <i class="fa-solid fa-arrows-rotate"></i> Refresh
-                </button>
+                <div style="display: flex; align-items: center; gap: 10px; flex-grow: 1; justify-content: flex-end; min-width: 250px;">
+                    <div style="position: relative; flex-grow: 1; max-width: 300px;">
+                        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #f57f17; opacity: 0.7;"></i>
+                        <input type="text" id="verification-search" placeholder="Search ID number..." oninput="debounceVerificationSearch()"
+                            style="width: 100%; padding: 10px 1rem 10px 2.5rem; border-radius: 12px; border: 1px solid #ffcc80; outline: none; font-size: 0.9rem; background: white;">
+                    </div>
+                    <button onclick="loadPendingVerifications()" style="background: white; border: 1px solid #ffcc80; padding: 10px 16px; border-radius: 12px; cursor: pointer; color: #e65100; font-weight: 600; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-arrows-rotate"></i> <span class="hide-mobile">Refresh</span>
+                    </button>
+                </div>
             </div>
             <div id="pending-verifications-list" style="padding: 1.5rem;">
                 <!-- Populated by JS -->
+            </div>
+            <div id="verification-pagination" style="display: flex; justify-content: center; gap: 8px; align-items: center; padding: 1.2rem; background: #fffcf5; border-top: 1px solid #ffe082;">
+                <!-- Pagination buttons -->
             </div>
         </div>
 
@@ -530,30 +558,59 @@
 
     let reasonAction = null;
     let reasonUserId = null;
+    let currentVerificationPage = 0;
+    const verificationLimit = 5;
+    let verificationSearchTimeout = null;
+
+    function debounceVerificationSearch() {
+        clearTimeout(verificationSearchTimeout);
+        verificationSearchTimeout = setTimeout(() => {
+            currentVerificationPage = 0;
+            loadPendingVerifications();
+        }, 400);
+    }
 
     async function loadPendingVerifications() {
         try {
-            const res = await fetch('/api/users/id-verifications/pending');
+            const search = document.getElementById('verification-search').value;
+            const offset = currentVerificationPage * verificationLimit;
+            
+            const res = await fetch(`/api/users/id-verifications/pending?limit=${verificationLimit}&offset=${offset}&search=${encodeURIComponent(search)}`);
             const data = await res.json();
+            
             const card = document.getElementById('id-verifications-card');
             const list = document.getElementById('pending-verifications-list');
             const countText = document.getElementById('pending-count-text');
 
-            if (!data || data.length === 0) {
+            if (!data.items || (data.items.length === 0 && !search && currentVerificationPage === 0)) {
                 card.style.display = 'none';
                 return;
             }
 
             card.style.display = 'block';
-            countText.textContent = `${data.length} submission${data.length > 1 ? 's' : ''} awaiting review`;
+            countText.textContent = `${data.total} total submission${data.total !== 1 ? 's' : ''}`;
 
-            list.innerHTML = data.map(u => {
+            if (data.items.length === 0) {
+                list.innerHTML = `<div style="text-align: center; padding: 3rem; color: #999;">
+                    <i class="fa-solid fa-magnifying-glass" style="font-size: 2rem; margin-bottom: 1rem; display: block; opacity: 0.3;"></i>
+                    No matching verifications found.
+                </div>`;
+                document.getElementById('verification-pagination').innerHTML = '';
+                return;
+            }
+
+            list.innerHTML = data.items.map(u => {
                 let notes = {};
                 try { notes = JSON.parse(u.id_verification_notes || '{}'); } catch(e) {}
                 const idType = notes.id_type || (u.senior_id_image ? 'senior' : 'pwd');
                 const idLabel = idType === 'senior' ? 'Senior Citizen' : 'PWD';
                 const idImage = u.senior_id_image || u.pwd_id_image;
-                const submittedAt = notes.submitted_at ? new Date(notes.submitted_at).toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Unknown';
+                
+                // Formatted date with AM/PM
+                const submittedAt = notes.submitted_at ? new Date(notes.submitted_at).toLocaleString('en-US', { 
+                    month: 'short', day: 'numeric', year: 'numeric', 
+                    hour: '2-digit', minute: '2-digit', hour12: true 
+                }) : 'Unknown';
 
                 return `
                 <div style="border: 1px solid #f0e6e0; border-radius: 16px; padding: 1.5rem; margin-bottom: 1rem; background: white; transition: box-shadow 0.3s;" onmouseover="this.style.boxShadow='0 4px 20px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'">
@@ -600,7 +657,7 @@
                         </div>
 
                         <!-- Action Buttons -->
-                        <div style="display: flex; flex-direction: column; gap: 8px; min-width: 140px;">
+                        <div style="display: flex; flex-direction: column; gap: 8px; min-width: 140px; flex-grow: 1;">
                             <button onclick="approveId(${u.id})" style="padding: 10px 16px; border-radius: 10px; border: none; background: #2e7d32; color: white; font-weight: 700; cursor: pointer; font-size: 0.85rem; transition: background 0.2s;" onmouseover="this.style.background='#1b5e20'" onmouseout="this.style.background='#2e7d32'">
                                 <i class="fa-solid fa-check"></i> Approve
                             </button>
@@ -614,9 +671,40 @@
                     </div>
                 </div>`;
             }).join('');
+
+            renderVerificationPagination(data.total);
         } catch (err) {
             console.error('Failed to load pending verifications:', err);
         }
+    }
+
+    function renderVerificationPagination(total) {
+        const container = document.getElementById('verification-pagination');
+        const totalPages = Math.ceil(total / verificationLimit);
+        
+        if (totalPages <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+
+        let html = '';
+        
+        // Previous Button
+        html += `<button onclick="changeVerificationPage(${currentVerificationPage - 1})" class="btn-page" ${currentVerificationPage === 0 ? 'disabled' : ''} style="padding: 8px 12px; border-radius: 8px; border: 1px solid #ffcc80; background: white; color: #e65100; cursor: pointer; opacity: ${currentVerificationPage === 0 ? '0.5' : '1'}"><i class="fa-solid fa-chevron-left"></i></button>`;
+        
+        // Page Info
+        html += `<span style="font-weight: 600; color: #e65100; font-size: 0.9rem;">Page ${currentVerificationPage + 1} of ${totalPages}</span>`;
+        
+        // Next Button
+        html += `<button onclick="changeVerificationPage(${currentVerificationPage + 1})" class="btn-page" ${currentVerificationPage >= totalPages - 1 ? 'disabled' : ''} style="padding: 8px 12px; border-radius: 8px; border: 1px solid #ffcc80; background: white; color: #e65100; cursor: pointer; opacity: ${currentVerificationPage >= totalPages - 1 ? '0.5' : '1'}"><i class="fa-solid fa-chevron-right"></i></button>`;
+        
+        container.innerHTML = html;
+    }
+
+    function changeVerificationPage(page) {
+        currentVerificationPage = page;
+        loadPendingVerifications();
+        document.getElementById('id-verifications-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     function openLightbox(src) {
