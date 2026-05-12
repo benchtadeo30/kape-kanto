@@ -25,9 +25,9 @@ const pageRequireAuth = (req, res, next) => {
 
 // --- PUBLIC PAGES ---
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     try {
-        const featuredItems = db.prepare(`
+        const featuredItems = await db.prepare(`
             SELECT m.*, IFNULL(SUM(oi.quantity), 0) as order_count 
             FROM menu_items m 
             LEFT JOIN order_items oi ON m.id = oi.menu_item_id 
@@ -36,13 +36,13 @@ router.get('/', (req, res) => {
             ORDER BY order_count DESC, m.id ASC 
             LIMIT 6
         `).all();
-        const promos = db.prepare(`
+        const promos = await db.prepare(`
             SELECT *, 'promo' as event_type FROM promos 
             WHERE is_active = 1 
             AND (end_date IS NULL OR end_date = '' OR datetime(end_date) >= datetime('now', 'localtime'))
         `).all();
 
-        const tasks = db.prepare(`
+        const tasks = await db.prepare(`
             SELECT *, 'task' as event_type FROM promo_tasks 
             WHERE is_active = 1 
             AND (end_date IS NULL OR end_date = '' OR datetime(end_date) >= datetime('now', 'localtime'))
@@ -61,9 +61,9 @@ router.get('/', (req, res) => {
     }
 });
 
-router.get('/menu', (req, res) => {
+router.get('/menu', async (req, res) => {
     try {
-        const categories = db.prepare(`SELECT * FROM categories`).all();
+        const categories = await db.prepare(`SELECT * FROM categories`).all();
         res.render('menu', { categories, title: 'Menu - Kape Kanto Hub' });
     } catch (e) {
         res.render('menu', { categories: [], title: 'Menu - Kape Kanto Hub' });
@@ -117,8 +117,8 @@ router.get('/order-tracking/:id', pageRequireAuth, (req, res) => {
     res.render('order-detail', { orderId, title: `Order #${orderId} - Kape Kanto Hub` });
 });
 
-router.get('/profile', pageRequireAuth, (req, res) => {
-    const promoProgress = db.prepare(`
+router.get('/profile', pageRequireAuth, async (req, res) => {
+    const promoProgress = await db.prepare(`
         SELECT 
             t.id as task_id, 
             t.title, 
@@ -132,7 +132,7 @@ router.get('/profile', pageRequireAuth, (req, res) => {
         WHERE (t.is_active = 1 AND (t.end_date IS NULL OR datetime(t.end_date) >= datetime('now', 'localtime')))
     `).all(req.session.userId);
 
-    const coupons = db.prepare(`
+    const coupons = await db.prepare(`
         SELECT c.*, p.title, p.discount_percent, p.promo_code, p.end_date 
         FROM user_coupons c
         JOIN promos p ON c.promo_id = p.id

@@ -54,22 +54,20 @@ function parseOptionsPayload(rawOptions) {
     })).filter(option => option.name && option.choices.length > 0);
 }
 
-function replaceMenuItemOptions(menuItemId, options) {
-    db.prepare(`DELETE FROM menu_item_options WHERE menu_item_id = ?`).run(menuItemId);
+async function replaceMenuItemOptions(menuItemId, options) {
+    await db.prepare(`DELETE FROM menu_item_options WHERE menu_item_id = ?`).run(menuItemId);
 
-    const insertOption = db.prepare(`INSERT INTO menu_item_options (menu_item_id, name) VALUES (?, ?)`);
-    const insertChoice = db.prepare(`INSERT INTO menu_item_option_choices (option_id, name, price_adjustment) VALUES (?, ?, ?)`);
-
-    options.forEach(option => {
-        const optionId = insertOption.run(menuItemId, option.name).lastInsertRowid;
-        option.choices.forEach(choice => {
-            insertChoice.run(optionId, choice.name, choice.price_adjustment);
-        });
-    });
+    for (const option of options) {
+        const optResult = await db.prepare(`INSERT INTO menu_item_options (menu_item_id, name) VALUES (?, ?)`).run(menuItemId, option.name);
+        const optionId = optResult.lastInsertRowid;
+        for (const choice of option.choices) {
+            await db.prepare(`INSERT INTO menu_item_option_choices (option_id, name, price_adjustment) VALUES (?, ?, ?)`).run(optionId, choice.name, choice.price_adjustment);
+        }
+    }
 }
 
 // GET /api/menu (Public)
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     const limit = parseInt(req.query.limit);
     const offset = parseInt(req.query.offset) || 0;
     const search = req.query.search || '';
@@ -124,8 +122,8 @@ router.get('/', (req, res) => {
             params.push(limit, offset);
         }
 
-        const items = db.prepare(itemsQuery).all(...params).map(normalizeMenuItemImage);
-        const total = db.prepare(countQuery).get(...countParams).total;
+        const items = (await db.prepare(itemsQuery).all(...params)).map(normalizeMenuItemImage);
+        const total = (await db.prepare(countQuery).get(...countParams)).total;
         
         if (!isNaN(limit)) {
             res.json({ items, total });
@@ -139,14 +137,15 @@ router.get('/', (req, res) => {
 });
 
 // GET /api/menu/:id/options (Public)
-router.get('/:id/options', (req, res) => {
+router.get('/:id/options', async (req, res) => {
     try {
-        const options = db.prepare(`SELECT * FROM menu_item_options WHERE menu_item_id = ?`).all(req.params.id);
+        const options = await db.prepare(`SELECT * FROM menu_item_options WHERE menu_item_id = ?`).all(req.params.id);
         
-        const optionsWithChoices = options.map(opt => {
-            const choices = db.prepare(`SELECT * FROM menu_item_option_choices WHERE option_id = ?`).all(opt.id);
-            return { ...opt, choices };
-        });
+        const optionsWithChoices = [];
+        for (const opt of options) {
+            const choices = await db.prepare(`SELECT * FROM menu_item_option_choices WHERE option_id = ?`).all(opt.id);
+            optionsWithChoices.push({ ...opt, choices });
+        }
         
         res.json(optionsWithChoices);
     } catch (error) {
@@ -156,7 +155,7 @@ router.get('/:id/options', (req, res) => {
 });
 
 // GET /api/menu/categories (Public)
-router.get('/categories', (req, res) => {
+router.get('/categories', async (req, res) => {
     const limit = parseInt(req.query.limit);
     const offset = parseInt(req.query.offset) || 0;
     const search = req.query.search || '';
@@ -181,8 +180,8 @@ router.get('/categories', (req, res) => {
             params.push(limit, offset);
         }
 
-        const categories = db.prepare(query).all(...params);
-        const total = db.prepare(countQuery).get(...countParams).total;
+        const categories = await db.prepare(query).all(...params);
+        const total = (await db.prepare(countQuery).get(...countParams)).total;
 
         if (!isNaN(limit)) {
             let idsQuery = `SELECT id FROM categories`;
@@ -194,7 +193,7 @@ router.get('/categories', (req, res) => {
             }
 
             idsQuery += ` ORDER BY name COLLATE NOCASE ASC`;
-            const ids = db.prepare(idsQuery).all(...idsParams).map(row => row.id);
+            const ids = (await db.prepare(idsQuery).all(...idsParams)).map(row => row.id);
             res.json({ items: categories, total, ids });
         } else {
             res.json(categories);
@@ -206,7 +205,7 @@ router.get('/categories', (req, res) => {
 });
 
 // POST /api/menu (Admin only)
-router.post('/', requireRole('admin'), upload.single('image'), (req, res) => {
+router.post('/', requireRole('admin'), upload.single('image'), async (req, res) => {
     const { name, description, price, category_id, stock, is_available, options } = req.body;
     const imagePath = req.file ? `/uploads/menu/${req.file.filename}` : buildInternetImageUrl(name);
 
@@ -215,83 +214,77 @@ router.post('/', requireRole('admin'), upload.single('image'), (req, res) => {
     }
 
     try {
-        db.prepare('BEGIN TRANSACTION').run();
+        await db.beginTransaction();
 
-        // Validation: Check for duplicate name
-        const existing = db.prepare(`SELECT id FROM menu_items WHERE LOWER(name) = LOWER(?)`).get(name);
+        const existing = await db.prepare(`SELECT id FROM menu_items WHERE LOWER(name) = LOWER(?)`).get(name);
         if (existing) {
-            db.prepare('ROLLBACK').run();
+            await db.rollback();
             return res.status(400).json({ error: 'A menu item with this name already exists.' });
         }
 
-        const stmt = db.prepare(`
+        const info = await db.prepare(`
             INSERT INTO menu_items (name, description, price, category_id, image, stock, is_available)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-        `);
-        const info = stmt.run(name, description, price, category_id, imagePath, stock || 0, is_available || 1);
-        replaceMenuItemOptions(info.lastInsertRowid, parseOptionsPayload(options));
-        db.prepare('COMMIT').run();
+        `).run(name, description, price, category_id, imagePath, stock || 0, is_available || 1);
+        await replaceMenuItemOptions(info.lastInsertRowid, parseOptionsPayload(options));
+        await db.commit();
         res.status(201).json({ message: 'Menu item created.', id: info.lastInsertRowid });
     } catch (error) {
-        try { db.prepare('ROLLBACK').run(); } catch (e) {}
+        await db.rollback();
         console.error('Create Menu Item Error:', error);
         res.status(500).json({ error: 'Internal server error: ' + error.message });
     }
 });
 
 // PUT /api/menu/:id (Admin only)
-router.put('/:id', requireRole('admin', 'staff'), upload.single('image'), (req, res) => {
+router.put('/:id', requireRole('admin', 'staff'), upload.single('image'), async (req, res) => {
     const { name, description, price, category_id, stock, is_available, options } = req.body;
     const itemId = req.params.id;
 
     try {
-        db.prepare('BEGIN TRANSACTION').run();
+        await db.beginTransaction();
 
-        // Validation: Check for duplicate name (excluding current)
-        const existing = db.prepare(`SELECT id FROM menu_items WHERE LOWER(name) = LOWER(?) AND id != ?`).get(name, itemId);
+        const existing = await db.prepare(`SELECT id FROM menu_items WHERE LOWER(name) = LOWER(?) AND id != ?`).get(name, itemId);
         if (existing) {
-            db.prepare('ROLLBACK').run();
+            await db.rollback();
             return res.status(400).json({ error: 'Another menu item with this name already exists.' });
         }
 
-        let stmt;
         let info;
 
         if (req.file) {
             const imagePath = `/uploads/menu/${req.file.filename}`;
-            stmt = db.prepare(`
+            info = await db.prepare(`
                 UPDATE menu_items 
                 SET name=?, description=?, price=?, category_id=?, image=?, stock=?, is_available=?, updated_at=CURRENT_TIMESTAMP
                 WHERE id=?
-            `);
-            info = stmt.run(name, description, price, category_id, imagePath, stock || 0, is_available || 0, itemId);
+            `).run(name, description, price, category_id, imagePath, stock || 0, is_available || 0, itemId);
         } else {
-            stmt = db.prepare(`
+            info = await db.prepare(`
                 UPDATE menu_items 
                 SET name=?, description=?, price=?, category_id=?, stock=?, is_available=?, updated_at=CURRENT_TIMESTAMP
                 WHERE id=?
-            `);
-            info = stmt.run(name, description, price, category_id, stock || 0, is_available || 0, itemId);
+            `).run(name, description, price, category_id, stock || 0, is_available || 0, itemId);
         }
 
         if (info.changes === 0) {
-            db.prepare('ROLLBACK').run();
+            await db.rollback();
             return res.status(404).json({ error: 'Menu item not found.' });
         }
-        replaceMenuItemOptions(itemId, parseOptionsPayload(options));
-        db.prepare('COMMIT').run();
+        await replaceMenuItemOptions(itemId, parseOptionsPayload(options));
+        await db.commit();
         res.json({ message: 'Menu item updated.' });
     } catch (error) {
-        try { db.prepare('ROLLBACK').run(); } catch (e) {}
+        await db.rollback();
         console.error('Update Menu Item Error:', error);
         res.status(500).json({ error: 'Internal server error: ' + error.message });
     }
 });
 
 // DELETE /api/menu/:id (Admin only)
-router.delete('/:id', requireRole('admin'), (req, res) => {
+router.delete('/:id', requireRole('admin'), async (req, res) => {
     try {
-        const info = db.prepare(`DELETE FROM menu_items WHERE id=?`).run(req.params.id);
+        const info = await db.prepare(`DELETE FROM menu_items WHERE id=?`).run(req.params.id);
         if (info.changes === 0) return res.status(404).json({ error: 'Menu item not found.' });
         res.json({ message: 'Menu item deleted.' });
     } catch (error) {
@@ -300,12 +293,12 @@ router.delete('/:id', requireRole('admin'), (req, res) => {
 });
 
 // PATCH /api/menu/:id/stock (Admin/Staff only)
-router.patch('/:id/stock', requireRole('admin', 'staff'), (req, res) => {
+router.patch('/:id/stock', requireRole('admin', 'staff'), async (req, res) => {
     const { stock } = req.body;
     if (stock === undefined) return res.status(400).json({ error: 'Stock value required.' });
 
     try {
-        const info = db.prepare(`UPDATE menu_items SET stock=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`).run(stock, req.params.id);
+        const info = await db.prepare(`UPDATE menu_items SET stock=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`).run(stock, req.params.id);
         if (info.changes === 0) return res.status(404).json({ error: 'Menu item not found.' });
         res.json({ message: 'Stock updated.' });
     } catch (error) {

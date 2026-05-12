@@ -19,8 +19,6 @@ const EMAIL_FROM_NAME = process.env.EMAIL_FROM_NAME || 'Kape Kanto Hub';
 const MAILJET_API_KEY = cleanCredential(process.env.MAILJET_API_KEY);
 const MAILJET_SECRET_KEY = cleanCredential(process.env.MAILJET_SECRET_KEY);
 const MAILJET_FROM = process.env.MAILJET_FROM || process.env.EMAIL_FROM;
-const RESEND_API_KEY = cleanCredential(process.env.RESEND_API_KEY);
-const RESEND_FROM = process.env.RESEND_FROM || process.env.EMAIL_FROM;
 
 if (!EMAIL_USER || !EMAIL_PASS) {
     console.warn('[EMAIL] WARNING: EMAIL_USER or EMAIL_PASS is not set');
@@ -29,10 +27,6 @@ if (!EMAIL_USER || !EMAIL_PASS) {
         emailUserSet: true,
         emailPassLength: EMAIL_PASS.length
     });
-}
-
-if (RESEND_API_KEY) {
-    console.log('[EMAIL] Resend API provider enabled');
 }
 
 if (MAILJET_API_KEY && MAILJET_SECRET_KEY) {
@@ -75,7 +69,6 @@ function logEmailError(context, email, error) {
         emailPassSet: Boolean(EMAIL_PASS),
         emailPassLength: EMAIL_PASS ? EMAIL_PASS.length : 0,
         mailjetApiKeySet: Boolean(MAILJET_API_KEY),
-        resendApiKeySet: Boolean(RESEND_API_KEY),
         provider: error.provider,
         transport: error.transport,
         code: error.code,
@@ -158,43 +151,6 @@ async function sendMailWithMailjet(mailOptions, context, email) {
     }
 }
 
-async function sendMailWithResend(mailOptions, context, email) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
-
-    try {
-        const response = await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${RESEND_API_KEY}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                from: RESEND_FROM || mailOptions.from,
-                to: Array.isArray(mailOptions.to) ? mailOptions.to : [mailOptions.to],
-                subject: mailOptions.subject,
-                html: mailOptions.html
-            }),
-            signal: controller.signal
-        });
-
-        const payload = await response.json().catch(() => ({}));
-
-        if (!response.ok) {
-            const error = new Error(payload.message || payload.error || `Resend API failed with status ${response.status}`);
-            error.code = 'EMAIL_API_FAILED';
-            error.provider = 'resend';
-            error.responseCode = response.status;
-            throw error;
-        }
-
-        console.log(`[EMAIL] ${context} sent via resend: ${payload.id || 'queued'}`);
-        return payload;
-    } finally {
-        clearTimeout(timeout);
-    }
-}
-
 async function sendMailWithFallback(mailOptions, context, email) {
     let lastError;
 
@@ -205,20 +161,6 @@ async function sendMailWithFallback(mailOptions, context, email) {
         } catch (error) {
             lastError = error;
             logEmailError(`${context} via mailjet`, email, error);
-
-            if (error.responseCode === 401 || error.responseCode === 403 || error.responseCode === 422) {
-                throw error;
-            }
-        }
-    }
-
-    if (RESEND_API_KEY) {
-        try {
-            console.log(`[EMAIL] Trying resend API for ${email}`);
-            return await sendMailWithResend(mailOptions, context, email);
-        } catch (error) {
-            lastError = error;
-            logEmailError(`${context} via resend`, email, error);
 
             if (error.responseCode === 401 || error.responseCode === 403 || error.responseCode === 422) {
                 throw error;

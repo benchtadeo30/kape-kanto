@@ -3,7 +3,7 @@ const router = express.Router();
 const { db } = require('../database/init');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { createCheckoutSession } = require('../services/payrex');
-const { trackLoyaltyProgress } = require('../services/loyalty');
+const { trackLoyaltyProgress, revertLoyaltyProgress } = require('../services/loyalty');
 
 // POST /api/orders (Place new order)
 router.post('/', requireAuth, async (req, res) => {
@@ -14,14 +14,14 @@ router.post('/', requireAuth, async (req, res) => {
     if (!order_type || !['delivery', 'pickup'].includes(order_type)) return res.status(400).json({ error: 'Invalid order type.' });
 
     try {
-        db.prepare('BEGIN TRANSACTION').run();
+        await db.beginTransaction();
 
         // 1. Get user details
-        const user = db.prepare(`SELECT * FROM users WHERE id = ?`).get(userId);
+        const user = await db.prepare(`SELECT * FROM users WHERE id = ?`).get(userId);
 
         // Check if user is email verified
         if (user.role === 'customer' && user.is_verified != 1) {
-            db.prepare('ROLLBACK').run();
+            await db.rollback();
             return res.status(403).json({ error: 'You must verify your email before placing an order.' });
         }
         
@@ -30,9 +30,9 @@ router.post('/', requireAuth, async (req, res) => {
         const validItems = [];
         
         for (let item of items) {
-            const dbItem = db.prepare(`SELECT id, name, price, stock, is_available, category_id FROM menu_items WHERE id = ?`).get(item.id);
+            const dbItem = await db.prepare(`SELECT id, name, price, stock, is_available, category_id FROM menu_items WHERE id = ?`).get(item.id);
             if (!dbItem || dbItem.is_available === 0 || dbItem.stock < item.quantity) {
-                db.prepare('ROLLBACK').run();
+                await db.rollback();
                 return res.status(400).json({ error: `Item ${item.name} is unavailable or out of stock.` });
             }
             
@@ -41,7 +41,7 @@ router.post('/', requireAuth, async (req, res) => {
             if (item.customizations) {
                 for (const optName in item.customizations) {
                     const choiceName = item.customizations[optName];
-                    const choice = db.prepare(`
+                    const choice = await db.prepare(`
                         SELECT c.price_adjustment 
                         FROM menu_item_option_choices c
                         JOIN menu_item_options o ON c.option_id = o.id
@@ -88,13 +88,11 @@ router.post('/', requireAuth, async (req, res) => {
             vat_amount = vat_exempt_sales * 0.12; 
         }
 
-        // The "Net Amount" after SC discount but before coupons
-        let net_after_sc = vat_exempt_sales - sc_discount;
-
         // Promo Code Logic
         let promo_discount_amount = 0;
+        let promoObj = null;
         if (promo_code) {
-            const promo = db.prepare(`
+            const promo = await db.prepare(`
                 SELECT p.*,
                        (SELECT id FROM promo_tasks WHERE reward_promo_id = p.id LIMIT 1) as is_loyalty_reward
                 FROM promos p
@@ -107,11 +105,12 @@ router.post('/', requireAuth, async (req, res) => {
                 // Check loyalty requirement
                 let canUsePromo = true;
                 if (promo.is_loyalty_reward) {
-                    const coupon = db.prepare(`SELECT * FROM user_coupons WHERE user_id = ? AND promo_id = ? AND is_used = 0`).get(req.session.userId, promo.id);
+                    const coupon = await db.prepare(`SELECT * FROM user_coupons WHERE user_id = ? AND promo_id = ? AND is_used = 0`).get(req.session.userId, promo.id);
                     if (!coupon) canUsePromo = false;
                 }
 
                 if (canUsePromo) {
+                    promoObj = promo;
                     let applicableGross = 0;
                     let appItemIds = [];
                     let appCatIds = [];
@@ -168,26 +167,18 @@ router.post('/', requireAuth, async (req, res) => {
         const total_discount = sc_discount + promo_discount_amount;
         const delivery_fee = (order_type === 'delivery') ? 50 : 0;
         
-        // Final Amount Due: (VAT-Exempt Sales - SC Discount - Promo Discount) + VAT (if not exempt) + Delivery
-        // For Standard: (Net + VAT) - Promo - SC(0) + Delivery = Gross - Promo + Delivery
-        // For SC/PWD: (Net - SC - Promo) + 0 + Delivery
-        // Final variables for DB storage
         let final_vat_amount = vat_amount;
         if (!isSeniorOrPWD) {
-            // Recalculate VAT based on discounted net for regular customers
             final_vat_amount = (vat_exempt_sales - promo_discount_amount) * 0.12;
         }
         const final_discount_amount = total_discount;
 
         const total = Math.round(((vat_exempt_sales - sc_discount - promo_discount_amount) + final_vat_amount + delivery_fee) * 100) / 100;
 
-
-        // Determine status based on payment method
         const isOnline = payment_method === 'online' || payment_method === 'payrex';
         const finalStatus = isOnline ? 'awaiting_payment' : 'pending';
         const finalPaymentMethod = isOnline ? 'payrex' : payment_method;
 
-        // Calculate estimated ready time for ASAP orders
         const finalScheduleMode = schedule_mode || 'scheduled';
         let estimatedReadyTime = null;
         let finalScheduledDate = scheduled_date || null;
@@ -203,7 +194,7 @@ router.post('/', requireAuth, async (req, res) => {
         }
 
         // 4. Create Order
-        const insertOrder = db.prepare(`
+        const insertOrder = await db.prepare(`
             INSERT INTO orders (
                 user_id, status, subtotal, vat_amount, delivery_fee, total, 
                 discount_amount, discount_type, sc_discount_amount, promo_discount_amount,
@@ -215,9 +206,7 @@ router.post('/', requireAuth, async (req, res) => {
                 @payment_method, 'awaiting', @order_type, @delivery_address, @notes, 
                 @promo_id, @schedule_mode, @scheduled_date, @scheduled_time, @estimated_ready_time
             )
-        `);
-
-        const orderInfo = insertOrder.run({
+        `).run({
             user_id: userId,
             status: finalStatus,
             subtotal: subtotal,
@@ -232,26 +221,24 @@ router.post('/', requireAuth, async (req, res) => {
             order_type: order_type,
             delivery_address: delivery_address || null,
             notes: notes || null,
-            promo_id: promo_code ? (db.prepare('SELECT id FROM promos WHERE UPPER(promo_code) = UPPER(?)').get(promo_code)?.id || null) : null,
+            promo_id: promoObj ? promoObj.id : null,
             schedule_mode: finalScheduleMode,
             scheduled_date: finalScheduledDate,
             scheduled_time: finalScheduledTime,
             estimated_ready_time: estimatedReadyTime
         });
         
-        const orderId = orderInfo.lastInsertRowid;
+        const orderId = insertOrder.lastInsertRowid;
 
         // 5. Insert Order Items
-        const insertOrderItem = db.prepare(`
-            INSERT INTO order_items (order_id, menu_item_id, quantity, unit_price, subtotal, customizations)
-            VALUES (?, ?, ?, ?, ?, ?)
-        `);
-
         for (let item of validItems) {
-            insertOrderItem.run(orderId, item.id, item.quantity, item.unit_price, item.subtotal, item.customizations);
+            await db.prepare(`
+                INSERT INTO order_items (order_id, menu_item_id, quantity, unit_price, subtotal, customizations)
+                VALUES (?, ?, ?, ?, ?, ?)
+            `).run(orderId, item.id, item.quantity, item.unit_price, item.subtotal, item.customizations);
         }
 
-        db.prepare('COMMIT').run();
+        await db.commit();
 
         // 6. Handle Payment Redirection or Success
         if (isOnline) {
@@ -268,8 +255,7 @@ router.post('/', requireAuth, async (req, res) => {
             try {
                 const sessionData = await createCheckoutSession(orderData, validItems, final_discount_amount, discount_type);
                 
-                // Save checkout ID for tracking
-                db.prepare(`UPDATE orders SET payrex_checkout_id = ? WHERE id = ?`).run(sessionData.sessionId, orderId);
+                await db.prepare(`UPDATE orders SET payrex_checkout_id = ? WHERE id = ?`).run(sessionData.sessionId, orderId);
 
                 res.json({ 
                     message: 'Order placed, awaiting payment.', 
@@ -282,11 +268,11 @@ router.post('/', requireAuth, async (req, res) => {
             }
         } else {
             // Physical payment — track loyalty progress immediately
-            trackLoyaltyProgress(userId, orderId, total);
+            await trackLoyaltyProgress(userId, orderId, total);
 
             // Decrement stock for non-online orders
             for (let item of validItems) {
-                db.prepare('UPDATE menu_items SET stock = stock - ? WHERE id = ?').run(item.quantity, item.id);
+                await db.prepare('UPDATE menu_items SET stock = stock - ? WHERE id = ?').run(item.quantity, item.id);
             }
 
             res.json({
@@ -296,7 +282,7 @@ router.post('/', requireAuth, async (req, res) => {
         }
 
     } catch (error) {
-        if (db.inTransaction) db.prepare('ROLLBACK').run();
+        await db.rollback();
         console.error('CRITICAL ORDER ERROR:', error);
         res.status(500).json({ 
             error: 'Internal server error while placing order.',
@@ -307,9 +293,9 @@ router.post('/', requireAuth, async (req, res) => {
 });
 
 // GET /api/orders/my
-router.get('/my', requireAuth, (req, res) => {
+router.get('/my', requireAuth, async (req, res) => {
     try {
-        const orders = db.prepare(`
+        const orders = await db.prepare(`
             SELECT * FROM orders 
             WHERE user_id = ? 
             ORDER BY created_at DESC
@@ -321,22 +307,20 @@ router.get('/my', requireAuth, (req, res) => {
 });
 
 // GET /api/orders/my/:id
-router.get('/my/:id', requireAuth, (req, res) => {
+router.get('/my/:id', requireAuth, async (req, res) => {
     try {
-        const user = db.prepare('SELECT role FROM users WHERE id = ?').get(req.session.userId);
+        const user = await db.prepare('SELECT role FROM users WHERE id = ?').get(req.session.userId);
         let order;
         
         if (user.role === 'admin' || user.role === 'staff') {
-            // Admin/Staff can see any order
-            order = db.prepare(`SELECT * FROM orders WHERE id = ?`).get(req.params.id);
+            order = await db.prepare(`SELECT * FROM orders WHERE id = ?`).get(req.params.id);
         } else {
-            // Customers only see their own
-            order = db.prepare(`SELECT * FROM orders WHERE id = ? AND user_id = ?`).get(req.params.id, req.session.userId);
+            order = await db.prepare(`SELECT * FROM orders WHERE id = ? AND user_id = ?`).get(req.params.id, req.session.userId);
         }
         
         if (!order) return res.status(404).json({ error: 'Order not found.' });
 
-        const items = db.prepare(`
+        const items = await db.prepare(`
             SELECT oi.*, m.name, m.image 
             FROM order_items oi
             JOIN menu_items m ON oi.menu_item_id = m.id
@@ -352,43 +336,41 @@ router.get('/my/:id', requireAuth, (req, res) => {
 });
 
 // POST /api/orders/my/:id/cancel
-router.post('/my/:id/cancel', requireAuth, (req, res) => {
+router.post('/my/:id/cancel', requireAuth, async (req, res) => {
     try {
-        db.prepare('BEGIN TRANSACTION').run();
+        await db.beginTransaction();
 
-        const order = db.prepare(`SELECT * FROM orders WHERE id = ? AND user_id = ?`).get(req.params.id, req.session.userId);
+        const order = await db.prepare(`SELECT * FROM orders WHERE id = ? AND user_id = ?`).get(req.params.id, req.session.userId);
         if (!order) {
-            db.prepare('ROLLBACK').run();
+            await db.rollback();
             return res.status(404).json({ error: 'Order not found.' });
         }
 
         if (order.status !== 'awaiting_payment' && order.status !== 'pending') {
-            db.prepare('ROLLBACK').run();
+            await db.rollback();
             return res.status(400).json({ error: 'Order cannot be cancelled at this stage.' });
         }
 
         if (order.status === 'pending' && ['pay_at_store', 'cod'].includes(order.payment_method)) {
-            const items = db.prepare('SELECT menu_item_id, quantity FROM order_items WHERE order_id = ?').all(order.id);
+            const items = await db.prepare('SELECT menu_item_id, quantity FROM order_items WHERE order_id = ?').all(order.id);
             for (let item of items) {
-                db.prepare('UPDATE menu_items SET stock = stock + ? WHERE id = ?').run(item.quantity, item.menu_item_id);
+                await db.prepare('UPDATE menu_items SET stock = stock + ? WHERE id = ?').run(item.quantity, item.menu_item_id);
             }
-
-            const { revertLoyaltyProgress } = require('../services/loyalty');
-            revertLoyaltyProgress(order.user_id, order.id, order.total);
+            await revertLoyaltyProgress(order.user_id, order.id, order.total);
         }
 
-        db.prepare(`UPDATE orders SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE id = ?`).run(order.id);
-        db.prepare('COMMIT').run();
+        await db.prepare(`UPDATE orders SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE id = ?`).run(order.id);
+        await db.commit();
         res.json({ message: 'Order cancelled successfully.' });
     } catch (error) {
-        if (db.inTransaction) db.prepare('ROLLBACK').run();
+        await db.rollback();
         console.error('Customer cancel error:', error);
         res.status(500).json({ error: 'Internal server error.' });
     }
 });
 
 // GET /api/orders/all (Admin/Staff)
-router.get('/all', requireRole('admin', 'staff'), (req, res) => {
+router.get('/all', requireRole('admin', 'staff'), async (req, res) => {
     const limit = parseInt(req.query.limit);
     const offset = parseInt(req.query.offset) || 0;
     const status = req.query.status || 'all';
@@ -420,11 +402,10 @@ router.get('/all', requireRole('admin', 'staff'), (req, res) => {
             params.push(limit, offset);
         }
 
-        const orders = db.prepare(query).all(...params);
+        const orders = await db.prepare(query).all(...params);
         
-        // Count query needs its own params (without limit/offset)
         const countParams = status !== 'all' ? [status] : [];
-        const total = db.prepare(countQuery).get(...countParams).total;
+        const total = (await db.prepare(countQuery).get(...countParams)).total;
 
         if (!isNaN(limit)) {
             res.json({ items: orders, total });
@@ -438,20 +419,20 @@ router.get('/all', requireRole('admin', 'staff'), (req, res) => {
 });
 
 // PATCH /api/orders/:id/status (Admin/Staff)
-router.patch('/:id/status', requireRole('admin', 'staff'), (req, res) => {
+router.patch('/:id/status', requireRole('admin', 'staff'), async (req, res) => {
     const { status, rider_name, rider_contact } = req.body;
     const validStatuses = ['pending', 'preparing', 'ready', 'out_for_delivery', 'completed', 'cancelled'];
     
     if (!validStatuses.includes(status)) return res.status(400).json({ error: 'Invalid status.' });
     
     try {
-        const order = db.prepare('SELECT order_type FROM orders WHERE id = ?').get(req.params.id);
+        const order = await db.prepare('SELECT order_type FROM orders WHERE id = ?').get(req.params.id);
         if (!order) return res.status(404).json({ error: 'Order not found.' });
 
         if (status === 'out_for_delivery' && order.order_type === 'pickup') {
             return res.status(400).json({ error: 'Pickup orders cannot be out for delivery.' });
         }
-        // Build dynamic update — include rider info when moving to out_for_delivery
+
         let query = `UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP`;
         const params = [status];
 
@@ -462,16 +443,13 @@ router.patch('/:id/status', requireRole('admin', 'staff'), (req, res) => {
         query += ` WHERE id = ?`;
         params.push(req.params.id);
 
-        const info = db.prepare(query).run(...params);
+        const info = await db.prepare(query).run(...params);
         if (info.changes === 0) return res.status(404).json({ error: 'Order not found.' });
 
-        // If order is completed, process promo tasks via loyalty service
         if (status === 'completed') {
-            const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
-            // Skip online orders because they are already tracked when payment succeeds in payment.js
-            if (order && !['online', 'payrex'].includes(order.payment_method)) {
-                const { trackLoyaltyProgress } = require('../services/loyalty');
-                trackLoyaltyProgress(order.user_id, order.id, order.total);
+            const completedOrder = await db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
+            if (completedOrder && !['online', 'payrex'].includes(completedOrder.payment_method)) {
+                await trackLoyaltyProgress(completedOrder.user_id, completedOrder.id, completedOrder.total);
             }
         }
 
@@ -483,55 +461,54 @@ router.patch('/:id/status', requireRole('admin', 'staff'), (req, res) => {
 });
 
 // PATCH /api/orders/:id/dismiss (Admin/Staff)
-router.patch('/:id/dismiss', requireRole('admin', 'staff'), (req, res) => {
+router.patch('/:id/dismiss', requireRole('admin', 'staff'), async (req, res) => {
     const orderId = req.params.id;
 
     try {
-        db.prepare('BEGIN TRANSACTION').run();
+        await db.beginTransaction();
 
-        const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId);
+        const order = await db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId);
         if (!order) {
-            db.prepare('ROLLBACK').run();
+            await db.rollback();
             return res.status(404).json({ error: 'Order not found.' });
         }
 
         if (['completed', 'cancelled'].includes(order.status)) {
-            db.prepare('ROLLBACK').run();
+            await db.rollback();
             return res.status(400).json({ error: 'Only active orders can be dismissed.' });
         }
 
-        const items = db.prepare('SELECT menu_item_id, quantity FROM order_items WHERE order_id = ?').all(orderId);
+        const items = await db.prepare('SELECT menu_item_id, quantity FROM order_items WHERE order_id = ?').all(orderId);
         for (let item of items) {
-            db.prepare('UPDATE menu_items SET stock = stock + ? WHERE id = ?').run(item.quantity, item.menu_item_id);
+            await db.prepare('UPDATE menu_items SET stock = stock + ? WHERE id = ?').run(item.quantity, item.menu_item_id);
         }
 
-        const { revertLoyaltyProgress } = require('../services/loyalty');
-        revertLoyaltyProgress(order.user_id, orderId, order.total);
+        await revertLoyaltyProgress(order.user_id, orderId, order.total);
 
-        db.prepare(`
+        await db.prepare(`
             UPDATE orders
             SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
         `).run(orderId);
 
-        db.prepare('COMMIT').run();
+        await db.commit();
         res.json({ message: 'Order dismissed. Stock was returned and loyalty progress was reverted.' });
     } catch (error) {
-        if (db.inTransaction) db.prepare('ROLLBACK').run();
+        await db.rollback();
         console.error('Dismiss order error:', error);
         res.status(500).json({ error: 'Failed to dismiss order.' });
     }
 });
 
 // DELETE /api/orders/:id (Admin/Staff)
-router.delete('/:id', requireRole('admin', 'staff'), (req, res) => {
+router.delete('/:id', requireRole('admin', 'staff'), async (req, res) => {
     const orderId = req.params.id;
     try {
-        db.prepare('BEGIN TRANSACTION').run();
+        await db.beginTransaction();
         
-        const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId);
+        const order = await db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId);
         if (!order) {
-            db.prepare('ROLLBACK').run();
+            await db.rollback();
             return res.status(404).json({ error: 'Order not found.' });
         }
 
@@ -539,25 +516,21 @@ router.delete('/:id', requireRole('admin', 'staff'), (req, res) => {
             && ['pay_at_store', 'cod'].includes(order.payment_method);
 
         if (shouldReturnStock) {
-            const { revertLoyaltyProgress } = require('../services/loyalty');
-            revertLoyaltyProgress(order.user_id, orderId, order.total);
+            await revertLoyaltyProgress(order.user_id, orderId, order.total);
 
-            const items = db.prepare('SELECT menu_item_id, quantity FROM order_items WHERE order_id = ?').all(orderId);
+            const items = await db.prepare('SELECT menu_item_id, quantity FROM order_items WHERE order_id = ?').all(orderId);
             for (let item of items) {
-                db.prepare('UPDATE menu_items SET stock = stock + ? WHERE id = ?').run(item.quantity, item.menu_item_id);
+                await db.prepare('UPDATE menu_items SET stock = stock + ? WHERE id = ?').run(item.quantity, item.menu_item_id);
             }
         }
 
-        // 2. Delete order items (Cascade should handle this if foreign keys are set, but let's be explicit)
-        db.prepare('DELETE FROM order_items WHERE order_id = ?').run(orderId);
+        await db.prepare('DELETE FROM order_items WHERE order_id = ?').run(orderId);
+        await db.prepare('DELETE FROM orders WHERE id = ?').run(orderId);
 
-        // 3. Delete order record
-        db.prepare('DELETE FROM orders WHERE id = ?').run(orderId);
-
-        db.prepare('COMMIT').run();
+        await db.commit();
         res.json({ message: shouldReturnStock ? 'Order deleted. Stock returned and loyalty progress reverted.' : 'Order permanently deleted.' });
     } catch (error) {
-        if (db.inTransaction) db.prepare('ROLLBACK').run();
+        await db.rollback();
         console.error('Delete error:', error);
         res.status(500).json({ error: 'Failed to delete order.' });
     }

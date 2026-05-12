@@ -1,5 +1,5 @@
 const express = require('express');
-// Trigger restart - v3 - sync schema
+// Trigger restart - v4 - sqlite cloud
 const session = require('express-session');
 const cors = require('cors');
 const path = require('path');
@@ -9,9 +9,6 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const { db, initDb, seedData } = require('./database/init');
-
-initDb();
-seedData();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -46,7 +43,7 @@ app.use(session({
 // Moved to server.js for global access
 
 // Global User Middleware
-app.use((req, res, next) => {
+app.use(async (req, res, next) => {
     res.locals.user = null;
     res.locals.isVerifiedInSession = req.session.isVerifiedInSession || false;
     res.locals.canUpdateID = req.session.canUpdateID || false;
@@ -54,9 +51,7 @@ app.use((req, res, next) => {
     if (req.session && req.session.userId) {
         console.log(`[SESSION] User ${req.session.userId} | Verified this session: ${res.locals.isVerifiedInSession}`);
         try {
-            if (db) {
-                res.locals.user = db.prepare(`SELECT id, username, email, pending_email, role, is_senior, is_pwd, is_verified, id_verification_status, id_verification_notes, id_verification_message, profile_image FROM users WHERE id = ?`).get(req.session.userId);
-            }
+            res.locals.user = await db.prepare(`SELECT id, username, email, pending_email, role, is_senior, is_pwd, is_verified, id_verification_status, id_verification_notes, id_verification_message, profile_image FROM users WHERE id = ?`).get(req.session.userId);
         } catch (e) {
             console.error("Session User Middleware Error:", e);
         }
@@ -126,19 +121,25 @@ app.use('/api/categories', categoryRoutes);
 app.use('/', pageRoutes);
 app.use('/help', helpRoutes);
 
-// Initialize DB (only if required on startup, better to run separately for schema creation)
-// require('./database/init'); 
-
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).json({ error: 'Something went wrong on the server!' });
 });
 
-// Start Server
-app.listen(PORT, () => {
-    console.log(`☕ Kape Kanto Hub Server is running on http://localhost:${PORT}`);
-});
+// Async startup: initialize DB schema then start listening
+(async () => {
+    try {
+        await initDb();
+        await seedData();
+        app.listen(PORT, () => {
+            console.log(`☕ Kape Kanto Hub Server is running on http://localhost:${PORT}`);
+        });
+    } catch (err) {
+        console.error('Failed to start server:', err);
+        process.exit(1);
+    }
+})();
 
 // Keep process alive
 setInterval(() => {}, 1000);

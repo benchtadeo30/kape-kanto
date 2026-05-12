@@ -5,12 +5,11 @@ const { requireRole, requireAuth } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 
 // GET /api/promos (Public - Unified promos & tasks, with pagination)
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     const limit = parseInt(req.query.limit) || 6;
     const offset = parseInt(req.query.offset) || 0;
 
     try {
-        // More compatible date comparison using date strings
         const promoQuery = `
             SELECT id, title, description, discount_percent, discount_amount, image, 
                    start_date, end_date, promo_code, 'promo' as event_type, created_at
@@ -34,9 +33,9 @@ router.get('/', (req, res) => {
             LIMIT ? OFFSET ?
         `;
 
-        const items = db.prepare(unifiedQuery).all(limit, offset);
+        const items = await db.prepare(unifiedQuery).all(limit, offset);
         const countQuery = `SELECT COUNT(*) as count FROM (${promoQuery} UNION ALL ${taskQuery}) as combined`;
-        const total = db.prepare(countQuery).get().count;
+        const total = (await db.prepare(countQuery).get()).count;
 
         console.log(`[PROMO API] Found ${items.length} active items (Total: ${total})`);
         res.json({ items, total, limit, offset });
@@ -47,9 +46,9 @@ router.get('/', (req, res) => {
 });
 
 // GET /api/promos/all (Admin - All promos)
-router.get('/all', requireRole('admin'), (req, res) => {
+router.get('/all', requireRole('admin'), async (req, res) => {
     try {
-        const promos = db.prepare(`SELECT * FROM promos`).all();
+        const promos = await db.prepare(`SELECT * FROM promos`).all();
         res.json(promos);
     } catch (error) {
         res.status(500).json({ error: 'Internal server error.' });
@@ -57,20 +56,20 @@ router.get('/all', requireRole('admin'), (req, res) => {
 });
 
 // GET /api/promos/context (Admin)
-router.get('/context', requireRole('admin'), (req, res) => {
+router.get('/context', requireRole('admin'), async (req, res) => {
     try {
-        const menuItems = db.prepare(`SELECT id, name, category_id, image FROM menu_items WHERE is_available = 1`).all();
-        const categories = db.prepare(`SELECT id, name FROM categories`).all();
+        const menuItems = await db.prepare(`SELECT id, name, category_id, image FROM menu_items WHERE is_available = 1`).all();
+        const categories = await db.prepare(`SELECT id, name FROM categories`).all();
         res.json({ menuItems, categories });
     } catch (error) {
         res.status(500).json({ error: 'Internal server error.' });
     }
 });
 
-// GET /api/promos/tasks (Admin - All tasks) — MUST be before /:id
-router.get('/tasks', requireRole('admin'), (req, res) => {
+// GET /api/promos/tasks (Admin - All tasks)
+router.get('/tasks', requireRole('admin'), async (req, res) => {
     try {
-        const tasks = db.prepare(`
+        const tasks = await db.prepare(`
             SELECT pt.*, p.promo_code, p.discount_percent as reward_discount
             FROM promo_tasks pt
             LEFT JOIN promos p ON pt.reward_promo_id = p.id
@@ -82,10 +81,10 @@ router.get('/tasks', requireRole('admin'), (req, res) => {
     }
 });
 
-// GET /api/promos/tasks/my-progress (Customer) — MUST be before /:id
-router.get('/tasks/my-progress', requireAuth, (req, res) => {
+// GET /api/promos/tasks/my-progress (Customer)
+router.get('/tasks/my-progress', requireAuth, async (req, res) => {
     try {
-        const tasks = db.prepare(`
+        const tasks = await db.prepare(`
             SELECT pt.id, pt.title, pt.customer_description, pt.task_type, pt.required_quantity,
                    COALESCE(up.current_quantity, 0) as current_quantity,
                    COALESCE(up.is_completed, 0) as is_completed,
@@ -104,13 +103,12 @@ router.get('/tasks/my-progress', requireAuth, (req, res) => {
 });
 
 // GET /api/promos/:id (Public)
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
     try {
-        const promo = db.prepare(`SELECT * FROM promos WHERE id = ?`).get(req.params.id);
+        const promo = await db.prepare(`SELECT * FROM promos WHERE id = ?`).get(req.params.id);
         if (!promo) return res.status(404).json({ error: 'Promo not found' });
 
-        // Get linked items
-        const items = db.prepare(`
+        const items = await db.prepare(`
             SELECT m.* FROM menu_items m
             JOIN promo_items pi ON m.id = pi.menu_item_id
             WHERE pi.promo_id = ?
@@ -123,7 +121,7 @@ router.get('/:id', (req, res) => {
     }
 });
 
-router.post('/', requireRole('admin'), upload.single('image'), (req, res) => {
+router.post('/', requireRole('admin'), upload.single('image'), async (req, res) => {
     const { 
         title, description, discount_percent, discount_amount, start_date, end_date, is_active, promo_code, 
         is_loyalty_task, task_type, required_quantity, required_menu_item_id, required_category_id, 
@@ -133,16 +131,13 @@ router.post('/', requireRole('admin'), upload.single('image'), (req, res) => {
     const imagePath = req.file ? `/uploads/promos/${req.file.filename}` : null;
 
     try {
-        const insertPromo = db.prepare(`
+        const info = await db.prepare(`
             INSERT INTO promos (
                 title, description, discount_percent, discount_amount, image, start_date, end_date, is_active, promo_code,
                 applicable_category_id, applicable_menu_item_id,
-                applicable_category_ids, applicable_menu_item_ids,
-                event_type
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `);
-
-        const info = insertPromo.run(
+                applicable_category_ids, applicable_menu_item_ids
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
             title, description, 
             parseFloat(discount_percent) || 0, 
             parseFloat(discount_amount) || 0, 
@@ -150,119 +145,102 @@ router.post('/', requireRole('admin'), upload.single('image'), (req, res) => {
             start_date || null, end_date || null,
             is_active == '1' ? 1 : 0, promo_code || null,
             applicable_category_id || null, applicable_menu_item_id || null,
-            applicable_category_ids || '[]', applicable_menu_item_ids || '[]',
-            'promo'
+            applicable_category_ids || '[]', applicable_menu_item_ids || '[]'
         );
         const promoId = info.lastInsertRowid;
 
-        // If it's a loyalty task, create the task linked to this promo
         if (is_loyalty_task == '1') {
-            db.prepare(`
+            await db.prepare(`
                 INSERT INTO promo_tasks (
                     title, description, task_type, customer_description, 
                     required_menu_item_id, required_category_id, required_quantity, 
                     min_order_amount, reward_promo_id, is_active, end_date
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `).run(
-                title, 
-                description, 
-                task_type, 
-                description, 
+                title, description, task_type, description, 
                 parseInt(required_menu_item_id) || null, 
                 parseInt(required_category_id) || null, 
                 parseInt(required_quantity) || 1, 
                 parseFloat(min_order_amount) || null, 
-                promoId, 
-                1, // tasks created via this route are active by default
-                end_date || null
+                promoId, 1, end_date || null
             );
         }
 
         res.status(201).json({ message: 'Campaign created successfully.', id: promoId });
     } catch (error) {
         console.error('[PROMO ERROR] Failed to create promo:', error);
-        res.status(500).json({ 
-            error: 'Internal server error.', 
-            details: error.message,
-            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-        });
+        res.status(500).json({ error: 'Internal server error.', details: error.message });
     }
 });
 
 // PUT /api/promos/:id (Admin)
-router.put('/:id', requireRole('admin'), upload.single('image'), (req, res) => {
+router.put('/:id', requireRole('admin'), upload.single('image'), async (req, res) => {
     const { 
         title, description, discount_percent, discount_amount, start_date, end_date, is_active, promo_code,
         applicable_category_ids, applicable_menu_item_ids,
         is_loyalty_task, task_type, required_quantity, required_menu_item_id, required_category_id,
         min_order_amount
     } = req.body;
-    const campaignId = req.params.id; // This is either promo_id or task_id depending on context
+    const campaignId = req.params.id;
 
     try {
-        const transaction = db.transaction(() => {
-            if (is_loyalty_task == '1') {
-                // 1. Update Task
-                const task = db.prepare('SELECT reward_promo_id FROM promo_tasks WHERE id = ?').get(campaignId);
-                if (!task) throw new Error('Task not found');
+        if (is_loyalty_task == '1') {
+            const task = await db.prepare('SELECT reward_promo_id FROM promo_tasks WHERE id = ?').get(campaignId);
+            if (!task) throw new Error('Task not found');
 
-                db.prepare(`
-                    UPDATE promo_tasks SET 
-                        title=?, description=?, task_type=?, customer_description=?,
-                        required_menu_item_id=?, required_category_id=?, required_quantity=?,
-                        min_order_amount=?, is_active=?, end_date=?
+            await db.prepare(`
+                UPDATE promo_tasks SET 
+                    title=?, description=?, task_type=?, customer_description=?,
+                    required_menu_item_id=?, required_category_id=?, required_quantity=?,
+                    min_order_amount=?, is_active=?, end_date=?
+                WHERE id=?
+            `).run(
+                title, description, task_type, description,
+                required_menu_item_id || null, required_category_id || null,
+                parseInt(required_quantity) || 1, parseFloat(min_order_amount) || null,
+                is_active == '1' ? 1 : 0, end_date || null, campaignId
+            );
+
+            const promoId = task.reward_promo_id;
+            if (req.file) {
+                const imagePath = `/uploads/promos/${req.file.filename}`;
+                await db.prepare(`
+                    UPDATE promos SET 
+                        title=?, description=?, discount_percent=?, discount_amount=?, image=?, 
+                        start_date=?, end_date=?, is_active=?, promo_code=?,
+                        applicable_category_ids=?, applicable_menu_item_ids=?
                     WHERE id=?
-                `).run(
-                    title, description, task_type, description,
-                    required_menu_item_id || null, required_category_id || null,
-                    parseInt(required_quantity) || 1, parseFloat(min_order_amount) || null,
-                    is_active == '1' ? 1 : 0, end_date || null, campaignId
-                );
-
-                // 2. Update linked Reward Promo
-                const promoId = task.reward_promo_id;
-                if (req.file) {
-                    const imagePath = `/uploads/promos/${req.file.filename}`;
-                    db.prepare(`
-                        UPDATE promos SET 
-                            title=?, description=?, discount_percent=?, discount_amount=?, image=?, 
-                            start_date=?, end_date=?, is_active=?, promo_code=?,
-                            applicable_category_ids=?, applicable_menu_item_ids=?
-                        WHERE id=?
-                    `).run(title, description, discount_percent || 0, discount_amount || 0, imagePath, start_date || null, end_date || null, is_active == '1' ? 1 : 0, promo_code || null, applicable_category_ids || '[]', applicable_menu_item_ids || '[]', promoId);
-                } else {
-                    db.prepare(`
-                        UPDATE promos SET 
-                            title=?, description=?, discount_percent=?, discount_amount=?,
-                            start_date=?, end_date=?, is_active=?, promo_code=?,
-                            applicable_category_ids=?, applicable_menu_item_ids=?
-                        WHERE id=?
-                    `).run(title, description, discount_percent || 0, discount_amount || 0, start_date || null, end_date || null, is_active == '1' ? 1 : 0, promo_code || null, applicable_category_ids || '[]', applicable_menu_item_ids || '[]', promoId);
-                }
+                `).run(title, description, discount_percent || 0, discount_amount || 0, imagePath, start_date || null, end_date || null, is_active == '1' ? 1 : 0, promo_code || null, applicable_category_ids || '[]', applicable_menu_item_ids || '[]', promoId);
             } else {
-                // Update Regular Promo
-                if (req.file) {
-                    const imagePath = `/uploads/promos/${req.file.filename}`;
-                    db.prepare(`
-                        UPDATE promos SET 
-                            title=?, description=?, discount_percent=?, discount_amount=?, image=?, 
-                            start_date=?, end_date=?, is_active=?, promo_code=?,
-                            applicable_category_ids=?, applicable_menu_item_ids=?
-                        WHERE id=?
-                    `).run(title, description, discount_percent || 0, discount_amount || 0, imagePath, start_date || null, end_date || null, is_active == '1' ? 1 : 0, promo_code || null, applicable_category_ids || '[]', applicable_menu_item_ids || '[]', campaignId);
-                } else {
-                    db.prepare(`
-                        UPDATE promos SET 
-                            title=?, description=?, discount_percent=?, discount_amount=?,
-                            start_date=?, end_date=?, is_active=?, promo_code=?,
-                            applicable_category_ids=?, applicable_menu_item_ids=?
-                        WHERE id=?
-                    `).run(title, description, discount_percent || 0, discount_amount || 0, start_date || null, end_date || null, is_active == '1' ? 1 : 0, promo_code || null, applicable_category_ids || '[]', applicable_menu_item_ids || '[]', campaignId);
-                }
+                await db.prepare(`
+                    UPDATE promos SET 
+                        title=?, description=?, discount_percent=?, discount_amount=?,
+                        start_date=?, end_date=?, is_active=?, promo_code=?,
+                        applicable_category_ids=?, applicable_menu_item_ids=?
+                    WHERE id=?
+                `).run(title, description, discount_percent || 0, discount_amount || 0, start_date || null, end_date || null, is_active == '1' ? 1 : 0, promo_code || null, applicable_category_ids || '[]', applicable_menu_item_ids || '[]', promoId);
             }
-        });
+        } else {
+            if (req.file) {
+                const imagePath = `/uploads/promos/${req.file.filename}`;
+                await db.prepare(`
+                    UPDATE promos SET 
+                        title=?, description=?, discount_percent=?, discount_amount=?, image=?, 
+                        start_date=?, end_date=?, is_active=?, promo_code=?,
+                        applicable_category_ids=?, applicable_menu_item_ids=?
+                    WHERE id=?
+                `).run(title, description, discount_percent || 0, discount_amount || 0, imagePath, start_date || null, end_date || null, is_active == '1' ? 1 : 0, promo_code || null, applicable_category_ids || '[]', applicable_menu_item_ids || '[]', campaignId);
+            } else {
+                await db.prepare(`
+                    UPDATE promos SET 
+                        title=?, description=?, discount_percent=?, discount_amount=?,
+                        start_date=?, end_date=?, is_active=?, promo_code=?,
+                        applicable_category_ids=?, applicable_menu_item_ids=?
+                    WHERE id=?
+                `).run(title, description, discount_percent || 0, discount_amount || 0, start_date || null, end_date || null, is_active == '1' ? 1 : 0, promo_code || null, applicable_category_ids || '[]', applicable_menu_item_ids || '[]', campaignId);
+            }
+        }
 
-        transaction();
         res.json({ message: 'Campaign updated successfully.' });
     } catch (error) {
         console.error('Update Error:', error);
@@ -274,39 +252,32 @@ router.put('/:id', requireRole('admin'), upload.single('image'), (req, res) => {
 });
 
 // DELETE /api/promos/cleanup (Admin - Cleanup)
-router.delete('/cleanup', requireRole('admin'), (req, res) => {
+router.delete('/cleanup', requireRole('admin'), async (req, res) => {
     try {
-        const transaction = db.transaction(() => {
-            // Delete tasks that are expired OR inactive
-            const expiredTasks = db.prepare(`
-                SELECT id, reward_promo_id FROM promo_tasks 
-                WHERE (end_date IS NOT NULL AND datetime(end_date) < datetime('now', 'localtime')) 
-                OR is_active = 0
-            `).all();
-            let deletedCount = 0;
+        const expiredTasks = await db.prepare(`
+            SELECT id, reward_promo_id FROM promo_tasks 
+            WHERE (end_date IS NOT NULL AND datetime(end_date) < datetime('now', 'localtime')) 
+            OR is_active = 0
+        `).all();
+        let deletedCount = 0;
 
-            expiredTasks.forEach(t => {
-                const resTask = db.prepare('DELETE FROM promo_tasks WHERE id = ?').run(t.id);
-                deletedCount += resTask.changes;
-                if (t.reward_promo_id) {
-                    const resPromo = db.prepare('DELETE FROM promos WHERE id = ?').run(t.reward_promo_id);
-                    deletedCount += resPromo.changes;
-                }
-            });
+        for (const t of expiredTasks) {
+            const resTask = await db.prepare('DELETE FROM promo_tasks WHERE id = ?').run(t.id);
+            deletedCount += resTask.changes;
+            if (t.reward_promo_id) {
+                const resPromo = await db.prepare('DELETE FROM promos WHERE id = ?').run(t.reward_promo_id);
+                deletedCount += resPromo.changes;
+            }
+        }
 
-            // Delete stand-alone promos that are expired OR inactive
-            const resPromos = db.prepare(`
-                DELETE FROM promos 
-                WHERE (end_date IS NOT NULL AND datetime(end_date) < datetime('now', 'localtime')) 
-                OR is_active = 0
-            `).run();
-            deletedCount += resPromos.changes;
+        const resPromos = await db.prepare(`
+            DELETE FROM promos 
+            WHERE (end_date IS NOT NULL AND datetime(end_date) < datetime('now', 'localtime')) 
+            OR is_active = 0
+        `).run();
+        deletedCount += resPromos.changes;
 
-            return deletedCount;
-        });
-
-        const totalDeleted = transaction();
-        res.json({ message: `Purge complete. Removed ${totalDeleted} expired/inactive items.` });
+        res.json({ message: `Purge complete. Removed ${deletedCount} expired/inactive items.` });
     } catch (error) {
         console.error('Purge Error:', error);
         res.status(500).json({ error: 'Failed to purge data.' });
@@ -314,17 +285,13 @@ router.delete('/cleanup', requireRole('admin'), (req, res) => {
 });
 
 // DELETE /api/promos/:id (Admin)
-router.delete('/:id', requireRole('admin'), (req, res) => {
+router.delete('/:id', requireRole('admin'), async (req, res) => {
     try {
-        const promo = db.prepare('SELECT id FROM promos WHERE id = ?').get(req.params.id);
+        const promo = await db.prepare('SELECT id FROM promos WHERE id = ?').get(req.params.id);
         if (!promo) return res.status(404).json({ error: 'Promo not found.' });
 
-        const transaction = db.transaction(() => {
-            db.prepare('DELETE FROM promo_tasks WHERE reward_promo_id = ?').run(req.params.id);
-            return db.prepare(`DELETE FROM promos WHERE id=?`).run(req.params.id);
-        });
-
-        const info = transaction();
+        await db.prepare('DELETE FROM promo_tasks WHERE reward_promo_id = ?').run(req.params.id);
+        const info = await db.prepare(`DELETE FROM promos WHERE id=?`).run(req.params.id);
         if (info.changes === 0) return res.status(404).json({ error: 'Promo not found.' });
         res.json({ message: 'Promo deleted.' });
     } catch (error) {
@@ -333,13 +300,13 @@ router.delete('/:id', requireRole('admin'), (req, res) => {
 });
 
 // POST /api/promos/validate (Customer)
-router.post('/validate', (req, res) => {
+router.post('/validate', async (req, res) => {
     const { code } = req.body;
     if (!code) return res.status(400).json({ error: 'Promo code required.' });
 
     try {
         const userId = req.session.userId;
-        const promo = db.prepare(`
+        const promo = await db.prepare(`
             SELECT p.*, 
                    (SELECT id FROM promo_tasks WHERE reward_promo_id = p.id LIMIT 1) as is_loyalty_reward
             FROM promos p
@@ -357,13 +324,12 @@ router.post('/validate', (req, res) => {
             if (!userId) {
                 return res.status(403).json({ error: 'Please log in to use your loyalty rewards.' });
             }
-            const coupon = db.prepare(`SELECT * FROM user_coupons WHERE user_id = ? AND promo_id = ? AND is_used = 0`).get(userId, promo.id);
+            const coupon = await db.prepare(`SELECT * FROM user_coupons WHERE user_id = ? AND promo_id = ? AND is_used = 0`).get(userId, promo.id);
             if (!coupon) {
                 return res.status(403).json({ error: 'You have not unlocked this reward yet. Complete the loyalty task first!' });
             }
         }
 
-        // Parse JSON fields if they are strings
         try {
             if (promo.applicable_category_ids && typeof promo.applicable_category_ids === 'string') {
                 promo.applicable_category_ids = JSON.parse(promo.applicable_category_ids);
@@ -389,17 +355,13 @@ router.post('/ai-generate', requireRole('admin'), async (req, res) => {
     if (!prompt) return res.status(400).json({ error: 'Task description is required.' });
 
     const allowedTaskTypes = [
-        "minimum_spend",
-        "buy_specific_item",
-        "buy_from_category",
-        "first_order",
-        "order_count",
-        "verify_email",
+        "minimum_spend", "buy_specific_item", "buy_from_category",
+        "first_order", "order_count", "verify_email",
     ];
 
     try {
-        const menuItems = db.prepare(`SELECT id, name, category_id FROM menu_items WHERE is_available = 1`).all();
-        const categories = db.prepare(`SELECT id, name FROM categories`).all();
+        const menuItems = await db.prepare(`SELECT id, name, category_id FROM menu_items WHERE is_available = 1`).all();
+        const categories = await db.prepare(`SELECT id, name FROM categories`).all();
 
         const schema = {
             type: "object",
@@ -462,8 +424,8 @@ Respond ONLY with a valid JSON object. No explanation.`;
     }
 });
 
-// POST /api/promos/ai-confirm (Admin - Save the generated task after preview)
-router.post('/ai-confirm', requireRole('admin'), (req, res) => {
+// POST /api/promos/ai-confirm (Admin)
+router.post('/ai-confirm', requireRole('admin'), async (req, res) => {
     const { rule } = req.body;
     if (!rule || !rule.task_type) return res.status(400).json({ error: 'Invalid rule data.' });
 
@@ -477,8 +439,7 @@ router.post('/ai-confirm', requireRole('admin'), (req, res) => {
     }
 
     try {
-        // 1. Create the reward promo
-        const insertPromo = db.prepare(`
+        const insertPromo = await db.prepare(`
             INSERT INTO promos (title, description, discount_percent, promo_code, is_active, end_date, applicable_category_ids, applicable_menu_item_ids)
             VALUES (?, ?, ?, ?, 1, ?, '[]', '[]')
         `).run(
@@ -490,8 +451,7 @@ router.post('/ai-confirm', requireRole('admin'), (req, res) => {
         );
         const newPromoId = insertPromo.lastInsertRowid;
 
-        // 2. Create the promo task with rule_json
-        db.prepare(`
+        await db.prepare(`
             INSERT INTO promo_tasks (title, description, task_type, rule_json, customer_description,
                 required_menu_item_id, required_category_id, required_quantity, min_order_amount, end_date, reward_promo_id, is_active)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
@@ -520,14 +480,14 @@ router.post('/ai-confirm', requireRole('admin'), (req, res) => {
 });
 
 // DELETE /api/promos/tasks/:id (Admin)
-router.delete('/tasks/:id', requireRole('admin'), (req, res) => {
+router.delete('/tasks/:id', requireRole('admin'), async (req, res) => {
     try {
-        const task = db.prepare('SELECT reward_promo_id FROM promo_tasks WHERE id = ?').get(req.params.id);
+        const task = await db.prepare('SELECT reward_promo_id FROM promo_tasks WHERE id = ?').get(req.params.id);
         if (!task) return res.status(404).json({ error: 'Task not found.' });
 
-        db.prepare('DELETE FROM promo_tasks WHERE id = ?').run(req.params.id);
+        await db.prepare('DELETE FROM promo_tasks WHERE id = ?').run(req.params.id);
         if (task.reward_promo_id) {
-            db.prepare('DELETE FROM promos WHERE id = ?').run(task.reward_promo_id);
+            await db.prepare('DELETE FROM promos WHERE id = ?').run(task.reward_promo_id);
         }
         res.json({ message: 'Task deleted.' });
     } catch (error) {
@@ -535,37 +495,37 @@ router.delete('/tasks/:id', requireRole('admin'), (req, res) => {
     }
 });
 
-// PATCH /api/promos/tasks/:id/toggle (Admin - toggle active)
-router.patch('/tasks/:id/toggle', requireRole('admin'), (req, res) => {
+// PATCH /api/promos/tasks/:id/toggle (Admin)
+router.patch('/tasks/:id/toggle', requireRole('admin'), async (req, res) => {
     try {
-        const task = db.prepare('SELECT is_active FROM promo_tasks WHERE id = ?').get(req.params.id);
+        const task = await db.prepare('SELECT is_active FROM promo_tasks WHERE id = ?').get(req.params.id);
         if (!task) return res.status(404).json({ error: 'Task not found.' });
 
         const newStatus = task.is_active ? 0 : 1;
-        db.prepare('UPDATE promo_tasks SET is_active = ? WHERE id = ?').run(newStatus, req.params.id);
+        await db.prepare('UPDATE promo_tasks SET is_active = ? WHERE id = ?').run(newStatus, req.params.id);
         res.json({ message: `Task ${newStatus ? 'activated' : 'deactivated'}.` });
     } catch (error) {
         res.status(500).json({ error: 'Internal server error.' });
     }
 });
 
-// PATCH /api/promos/:id/toggle (Admin - toggle active)
-router.patch('/:id/toggle', requireRole('admin'), (req, res) => {
+// PATCH /api/promos/:id/toggle (Admin)
+router.patch('/:id/toggle', requireRole('admin'), async (req, res) => {
     try {
-        const promo = db.prepare('SELECT is_active FROM promos WHERE id = ?').get(req.params.id);
+        const promo = await db.prepare('SELECT is_active FROM promos WHERE id = ?').get(req.params.id);
         if (!promo) return res.status(404).json({ error: 'Promo not found.' });
 
         const newStatus = promo.is_active ? 0 : 1;
-        db.prepare('UPDATE promos SET is_active = ? WHERE id = ?').run(newStatus, req.params.id);
+        await db.prepare('UPDATE promos SET is_active = ? WHERE id = ?').run(newStatus, req.params.id);
         res.json({ message: `Promo ${newStatus ? 'activated' : 'deactivated'}.` });
     } catch (error) {
         res.status(500).json({ error: 'Internal server error.' });
     }
 });
 
-// POST /api/promos/toggle-all (Admin - bulk toggle)
-router.post('/toggle-all', requireRole('admin'), (req, res) => {
-    const { action } = req.body; // 'pause' or 'resume'
+// POST /api/promos/toggle-all (Admin)
+router.post('/toggle-all', requireRole('admin'), async (req, res) => {
+    const { action } = req.body;
     if (!['pause', 'resume'].includes(action)) {
         return res.status(400).json({ error: 'Invalid action.' });
     }
@@ -573,11 +533,8 @@ router.post('/toggle-all', requireRole('admin'), (req, res) => {
     const status = action === 'resume' ? 1 : 0;
     
     try {
-        const transaction = db.transaction(() => {
-            db.prepare('UPDATE promos SET is_active = ?').run(status);
-            db.prepare('UPDATE promo_tasks SET is_active = ?').run(status);
-        });
-        transaction();
+        await db.prepare('UPDATE promos SET is_active = ?').run(status);
+        await db.prepare('UPDATE promo_tasks SET is_active = ?').run(status);
         res.json({ message: `All campaigns have been ${action === 'resume' ? 'activated' : 'paused'}.` });
     } catch (error) {
         console.error('Bulk Toggle Error:', error);
