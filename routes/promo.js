@@ -106,6 +106,59 @@ router.get('/tasks/my-progress', requireAuth, async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: 'Internal server error.' });
     }
+// POST /api/promos/validate (Customer)
+router.post('/validate', async (req, res) => {
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ error: 'Promo code required.' });
+
+    try {
+        const userId = req.session.userId;
+        const promo = await db.prepare(`
+            SELECT p.*, 
+                   (SELECT id FROM promo_tasks WHERE reward_promo_id = p.id LIMIT 1) as is_loyalty_reward
+            FROM promos p
+            WHERE UPPER(p.promo_code) = UPPER(?) 
+            AND p.is_active = 1 
+            AND (p.start_date IS NULL OR p.start_date = '' OR datetime(p.start_date) <= datetime('now', 'localtime'))
+            AND (p.end_date IS NULL OR p.end_date = '' OR datetime(p.end_date) >= datetime('now', 'localtime'))
+        `).get(code);
+
+        if (!promo) {
+            return res.status(404).json({ error: 'Invalid or expired promo code.' });
+        }
+
+        if (promo.is_loyalty_reward) {
+            if (!userId) {
+                return res.status(403).json({ error: 'Please log in to use your loyalty rewards.' });
+            }
+            const coupon = await db.prepare(`SELECT * FROM user_coupons WHERE user_id = ? AND promo_id = ? AND is_used = 0`).get(userId, promo.id);
+            if (!coupon) {
+                return res.status(403).json({ error: 'You have not unlocked this reward yet. Complete the loyalty task first!' });
+            }
+        }
+
+        try {
+            if (promo.applicable_category_ids && typeof promo.applicable_category_ids === 'string') {
+                promo.applicable_category_ids = JSON.parse(promo.applicable_category_ids);
+            }
+            if (promo.applicable_menu_item_ids && typeof promo.applicable_menu_item_ids === 'string') {
+                promo.applicable_menu_item_ids = JSON.parse(promo.applicable_menu_item_ids);
+            }
+        } catch (e) {
+            promo.applicable_category_ids = [];
+            promo.applicable_menu_item_ids = [];
+        }
+
+        res.json(promo);
+    } catch (error) {
+        console.error('Validation Error:', error);
+        res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
+// GET /api/promos/validate - Catch accidental GET requests
+router.get('/validate', (req, res) => {
+    res.status(405).json({ error: 'Method Not Allowed. Use POST to validate promo codes.' });
 });
 
 // GET /api/promos/:id (Public)
@@ -305,55 +358,6 @@ router.delete('/:id', requireRole('admin'), async (req, res) => {
     }
 });
 
-// POST /api/promos/validate (Customer)
-router.post('/validate', async (req, res) => {
-    const { code } = req.body;
-    if (!code) return res.status(400).json({ error: 'Promo code required.' });
-
-    try {
-        const userId = req.session.userId;
-        const promo = await db.prepare(`
-            SELECT p.*, 
-                   (SELECT id FROM promo_tasks WHERE reward_promo_id = p.id LIMIT 1) as is_loyalty_reward
-            FROM promos p
-            WHERE UPPER(p.promo_code) = UPPER(?) 
-            AND p.is_active = 1 
-            AND (p.start_date IS NULL OR p.start_date = '' OR datetime(p.start_date) <= datetime('now', 'localtime'))
-            AND (p.end_date IS NULL OR p.end_date = '' OR datetime(p.end_date) >= datetime('now', 'localtime'))
-        `).get(code);
-
-        if (!promo) {
-            return res.status(404).json({ error: 'Invalid or expired promo code.' });
-        }
-
-        if (promo.is_loyalty_reward) {
-            if (!userId) {
-                return res.status(403).json({ error: 'Please log in to use your loyalty rewards.' });
-            }
-            const coupon = await db.prepare(`SELECT * FROM user_coupons WHERE user_id = ? AND promo_id = ? AND is_used = 0`).get(userId, promo.id);
-            if (!coupon) {
-                return res.status(403).json({ error: 'You have not unlocked this reward yet. Complete the loyalty task first!' });
-            }
-        }
-
-        try {
-            if (promo.applicable_category_ids && typeof promo.applicable_category_ids === 'string') {
-                promo.applicable_category_ids = JSON.parse(promo.applicable_category_ids);
-            }
-            if (promo.applicable_menu_item_ids && typeof promo.applicable_menu_item_ids === 'string') {
-                promo.applicable_menu_item_ids = JSON.parse(promo.applicable_menu_item_ids);
-            }
-        } catch (e) {
-            promo.applicable_category_ids = [];
-            promo.applicable_menu_item_ids = [];
-        }
-
-        res.json(promo);
-    } catch (error) {
-        console.error('Validation Error:', error);
-        res.status(500).json({ error: 'Internal server error.' });
-    }
-});
 
 // POST /api/promos/ai-generate (Admin)
 router.post('/ai-generate', requireRole('admin'), async (req, res) => {
