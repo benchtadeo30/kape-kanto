@@ -438,6 +438,7 @@ async function applyPromo() {
             btn.disabled = true;
 
             updateTotals();
+            renderCartItems();
         } else {
             showToast(data.error || 'Invalid promo code.', 'error');
             activePromo = null;
@@ -466,6 +467,7 @@ function removePromo() {
 
     showToast('Promo code removed.', 'info');
     updateTotals();
+    renderCartItems();
 }
 
 // ── Update Totals ────────────────────────────────────────────
