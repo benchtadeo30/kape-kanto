@@ -27,12 +27,18 @@ async function createCheckoutSession(order, orderItems, discountAmount = 0, disc
         const netTotalToDistribute = order.total - (order.delivery_fee || 0);
         
         orderItems.forEach((item) => {
-            const itemWeight = grossSubtotal > 0 ? (item.subtotal / grossSubtotal) : 0;
-            const itemTargetTotal = netTotalToDistribute * itemWeight;
+            let unitAmountCents;
             
-            // Calculate unit price such that unitPrice * quantity approx = itemTargetTotal
-            // We use the full target amount here to keep it simple for the user
-            const unitAmountCents = Math.round((itemTargetTotal / item.quantity) * 100);
+            if (item.final_unit_price !== undefined) {
+                // Use pre-calculated final price (includes its own discount/VAT)
+                unitAmountCents = Math.round(item.final_unit_price * 100);
+            } else {
+                // Fallback to proportional distribution
+                const itemWeight = grossSubtotal > 0 ? (item.subtotal / grossSubtotal) : 0;
+                const itemTargetTotal = netTotalToDistribute * itemWeight;
+                unitAmountCents = Math.round((itemTargetTotal / item.quantity) * 100);
+            }
+
             const lineItemTotalCents = unitAmountCents * item.quantity;
             totalLineItemsCents += lineItemTotalCents;
 

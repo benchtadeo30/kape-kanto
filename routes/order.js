@@ -242,6 +242,64 @@ router.post('/', requireAuth, async (req, res) => {
 
         // 6. Handle Payment Redirection or Success
         if (isOnline) {
+            // Re-fetch promo details to ensure accurate itemized calculation for PayRex
+            let appItemIds = [];
+            let appCatIds = [];
+            let hasRestrictions = false;
+            
+            if (promoObj) {
+                try {
+                    if (promoObj.applicable_menu_item_ids) {
+                        const parsed = JSON.parse(promoObj.applicable_menu_item_ids);
+                        if (Array.isArray(parsed)) appItemIds = appItemIds.concat(parsed);
+                    }
+                    if (promoObj.applicable_category_ids) {
+                        const parsed = JSON.parse(promoObj.applicable_category_ids);
+                        if (Array.isArray(parsed)) appCatIds = appCatIds.concat(parsed);
+                    }
+                } catch(e) {}
+                if (promoObj.applicable_menu_item_id) appItemIds.push(promoObj.applicable_menu_item_id);
+                if (promoObj.applicable_category_id) appCatIds.push(promoObj.applicable_category_id);
+                
+                appItemIds = appItemIds.filter(v => v !== null).map(String);
+                appCatIds = appCatIds.filter(v => v !== null).map(String);
+                hasRestrictions = appItemIds.length > 0 || appCatIds.length > 0;
+            }
+
+            // Calculate exact final price for each item to avoid proportional distribution errors in PayRex
+            validItems.forEach(item => {
+                let net = item.unit_price / 1.12;
+                let totalDiscountOnItem = 0;
+                
+                // Senior/PWD Discount (Establishment rule: apply on net price)
+                if (isSeniorOrPWD) {
+                    totalDiscountOnItem += net * 0.20;
+                    net = net * 0.80;
+                }
+                
+                // Promo Discount
+                if (promoObj) {
+                    const itemMatch = appItemIds.includes(String(item.id));
+                    const catMatch = appCatIds.includes(String(item.category_id || ''));
+                    const isEligible = !hasRestrictions || itemMatch || catMatch;
+                    
+                    if (isEligible) {
+                        if (promoObj.discount_percent > 0) {
+                            totalDiscountOnItem += net * (promoObj.discount_percent / 100);
+                        } else if (promoObj.discount_amount > 0 && applicableGross > 0) {
+                            // Pro-rate flat discount based on item's share of total applicable gross
+                            const itemShareOfApplicable = item.subtotal / applicableGross;
+                            const itemTotalPromoDiscount = promo_discount_amount * itemShareOfApplicable;
+                            totalDiscountOnItem += itemTotalPromoDiscount / item.quantity;
+                        }
+                    }
+                }
+                
+                const finalNet = (item.unit_price / 1.12) - totalDiscountOnItem;
+                const vat = isSeniorOrPWD ? 0 : (finalNet * 0.12);
+                item.final_unit_price = Math.max(0, finalNet + vat);
+            });
+
             const orderData = { 
                 id: orderId, 
                 customer_email: user.email,
