@@ -683,8 +683,18 @@
     let searchTimeout = null;
     let cachedPromos = [];
     let allCampaigns = [];
+    let currentOffset = 0;
+    const limit = 8;
     let currentPage = 1;
     const campaignsPerPage = 6;
+
+    async function loadCampaigns() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            currentPage = 1;
+            renderPaginatedList();
+        }, 300);
+    }
 
     function debounceSearch() {
         clearTimeout(searchTimeout);
@@ -1176,6 +1186,7 @@
                         </div>
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 8px; justify-content: center;">
+                        <button class="btn btn-outline" style="padding: 0.5rem; width: 40px; height: 40px; border-radius: 10px; border-color: #ddd;" onclick="openEditModal(${item.id}, '${item.type}')"><i class="fa-solid fa-pen-to-square"></i></button>
                         <button class="btn btn-secondary" style="padding: 0.5rem; width: 40px; height: 40px; border-radius: 10px;" onclick="handleAction(${item.id}, '${item.type}', 'toggle')"><i class="fa-solid fa-${item.is_active ? 'pause' : 'play'}"></i></button>
                         <button class="btn btn-danger" style="padding: 0.5rem; width: 40px; height: 40px; border-radius: 10px; background: rgba(255,0,0,0.05); border: 1px solid rgba(255,0,0,0.1); color: var(--danger);" onclick="handleAction(${item.id}, '${item.type}', 'delete')"><i class="fa-solid fa-trash"></i></button>
                     </div>
@@ -1248,7 +1259,10 @@
         document.getElementById('campaign-modal').style.display = 'flex';
     }
 
-    function openEditModal(item) {
+    function openEditModal(id, type) {
+        const item = allCampaigns.find(i => i.id === id && i.type === type);
+        if (!item) return;
+
         openModal();
         document.getElementById('modal-title').innerText = 'Edit Campaign';
         document.getElementById('campaign-id').value = item.id;
