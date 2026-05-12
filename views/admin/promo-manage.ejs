@@ -1144,7 +1144,7 @@
                 badgeClass = 'badge-danger';
             } else if (isUpcoming && item.is_active) {
                 const timeStr = startTime.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                statusText = `Upcoming · Starts ${timeStr}`;
+                statusText = 'Upcoming';
                 badgeClass = 'badge-secondary';
                 badgeClass += ' upcoming-badge';
             }
