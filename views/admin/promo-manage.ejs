@@ -1236,6 +1236,9 @@
         document.getElementById('modal-title').innerText = 'Build Campaign';
         document.getElementById('campaign-file-display').innerText = 'Click to upload banner';
         
+        // Reset Custom Selects
+        syncCustomSelects();
+
         // Reset Toggles
         document.getElementById('no-start-toggle').checked = false;
         document.getElementById('no-end-toggle').checked = false;
@@ -1288,13 +1291,19 @@
         if (!item.start_date || item.start_date === '') {
             document.getElementById('no-start-toggle').checked = true;
         } else {
-            document.getElementById('campaign-start').value = item.start_date;
+            document.getElementById('no-start-toggle').checked = false;
+            const startInput = document.getElementById('campaign-start');
+            if (startInput._flatpickr) startInput._flatpickr.setDate(item.start_date);
+            else startInput.value = item.start_date;
         }
         
         if (!item.end_date || item.end_date === '') {
             document.getElementById('no-end-toggle').checked = true;
         } else {
-            document.getElementById('campaign-end').value = item.end_date;
+            document.getElementById('no-end-toggle').checked = false;
+            const endInput = document.getElementById('campaign-end');
+            if (endInput._flatpickr) endInput._flatpickr.setDate(item.end_date);
+            else endInput.value = item.end_date;
         }
         
         toggleDateInput('start');
@@ -1303,6 +1312,12 @@
         // Handle Loyalty Fields
         const isTask = item.type === 'task';
         document.querySelector(`input[name="is_loyalty_task"][value="${isTask ? '1' : '0'}"]`).checked = true;
+        
+        if (isTask) {
+            document.getElementById('task-type').value = item.task_type || 'buy_specific_item';
+        }
+        syncCustomSelects();
+        
         toggleTaskFields(isTask);
         
         if (isTask) {
@@ -1466,25 +1481,38 @@
     }
 
     function toggleDateInput(type) {
-        const input = document.getElementById(`campaign-${type}`);
+        const isToggled = document.getElementById(`no-${type}-toggle`).checked;
         const container = document.getElementById(`${type}-date-container`);
         const toggleContainer = document.getElementById(`toggle-${type}-container`);
-        const isChecked = document.getElementById(`no-${type}-toggle`).checked;
+        const input = document.getElementById(`campaign-${type}`);
         
-        if (isChecked) {
-            input.value = '';
-            input.disabled = true;
+        if (isToggled) {
             container.style.opacity = '0.4';
-            container.style.filter = 'grayscale(1)';
             container.style.pointerEvents = 'none';
             toggleContainer.classList.add('active');
+            if (input._flatpickr) input._flatpickr.clear();
         } else {
-            input.disabled = false;
             container.style.opacity = '1';
-            container.style.filter = 'none';
             container.style.pointerEvents = 'all';
             toggleContainer.classList.remove('active');
         }
+    }
+
+    function syncCustomSelects() {
+        document.querySelectorAll('select.kk-select-modern').forEach(select => {
+            const wrapper = document.getElementById(`kk-container-${select.id}`);
+            if (wrapper) {
+                const trigger = wrapper.querySelector('.kk-select-trigger');
+                const currentOption = select.options[select.selectedIndex];
+                if (currentOption) {
+                    const icon = currentOption.dataset.icon ? `<i class="fa-solid ${currentOption.dataset.icon}"></i>` : '';
+                    trigger.innerHTML = `<span>${icon} ${currentOption.text}</span><i class="fa-solid fa-chevron-down"></i>`;
+                    wrapper.querySelectorAll('.kk-select-option').forEach((optDiv, idx) => {
+                        optDiv.classList.toggle('selected', idx === select.selectedIndex);
+                    });
+                }
+            }
+        });
     }
 
     function updateServerClock() {
