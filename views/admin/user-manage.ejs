@@ -17,10 +17,10 @@
         max-width: 500px;
         border-radius: 24px;
         box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        overflow: hidden;
         display: flex;
         flex-direction: column;
         animation: modalSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
     }
     .modal-header {
         padding: 1.5rem 2rem;
@@ -29,6 +29,8 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        border-top-left-radius: 24px;
+        border-top-right-radius: 24px;
     }
     .modal-body { padding: 2rem; }
     .modal-footer {
@@ -38,10 +40,32 @@
         display: flex;
         justify-content: flex-end;
         gap: 1rem;
+        border-bottom-left-radius: 24px;
+        border-bottom-right-radius: 24px;
     }
     @keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
     @keyframes modalSlideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 2.2rem;
+        cursor: pointer;
+        color: #999;
+        transition: all 0.2s ease;
+        line-height: 1;
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+    }
+    .modal-close:hover {
+        background: #f0e6e0;
+        color: var(--primary);
+        transform: rotate(90deg);
+    }
     .user-table th { color: #999; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1px; padding: 1rem; border-bottom: 1px solid #f0e6e0; }
     .user-row:hover { background: #fdfaf7 !important; }
 </style>
@@ -135,7 +159,7 @@
             <div class="modal-content" style="max-width: 450px;">
                 <div class="modal-header">
                     <h3 id="reason-modal-title"><i class="fa-solid fa-comment-dots" style="margin-right: 10px; color: var(--primary);"></i> Provide Reason</h3>
-                    <button onclick="closeReasonModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #999;">&times;</button>
+                    <button onclick="closeReasonModal()" class="modal-close">&times;</button>
                 </div>
                 <div class="modal-body">
                     <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Reason / Message to User</label>
@@ -171,7 +195,7 @@
     <div class="modal-content">
         <div class="modal-header">
             <h3><i class="fa-solid fa-user-plus" style="margin-right: 10px; color: var(--primary);"></i> Create New Account</h3>
-            <button onclick="closeCreateModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #999;">&times;</button>
+            <button onclick="closeCreateModal()" class="modal-close">&times;</button>
         </div>
         <form id="create-form" onsubmit="handleCreate(event)">
             <div class="modal-body">
@@ -219,7 +243,7 @@
     <div class="modal-content">
         <div class="modal-header">
             <h3><i class="fa-solid fa-user-pen" style="margin-right: 10px; color: var(--primary);"></i> Edit Account</h3>
-            <button onclick="closeEditModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #999;">&times;</button>
+            <button onclick="closeEditModal()" class="modal-close">&times;</button>
         </div>
         <form id="edit-form" onsubmit="handleUpdate(event)">
             <input type="hidden" id="edit-id">
