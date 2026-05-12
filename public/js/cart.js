@@ -153,7 +153,9 @@ function renderCartItems() {
                     onerror="this.src='https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=200'">
                 <div style="flex:1;min-width:0;">
                     <h4 style="margin:0;font-size:1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.name}</h4>
-                    <p style="margin:3px 0;color:var(--primary);font-weight:700;">₱${item.price.toFixed(2)}</p>
+                    <div style="margin:3px 0; display: flex; align-items: center; gap: 8px;">
+                        ${getPriceHtml(item)}
+                    </div>
                     ${customizationHtml}
                 </div>
                 <div style="display:flex;align-items:center;background:#f5f5f5;border-radius:50px;padding:4px 10px;gap:0.75rem;">
@@ -727,4 +729,46 @@ async function placeOrder() {
         btn.disabled = false;
         updateCheckoutUI();
     }
+}
+
+function getPriceHtml(item) {
+    if (!activePromo) return `<span style="color:var(--primary);font-weight:700;">₱${item.price.toFixed(2)}</span>`;
+
+    let validCats = [];
+    let validItems = [];
+    const getArray = (val) => {
+        if (!val) return [];
+        if (Array.isArray(val)) return val;
+        try { return JSON.parse(val); } catch(e) { return []; }
+    };
+
+    validCats = getArray(activePromo.applicable_category_ids);
+    if (activePromo.applicable_category_id) validCats.push(String(activePromo.applicable_category_id));
+    validItems = getArray(activePromo.applicable_menu_item_ids);
+    if (activePromo.applicable_menu_item_id) validItems.push(String(activePromo.applicable_menu_item_id));
+
+    validCats = validCats.filter(v => v != null).map(String);
+    validItems = validItems.filter(v => v != null).map(String);
+
+    const hasRestrictions = validCats.length > 0 || validItems.length > 0;
+    const isEligible = !hasRestrictions || validItems.includes(String(item.id)) || validCats.includes(String(item.category_id || item.categoryId || ''));
+
+    if (!isEligible) return `<span style="color:var(--primary);font-weight:700;">₱${item.price.toFixed(2)}</span>`;
+
+    let discountedPrice = item.price;
+    if (activePromo.discount_percent > 0) {
+        discountedPrice = item.price * (1 - activePromo.discount_percent / 100);
+    } else if (activePromo.discount_amount > 0) {
+        if (!hasRestrictions) {
+            return `<span style="color:var(--primary);font-weight:700;">₱${item.price.toFixed(2)}</span>`;
+        }
+        discountedPrice = Math.max(0, item.price - activePromo.discount_amount);
+    }
+
+    if (discountedPrice >= item.price) return `<span style="color:var(--primary);font-weight:700;">₱${item.price.toFixed(2)}</span>`;
+
+    return `
+        <span style="text-decoration: line-through; color: #999; font-size: 0.85rem;">₱${item.price.toFixed(2)}</span>
+        <span style="color: var(--success); font-weight: 800;">₱${discountedPrice.toFixed(2)}</span>
+    `;
 }
