@@ -112,12 +112,19 @@
             if (o.status === 'cancelled') statusColor = 'var(--danger)';
             if (o.status === 'pending') statusColor = 'var(--warning)';
 
+            let statusLabel = o.status.replace('_', ' ');
+            if (o.status === 'completed') {
+                statusLabel = o.order_type === 'delivery' ? 'Delivered' : 'Picked Up';
+            } else {
+                statusLabel = statusLabel.charAt(0).toUpperCase() + statusLabel.slice(1);
+            }
+
             html += `
                 <tr>
                     <td data-label="Order ID"><strong>#${o.id}</strong></td>
                     <td data-label="Customer">${o.username}</td>
                     <td data-label="Total">₱${o.total.toFixed(2)}</td>
-                    <td data-label="Status"><span class="badge" style="background: ${statusColor}; color: white;">${o.status.replace('_', ' ')}</span></td>
+                    <td data-label="Status"><span class="badge" style="background: ${statusColor}; color: white;">${statusLabel}</span></td>
                     <td data-label="Type">${o.order_type.charAt(0).toUpperCase() + o.order_type.slice(1)}</td>
                 </tr>
             `;

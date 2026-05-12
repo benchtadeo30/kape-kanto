@@ -170,7 +170,7 @@
             <button class="ao-tab" onclick="filterOrders('preparing', this)"><i class="fa-solid fa-fire"></i> Preparing</button>
             <button class="ao-tab" onclick="filterOrders('ready', this)"><i class="fa-solid fa-circle-check"></i> Ready</button>
             <button class="ao-tab" onclick="filterOrders('out_for_delivery', this)"><i class="fa-solid fa-truck-fast"></i> Out for Delivery</button>
-            <button class="ao-tab" onclick="filterOrders('completed', this)"><i class="fa-solid fa-flag-checkered"></i> Completed</button>
+            <button class="ao-tab" onclick="filterOrders('completed', this)"><i class="fa-solid fa-flag-checkered"></i> Delivered / Picked Up</button>
         </div>
 
         <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; background: white; padding: 1rem 1.5rem; border-radius: 16px; border: 1px solid #f0e6e0;">
@@ -341,15 +341,19 @@
     function buildCard(o) {
         const date = new Date(o.created_at).toLocaleDateString('en-PH', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
         const badgeCls = BADGE_MAP[o.status] || '';
-        const statusLabel = o.status.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
         const isDelivery = o.order_type === 'delivery';
+
+        const getStatusLabel = (status, orderType) => {
+            if (status === 'completed') return orderType === 'delivery' ? 'Delivered' : 'Picked Up';
+            return status.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+        };
 
         const statusOptions = ALL_STATUSES
             .filter(s => isDelivery || s !== 'out_for_delivery')
             .map(s => `
                 <button class="ao-drop-item ${s === o.status ? 'active' : ''}" onclick="updateStatus(${o.id}, '${s}')">
                     <i class="fa-solid ${s === 'completed' ? 'fa-check-double' : s === 'cancelled' ? 'fa-xmark' : 'fa-circle-dot'}" style="font-size:0.7rem; opacity:0.6;"></i>
-                    Move to ${s.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}
+                    Mark as ${getStatusLabel(s, o.order_type)}
                 </button>
             `).join('');
 
@@ -375,7 +379,7 @@
                     <i class="fa-solid fa-${isDelivery ? 'truck-fast' : 'shop'}"></i>
                     ${isDelivery ? 'Delivery' : 'Pickup'}
                 </span>
-                <span class="ao-badge ${badgeCls}">${statusLabel}</span>
+                <span class="ao-badge ${badgeCls}">${getStatusLabel(o.status, o.order_type)}</span>
                 <p class="ao-total">₱${o.total.toFixed(2)}</p>
             </div>
 
@@ -432,7 +436,9 @@
                     body: JSON.stringify({ status })
                 });
                 if (res.ok) {
-                    KapeKanto.toast(`Order #${id} → ${status.replace(/_/g,' ')}`, 'success');
+                    const order = allOrders.find(o => Number(o.id) === Number(id));
+                    const label = getStatusLabel(status, order?.order_type || 'delivery');
+                    KapeKanto.toast(`Order #${id} → ${label}`, 'success');
                     loadOrders();
                 } else {
                     const d = await res.json();
@@ -508,7 +514,12 @@
 
         const vatExemptDiscount = order.sc_discount_amount > 0 ? (order.subtotal - (order.subtotal / 1.12)) : 0;
         const badgeCls = BADGE_MAP[order.status] || '';
-        const statusLabel = order.status.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+        const isDelivery = order.order_type === 'delivery';
+        const getStatusLabel = (status, orderType) => {
+            if (status === 'completed') return orderType === 'delivery' ? 'Delivered' : 'Picked Up';
+            return status.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+        };
+        const statusLabel = getStatusLabel(order.status, order.order_type);
 
         document.getElementById('ao-modal-body').innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; background:#fdfaf7; padding:1rem; border-radius:16px; border:1px solid #f0e6e0;">

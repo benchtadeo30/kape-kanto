@@ -89,7 +89,7 @@
                 <button class="so-tab" onclick="filterOrders('preparing', this)"><i class="fa-solid fa-fire"></i> Preparing</button>
                 <button class="so-tab" onclick="filterOrders('ready', this)"><i class="fa-solid fa-check-double"></i> Ready</button>
                 <button class="so-tab" onclick="filterOrders('out_for_delivery', this)"><i class="fa-solid fa-truck-fast"></i> Out for Delivery</button>
-                <button class="so-tab" onclick="filterOrders('completed', this)"><i class="fa-solid fa-flag-checkered"></i> Completed</button>
+                <button class="so-tab" onclick="filterOrders('completed', this)"><i class="fa-solid fa-flag-checkered"></i> Delivered / Picked Up</button>
             </div>
 
             <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; background: #fdfaf7; padding: 0.75rem 1.25rem; border-radius: 50px; border: 1px solid #f0e6e0;">
@@ -178,7 +178,8 @@
         { value: 'cancelled', label: 'Cancelled', icon: 'fa-ban' }
     ];
 
-    function statusLabel(status) {
+    function statusLabel(status, orderType) {
+        if (status === 'completed') return orderType === 'delivery' ? 'Delivered' : 'Picked Up';
         return String(status || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
     }
 
@@ -340,7 +341,7 @@
                     ${riderInfo}
                 </div>
                 <span class="so-type-chip"><i class="fa-solid ${isDelivery ? 'fa-truck-fast' : 'fa-bag-shopping'}"></i> ${isDelivery ? 'Delivery' : 'Pickup'}</span>
-                <span class="so-badge ${BADGE_MAP[o.status] || ''}">${statusLabel(o.status)}</span>
+                <span class="so-badge ${BADGE_MAP[o.status] || ''}">${statusLabel(o.status, o.order_type)}</span>
                 <select class="so-status-select kk-select-modern" onchange="changeStatusFromDropdown(${o.id}, '${o.status}', this)">
                     ${statusOptions}
                 </select>
@@ -407,7 +408,8 @@
                 const data = await res.json().catch(() => ({}));
                 if (!res.ok) throw new Error(data.error || 'Update failed');
 
-                KapeKanto.toast(`Order #${id} -> ${statusLabel(status)}`, 'success');
+                const order = allOrders.find(o => Number(o.id) === Number(id));
+                KapeKanto.toast(`Order #${id} -> ${statusLabel(status, order?.order_type)}`, 'success');
                 loadOrders();
             } catch (e) {
                 KapeKanto.toast(e.message || 'Failed to update order.', 'error');
@@ -425,8 +427,9 @@
         const nextStatus = select.value;
         if (nextStatus === currentStatus) return;
 
+        const order = allOrders.find(o => Number(o.id) === Number(id));
         KapeKanto.confirm(
-            `Change Order #${id} from ${statusLabel(currentStatus)} to ${statusLabel(nextStatus)}?`,
+            `Change Order #${id} from ${statusLabel(currentStatus, order?.order_type)} to ${statusLabel(nextStatus, order?.order_type)}?`,
             async () => {
                 await updateStatus(id, nextStatus);
             },

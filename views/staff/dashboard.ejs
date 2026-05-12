@@ -78,7 +78,8 @@
     let activeOrders = [];
     let kitchenPage = 1;
 
-    function statusLabel(status) {
+    function statusLabel(status, orderType) {
+        if (status === 'completed') return orderType === 'delivery' ? 'Delivered' : 'Picked Up';
         return String(status || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
     }
 
@@ -121,7 +122,7 @@
                             <h3 class="kitchen-title">Order #${o.id}</h3>
                             <div class="kitchen-meta">${date} / ${String(o.order_type || '').toUpperCase()}</div>
                         </div>
-                        <span class="status-badge status-${o.status}">${statusLabel(o.status)}</span>
+                        <span class="status-badge status-${o.status}">${statusLabel(o.status, o.order_type)}</span>
                     </div>
                     <div class="kitchen-grid">
                         <div>
@@ -138,7 +139,7 @@
                         <button class="staff-action" onclick="updateStatus(${o.id}, 'preparing')"><i class="fa-solid fa-fire"></i> Start Prep</button>
                         <button class="staff-action blue" onclick="updateStatus(${o.id}, 'ready')"><i class="fa-solid fa-check-double"></i> Ready</button>
                         ${o.order_type === 'delivery' ? `<button class="staff-action purple" onclick="updateStatus(${o.id}, 'out_for_delivery')"><i class="fa-solid fa-truck-fast"></i> Out</button>` : ''}
-                        <button class="staff-action green" style="margin-left:auto;" onclick="updateStatus(${o.id}, 'completed')"><i class="fa-solid fa-circle-check"></i> Done</button>
+                        <button class="staff-action green" style="margin-left:auto;" onclick="updateStatus(${o.id}, 'completed')"><i class="fa-solid fa-circle-check"></i> ${o.order_type === 'delivery' ? 'Delivered' : 'Picked Up'}</button>
                     </div>
                 </article>
             `;
@@ -190,7 +191,8 @@
             });
             const data = await res.json().catch(() => ({}));
             if (!res.ok) throw new Error(data.error || 'Update failed');
-            KapeKanto.toast(`Order #${id} marked as ${statusLabel(status)}`, 'success');
+            const order = activeOrders.find(o => Number(o.id) === Number(id));
+            KapeKanto.toast(`Order #${id} marked as ${statusLabel(status, order?.order_type)}`, 'success');
             loadOrders();
         } catch (e) {
             KapeKanto.toast(e.message || 'Error updating status', 'error');
