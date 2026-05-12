@@ -351,6 +351,80 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    // Initialize custom premium selects
+    initCustomSelects();
+});
+
+// ─── Custom Premium Selects ────────────────────────────────────────────────
+function initCustomSelects(container = document) {
+    const selects = container.querySelectorAll('select.kk-select-modern');
+    selects.forEach(select => {
+        if (select.dataset.kkSelectInitialized) return;
+        select.style.display = 'none';
+        
+        const wrapper = document.createElement('div');
+        wrapper.className = 'kk-select-container';
+        if (select.id) wrapper.id = `kk-container-${select.id}`;
+        
+        const trigger = document.createElement('div');
+        trigger.className = 'kk-select-trigger';
+        
+        const currentOption = select.options[select.selectedIndex];
+        const icon = currentOption?.dataset.icon ? `<i class="fa-solid ${currentOption.dataset.icon}"></i>` : '';
+        trigger.innerHTML = `<span>${icon} ${currentOption?.text || 'Select...'}</span><i class="fa-solid fa-chevron-down"></i>`;
+        
+        const optionsContainer = document.createElement('div');
+        optionsContainer.className = 'kk-select-options';
+        
+        Array.from(select.options).forEach((option, index) => {
+            const optDiv = document.createElement('div');
+            optDiv.className = 'kk-select-option';
+            if (index === select.selectedIndex) optDiv.classList.add('selected');
+            
+            const optIcon = option.dataset.icon ? `<i class="fa-solid ${option.dataset.icon}"></i>` : '';
+            optDiv.innerHTML = `${optIcon} <span>${option.text}</span>`;
+            
+            optDiv.onclick = (e) => {
+                e.stopPropagation();
+                select.selectedIndex = index;
+                const newIcon = option.dataset.icon ? `<i class="fa-solid ${option.dataset.icon}"></i>` : '';
+                trigger.innerHTML = `<span>${newIcon} ${option.text}</span><i class="fa-solid fa-chevron-down"></i>`;
+                
+                wrapper.querySelectorAll('.kk-select-option').forEach(o => o.classList.remove('selected'));
+                optDiv.classList.add('selected');
+                
+                wrapper.classList.remove('open');
+                
+                // Trigger change event
+                const event = new Event('change', { bubbles: true });
+                select.dispatchEvent(event);
+            };
+            
+            optionsContainer.appendChild(optDiv);
+        });
+        
+        wrapper.appendChild(trigger);
+        wrapper.appendChild(optionsContainer);
+        select.parentNode.insertBefore(wrapper, select);
+        
+        trigger.onclick = (e) => {
+            e.stopPropagation();
+            const isOpen = wrapper.classList.contains('open');
+            // Close all other custom selects first
+            document.querySelectorAll('.kk-select-container.open').forEach(c => {
+                if (c !== wrapper) c.classList.remove('open');
+            });
+            wrapper.classList.toggle('open', !isOpen);
+        };
+        
+        select.dataset.kkSelectInitialized = 'true';
+    });
+}
+
+// Global click to close dropdowns
+document.addEventListener('click', () => {
+    document.querySelectorAll('.kk-select-container.open').forEach(c => c.classList.remove('open'));
 });
 
 // ─── Global namespace ──────────────────────────────────────────────────────
@@ -359,6 +433,7 @@ window.KapeKanto = {
     confirm: showConfirm,
     alert: showAlert,
     validate: validateForm,
+    initSelects: initCustomSelects,
     updateCartBadge,
     getCart,
     saveCart,

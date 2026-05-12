@@ -161,12 +161,12 @@
     };
 
     const STATUS_OPTIONS = [
-        { value: 'pending', label: 'Pending' },
-        { value: 'preparing', label: 'Preparing' },
-        { value: 'ready', label: 'Ready' },
-        { value: 'out_for_delivery', label: 'Out for Delivery', deliveryOnly: true },
-        { value: 'completed', label: 'Completed' },
-        { value: 'cancelled', label: 'Cancelled' }
+        { value: 'pending', label: 'Pending', icon: 'fa-clock' },
+        { value: 'preparing', label: 'Preparing', icon: 'fa-fire' },
+        { value: 'ready', label: 'Ready', icon: 'fa-check-double' },
+        { value: 'out_for_delivery', label: 'Out for Delivery', deliveryOnly: true, icon: 'fa-truck-fast' },
+        { value: 'completed', label: 'Completed', icon: 'fa-flag-checkered' },
+        { value: 'cancelled', label: 'Cancelled', icon: 'fa-ban' }
     ];
 
     function statusLabel(status) {
@@ -239,6 +239,7 @@
         }
 
         container.innerHTML = pagedOrders.map(o => buildCard(o)).join('');
+        KapeKanto.initSelects(container);
         renderPagination(currentPage, totalPages);
     }
 
@@ -300,7 +301,7 @@
 
         const statusOptions = STATUS_OPTIONS
             .filter(option => !option.deliveryOnly || isDelivery)
-            .map(option => `<option value="${option.value}" ${option.value === o.status ? 'selected' : ''}>${option.label}</option>`)
+            .map(option => `<option value="${option.value}" data-icon="${option.icon}" ${option.value === o.status ? 'selected' : ''}>${option.label}</option>`)
             .join('');
 
         return `
@@ -313,7 +314,7 @@
                 </div>
                 <span class="so-type-chip"><i class="fa-solid ${isDelivery ? 'fa-truck-fast' : 'fa-bag-shopping'}"></i> ${isDelivery ? 'Delivery' : 'Pickup'}</span>
                 <span class="so-badge ${BADGE_MAP[o.status] || ''}">${statusLabel(o.status)}</span>
-                <select class="so-status-select" onchange="changeStatusFromDropdown(${o.id}, '${o.status}', this)">
+                <select class="so-status-select kk-select-modern" onchange="changeStatusFromDropdown(${o.id}, '${o.status}', this)">
                     ${statusOptions}
                 </select>
                 <span class="so-total">PHP ${Number(o.total || 0).toFixed(2)}</span>
