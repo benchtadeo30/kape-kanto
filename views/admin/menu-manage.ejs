@@ -92,6 +92,36 @@
         z-index: 1;
     }
 
+    .close-modal-btn {
+        background: #f5f5f5;
+        border: none;
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: #666;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-size: 1.6rem;
+        line-height: 1;
+    }
+
+    .close-modal-btn:hover {
+        background: #e8ddd4;
+        color: var(--admin-primary);
+        transform: rotate(90deg);
+    }
+
+    @media (min-width: 1024px) {
+        .close-modal-btn {
+            width: 48px;
+            height: 48px;
+            font-size: 2rem;
+        }
+    }
+
     /* Custom File Upload */
     .drop-zone {
         border: 2px dashed #d7ccc8;
@@ -399,7 +429,7 @@
                     <p style="font-size: 0.8rem; color: #999; margin: 0;">Configure your menu item's appearance and settings.</p>
                 </div>
             </div>
-            <button onclick="closeModal()" style="background: #f5f5f5; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #666; transition: 0.2s; margin-top: 1rem;">&times;</button>
+            <button onclick="closeModal()" class="close-modal-btn" style="margin-top: 0.5rem;">&times;</button>
         </div>
         <form id="menu-form" style="display: flex; flex-direction: column; height: 100%; overflow: hidden;">
             <div class="modal-body" style="padding: 2.5rem; background: #fff; flex: 1; overflow-y: auto;">
@@ -516,7 +546,7 @@
                     <p style="margin: 0; font-size: 0.8rem; color: #999;">Organize your menu items efficiently.</p>
                 </div>
             </div>
-            <button onclick="closeCatModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #ccc; transition: 0.2s;">&times;</button>
+            <button onclick="closeCatModal()" class="close-modal-btn">&times;</button>
         </div>
         <form id="cat-form" onsubmit="handleCatSubmit(event)" style="display: flex; flex-direction: column;">
             <div class="modal-body" style="padding: 2.5rem;">
@@ -543,7 +573,7 @@
     <div class="modal-content" style="max-width: 500px;">
         <div class="modal-header">
             <h3>Select Category</h3>
-            <button onclick="closeCategorySelector()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #999;">&times;</button>
+            <button onclick="closeCategorySelector()" class="close-modal-btn" style="font-size: 1.5rem;">&times;</button>
         </div>
         <div class="modal-body" style="padding: 1.5rem;">
             <div style="position: relative; margin-bottom: 1.5rem;">
