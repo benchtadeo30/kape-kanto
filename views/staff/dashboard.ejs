@@ -23,6 +23,7 @@
     .status-preparing { background: #e8f2ff; color: #125a9c; }
     .status-ready { background: #e8f5e9; color: #2e7d32; }
     .status-out_for_delivery { background: #f2e8ff; color: #6c3ba2; }
+    .status-awaiting_payment { background: #fff8e1; color: #ff8f00; border: 1px solid rgba(255,143,0,0.3); }
     .kitchen-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.85rem; }
     .kitchen-label { margin: 0; color: var(--text-light); font-size: 0.74rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
     .kitchen-value { margin: 0.15rem 0 0; font-weight: 800; color: var(--primary-dark); }
@@ -73,13 +74,14 @@
 </div>
 
 <script>
-    const ACTIVE_STATUSES = ['pending', 'preparing', 'ready', 'out_for_delivery'];
+    const ACTIVE_STATUSES = ['pending', 'preparing', 'ready', 'out_for_delivery', 'awaiting_payment'];
     const KITCHEN_PAGE_LIMIT = 6;
     let activeOrders = [];
     let kitchenPage = 1;
 
     function statusLabel(status, orderType) {
         if (status === 'completed') return orderType === 'delivery' ? 'Delivered' : 'Picked Up';
+        if (status === 'awaiting_payment') return 'UNPAID / AWAITING';
         return String(status || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
     }
 
@@ -135,7 +137,8 @@
                         </div>
                     </div>
                     ${o.notes ? `<div class="note-box"><strong>Special notes:</strong> ${o.notes}</div>` : ''}
-                    <div class="kitchen-actions">
+                    ${o.status === 'awaiting_payment' ? `<div style="background: #fff4f1; border: 1px solid #ff8f00; color: #b75d00; padding: 10px; border-radius: 12px; font-weight: 800; font-size: 0.85rem; text-align: center;"><i class="fa-solid fa-triangle-exclamation"></i> DO NOT PREPARE - PAYMENT PENDING</div>` : ''}
+                    <div class="kitchen-actions" style="${o.status === 'awaiting_payment' ? 'opacity: 0.5; pointer-events: none; filter: grayscale(1);' : ''}">
                         <button class="staff-action" onclick="updateStatus(${o.id}, 'preparing')"><i class="fa-solid fa-fire"></i> Start Prep</button>
                         <button class="staff-action blue" onclick="updateStatus(${o.id}, 'ready')"><i class="fa-solid fa-check-double"></i> Ready</button>
                         ${o.order_type === 'delivery' ? `<button class="staff-action purple" onclick="updateStatus(${o.id}, 'out_for_delivery')"><i class="fa-solid fa-truck-fast"></i> Out</button>` : ''}

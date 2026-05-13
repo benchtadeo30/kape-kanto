@@ -135,6 +135,64 @@ async function trackLoyaltyProgress(userId, orderId, orderTotal) {
 }
 
 /**
+ * Increments promo usage for a user.
+ */
+async function incrementPromoUsage(userId, promoId) {
+    if (!promoId) return;
+    try {
+        const promo = await db.prepare('SELECT * FROM promos WHERE id = ?').get(promoId);
+        if (!promo) {
+            console.error(`[PROMO] Promo ID ${promoId} not found in database.`);
+            return;
+        }
+
+        console.log(`[PROMO] Incrementing usage for Promo #${promoId} ("${promo.title}"), User #${userId}`);
+
+        let userCoupon = await db.prepare('SELECT * FROM user_coupons WHERE user_id = ? AND promo_id = ?').get(userId, promoId);
+        
+        if (userCoupon) {
+            const newTimesUsed = (userCoupon.times_used || 0) + 1;
+            const limit = Math.max(userCoupon.usage_limit || 0, promo.usage_limit || 1);
+            const isUsed = newTimesUsed >= limit ? 1 : 0;
+            
+            await db.prepare('UPDATE user_coupons SET times_used = ?, is_used = ? WHERE id = ?')
+                .run(newTimesUsed, isUsed, userCoupon.id);
+            console.log(`[PROMO] Updated usage for Coupon #${userCoupon.id}: ${newTimesUsed}/${limit} (is_used: ${isUsed})`);
+        } else {
+            // If it's a public promo or first-time use of a promo, track usage by creating a record
+            const limit = promo.usage_limit || 1;
+            const isUsed = 1 >= limit ? 1 : 0;
+            await db.prepare('INSERT INTO user_coupons (user_id, promo_id, times_used, usage_limit, is_used) VALUES (?, ?, ?, ?, ?)')
+                .run(userId, promoId, 1, limit, isUsed);
+            console.log(`[PROMO] Created usage record for Promo #${promoId} for User #${userId}: 1/${limit} (is_used: ${isUsed})`);
+        }
+    } catch (error) {
+        console.error("[PROMO] Increment Promo Usage Error:", error);
+    }
+}
+
+/**
+ * Reverts promo usage (for cancellations).
+ */
+async function revertPromoUsage(userId, promoId) {
+    if (!promoId) return;
+    try {
+        let userCoupon = await db.prepare('SELECT * FROM user_coupons WHERE user_id = ? AND promo_id = ?').get(userId, promoId);
+        if (userCoupon && userCoupon.times_used > 0) {
+            const newTimesUsed = userCoupon.times_used - 1;
+            const limit = userCoupon.usage_limit || 1;
+            const isUsed = newTimesUsed >= limit ? 1 : 0;
+            
+            await db.prepare('UPDATE user_coupons SET times_used = ?, is_used = ? WHERE id = ?')
+                .run(newTimesUsed, isUsed, userCoupon.id);
+            console.log(`[PROMO] Reverted usage for Coupon #${userCoupon.id}: ${newTimesUsed}/${limit}`);
+        }
+    } catch (error) {
+        console.error("Revert Promo Usage Error:", error);
+    }
+}
+
+/**
  * Reverts loyalty progress for a cancelled/dismissed order.
  */
 async function revertLoyaltyProgress(userId, orderId, orderTotal) {
@@ -203,4 +261,4 @@ async function revertLoyaltyProgress(userId, orderId, orderTotal) {
     }
 }
 
-module.exports = { trackLoyaltyProgress, revertLoyaltyProgress };
+module.exports = { trackLoyaltyProgress, revertLoyaltyProgress, incrementPromoUsage, revertPromoUsage };

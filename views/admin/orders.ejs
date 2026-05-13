@@ -128,21 +128,52 @@
     /* Details modal */
     #ao-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:9999; align-items:center; justify-content:center; }
     #ao-modal.open { display: flex; }
-    .ao-modal-box { background: white; border-radius: 24px; padding: 2.5rem; width: 100%; max-width: 520px; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1); }
-    @keyframes popIn { from { transform: scale(0.9); opacity:0; } }
-
-    .ao-items-list { border-radius: 16px; background: #fdfaf7; padding: 1.8rem; margin: 1.5rem 0; border: 1px solid #f0e6e0; }
-    .ao-item-row { display: flex; justify-content: space-between; padding: 1.2rem 0; border-bottom: 1px dashed #f0e6e0; font-size: 1.2rem; align-items: center; }
-    .ao-item-row:last-child { border: none; }
-    .ao-breakdown-row { display: flex; justify-content: space-between; font-size: 1.1rem; color: #666; padding: 0.6rem 0; }
-    .ao-breakdown-row.total { font-weight: 900; color: var(--primary); border-top: 2px solid #f0e6e0; margin-top: 1.2rem; padding-top: 1.2rem; font-size: 1.6rem; }
-    .ao-breakdown-row.red { color: var(--danger); font-weight: 600; }
-
-    .ao-detail-section { margin-bottom: 2rem; }
-    .ao-detail-label { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; color: #999; font-weight: 700; margin-bottom: 0.8rem; display: block; }
-    .ao-detail-value { font-size: 1.2rem; color: var(--primary-dark); font-weight: 600; }
-
-    #ao-modal-body { padding-top: 0.5rem; }
+    .ao-modal-box { 
+        background: white; 
+        border-radius: 24px; 
+        padding: 2.5rem; 
+        width: 100%; 
+        max-width: 520px; 
+        max-height: calc(100vh - 40px); /* Limit height */
+        display: flex;
+        flex-direction: column;
+        overflow: hidden !important; 
+        box-shadow: 0 20px 60px rgba(0,0,0,0.2); 
+        animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1); 
+    }
+    #ao-modal-body { 
+        flex: 1;
+        overflow-y: auto !important;
+        min-height: 0;
+        padding-top: 0.5rem; 
+    }
+    .ao-modal-close {
+        background: none;
+        border: none;
+        font-size: 2.2rem;
+        cursor: pointer;
+        color: #999;
+        transition: all 0.2s ease;
+        line-height: 1;
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+    }
+    @media (min-width: 1024px) {
+        .ao-modal-close {
+            width: 60px;
+            height: 60px;
+            font-size: 3.2rem;
+        }
+    }
+    .ao-modal-close:hover {
+        background: #fdfaf7;
+        color: var(--primary);
+        transform: rotate(90deg);
+    }
 
     @media (max-width: 380px) {
         .ao-modal-box { padding: 1.5rem !important; }
@@ -191,9 +222,9 @@
 <!-- Details modal -->
 <div id="ao-modal">
     <div class="ao-modal-box">
-        <div class="flex-stack-mobile" style="margin-bottom:1rem;">
-            <h3 id="ao-modal-title">Order Details</h3>
-            <button onclick="closeModal()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--text-light);">&times;</button>
+        <div class="flex-stack-mobile" style="margin-bottom:1.5rem; align-items: center; justify-content: space-between;">
+            <h3 id="ao-modal-title" style="margin:0;">Order Details</h3>
+            <button onclick="closeModal()" class="ao-modal-close">&times;</button>
         </div>
         <div id="ao-modal-body"></div>
     </div>

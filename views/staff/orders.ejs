@@ -37,7 +37,8 @@
     .badge-delivery { background:#f2e8ff; color:#6c3ba2; }
     .badge-completed { background:#e8f5e9; color:#1b5e20; }
     .badge-cancelled { background:#ffebee; color:#b71c1c; }
-    .badge-awaiting { background:#f5f5f5; color:#616161; }
+    .badge-awaiting { background:#fff8e1; color:#ff8f00; border: 1px solid rgba(255,143,0,0.3); }
+    .badge-awaiting i { margin-right: 4px; }
     .so-total { font-weight: 900; color: var(--primary); font-size: 1rem; }
     .so-status-select { width: 100%; min-width: 130px; border-radius: 999px !important; padding: 0.55rem 0.75rem !important; font-size: 0.78rem; font-weight: 800; border: 1px solid #e6d8cc !important; color: var(--primary-dark); background: white; }
     .so-actions { display: flex; justify-content: flex-end; gap: 0.45rem; flex-wrap: wrap; }
@@ -89,6 +90,7 @@
                 <button class="so-tab" onclick="filterOrders('preparing', this)"><i class="fa-solid fa-fire"></i> Preparing</button>
                 <button class="so-tab" onclick="filterOrders('ready', this)"><i class="fa-solid fa-check-double"></i> Ready</button>
                 <button class="so-tab" onclick="filterOrders('out_for_delivery', this)"><i class="fa-solid fa-truck-fast"></i> Out for Delivery</button>
+                <button class="so-tab" onclick="filterOrders('awaiting_payment', this)" style="border-color: #ff8f00; color: #ff8f00;"><i class="fa-solid fa-hourglass-half"></i> Unpaid / Awaiting</button>
                 <button class="so-tab" onclick="filterOrders('completed', this)"><i class="fa-solid fa-flag-checkered"></i> Delivered / Picked Up</button>
             </div>
 
@@ -175,11 +177,13 @@
         { value: 'ready', label: 'Ready', icon: 'fa-check-double' },
         { value: 'out_for_delivery', label: 'Out for Delivery', deliveryOnly: true, icon: 'fa-truck-fast' },
         { value: 'completed', label: 'Completed', icon: 'fa-flag-checkered' },
-        { value: 'cancelled', label: 'Cancelled', icon: 'fa-ban' }
+        { value: 'cancelled', label: 'Cancelled', icon: 'fa-ban' },
+        { value: 'awaiting_payment', label: 'Awaiting Payment (Unpaid)', icon: 'fa-hourglass-half' }
     ];
 
     function statusLabel(status, orderType) {
         if (status === 'completed') return orderType === 'delivery' ? 'Delivered' : 'Picked Up';
+        if (status === 'awaiting_payment') return 'UNPAID / AWAITING';
         return String(status || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
     }
 
@@ -341,7 +345,7 @@
                     ${riderInfo}
                 </div>
                 <span class="so-type-chip"><i class="fa-solid ${isDelivery ? 'fa-truck-fast' : 'fa-bag-shopping'}"></i> ${isDelivery ? 'Delivery' : 'Pickup'}</span>
-                <span class="so-badge ${BADGE_MAP[o.status] || ''}">${statusLabel(o.status, o.order_type)}</span>
+                <span class="so-badge ${BADGE_MAP[o.status] || ''}">${o.status === 'awaiting_payment' ? '<i class="fa-solid fa-triangle-exclamation"></i>' : ''}${statusLabel(o.status, o.order_type)}</span>
                 <select class="so-status-select kk-select-modern" onchange="changeStatusFromDropdown(${o.id}, '${o.status}', this)">
                     ${statusOptions}
                 </select>

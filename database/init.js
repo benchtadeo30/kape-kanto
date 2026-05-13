@@ -163,6 +163,7 @@ async function initDb() {
             applicable_menu_item_id INTEGER,
             applicable_category_ids TEXT DEFAULT '[]',
             applicable_menu_item_ids TEXT DEFAULT '[]',
+            usage_limit INTEGER DEFAULT 1,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY(applicable_category_id) REFERENCES categories(id) ON DELETE SET NULL,
             FOREIGN KEY(applicable_menu_item_id) REFERENCES menu_items(id) ON DELETE SET NULL
@@ -289,9 +290,11 @@ async function initDb() {
             user_id INTEGER,
             promo_id INTEGER,
             is_used BOOLEAN DEFAULT 0,
+            times_used INTEGER DEFAULT 0,
+            usage_limit INTEGER DEFAULT 1,
             earned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-            FOREIGN KEY (promo_id) REFERENCES promos(id) ON DELETE CASCADE
+            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY(promo_id) REFERENCES promos(id) ON DELETE CASCADE
         )
     `);
 
@@ -341,6 +344,11 @@ async function initDb() {
     await safeAddColumn('promos', 'applicable_menu_item_id', 'INTEGER');
     await safeAddColumn('promos', 'applicable_category_ids', "TEXT DEFAULT '[]'");
     await safeAddColumn('promos', 'applicable_menu_item_ids', "TEXT DEFAULT '[]'");
+    await safeAddColumn('promos', 'usage_limit', 'INTEGER DEFAULT 1');
+
+    // user_coupons migrations
+    await safeAddColumn('user_coupons', 'times_used', 'INTEGER DEFAULT 0');
+    await safeAddColumn('user_coupons', 'usage_limit', 'INTEGER DEFAULT 1');
 
     // Order migrations
     await safeAddColumn('orders', 'vat_amount', 'REAL DEFAULT 0');

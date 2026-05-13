@@ -3,7 +3,7 @@ const router = express.Router();
 const { db } = require('../database/init');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { createCheckoutSession } = require('../services/payrex');
-const { trackLoyaltyProgress, revertLoyaltyProgress } = require('../services/loyalty');
+const { trackLoyaltyProgress, revertLoyaltyProgress, incrementPromoUsage, revertPromoUsage } = require('../services/loyalty');
 
 // POST /api/orders (Place new order)
 router.post('/', requireAuth, async (req, res) => {
@@ -102,11 +102,21 @@ router.post('/', requireAuth, async (req, res) => {
             `).get(promo_code);
 
             if (promo) {
-                // Check loyalty requirement
+                // Check loyalty requirement and usage limits
                 let canUsePromo = true;
+                const coupon = await db.prepare(`SELECT * FROM user_coupons WHERE user_id = ? AND promo_id = ?`).get(req.session.userId, promo.id);
+                
                 if (promo.is_loyalty_reward) {
-                    const coupon = await db.prepare(`SELECT * FROM user_coupons WHERE user_id = ? AND promo_id = ? AND is_used = 0`).get(req.session.userId, promo.id);
-                    if (!coupon) canUsePromo = false;
+                    if (!coupon || coupon.is_used) {
+                        canUsePromo = false;
+                    } else if (coupon.times_used >= (coupon.usage_limit || promo.usage_limit || 1)) {
+                        canUsePromo = false;
+                    }
+                } else if (promo.usage_limit > 0) {
+                    // Public promo with usage limit
+                    if (coupon && (coupon.is_used || coupon.times_used >= (coupon.usage_limit || promo.usage_limit))) {
+                        canUsePromo = false;
+                    }
                 }
 
                 if (canUsePromo) {
@@ -239,6 +249,14 @@ router.post('/', requireAuth, async (req, res) => {
         }
 
         await db.commit();
+        
+        // Increment Promo Usage for offline orders
+        if (!isOnline && promoObj) {
+            console.log(`[ORDER] Incrementing promo usage for offline order #${orderId}, Promo: ${promoObj.promo_code}`);
+            await incrementPromoUsage(userId, promoObj.id);
+        } else if (isOnline && promoObj) {
+            console.log(`[ORDER] Online order #${orderId} with promo ${promoObj.promo_code} - usage will be incremented after payment.`);
+        }
 
         // 6. Handle Payment Redirection or Success
         if (isOnline) {
@@ -415,6 +433,9 @@ router.post('/my/:id/cancel', requireAuth, async (req, res) => {
                 await db.prepare('UPDATE menu_items SET stock = stock + ? WHERE id = ?').run(item.quantity, item.menu_item_id);
             }
             await revertLoyaltyProgress(order.user_id, order.id, order.total);
+            if (order.promo_id) {
+                await revertPromoUsage(order.user_id, order.promo_id);
+            }
         }
 
         await db.prepare(`UPDATE orders SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE id = ?`).run(order.id);
@@ -438,12 +459,12 @@ router.get('/all', requireRole('admin', 'staff'), async (req, res) => {
             SELECT o.*, u.username, u.email 
             FROM orders o
             JOIN users u ON o.user_id = u.id
-            WHERE o.status != 'awaiting_payment'
+            WHERE 1=1
         `;
         let countQuery = `
             SELECT COUNT(*) as total 
             FROM orders o
-            WHERE o.status != 'awaiting_payment'
+            WHERE 1=1
         `;
         const params = [];
 

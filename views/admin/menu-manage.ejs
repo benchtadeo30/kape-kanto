@@ -37,6 +37,7 @@
         background: white;
         width: 100%;
         max-width: 550px;
+        max-height: calc(100vh - 40px); /* Limit height */
         border-radius: 24px;
         box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
         overflow: hidden !important; /* Contain body scroll */
@@ -73,10 +74,11 @@
 
     .modal-body {
         padding: 2rem;
-        max-height: 75vh;
+        flex: 1; /* Take up remaining space */
         overflow-y: auto !important; /* Allow scrolling for long content */
         position: relative;
         z-index: 10;
+        min-height: 0; /* Important for flex-basis */
     }
 
     .modal-footer {
@@ -116,9 +118,9 @@
 
     @media (min-width: 1024px) {
         .close-modal-btn {
-            width: 48px;
-            height: 48px;
-            font-size: 2rem;
+            width: 60px;
+            height: 60px;
+            font-size: 2.8rem;
         }
     }
 
@@ -418,7 +420,7 @@
 
 <!-- Menu Modal -->
 <div id="menu-modal" class="admin-modal">
-    <div class="modal-content" style="max-width: 700px; height: auto; max-height: 90vh;">
+    <div class="modal-content" style="max-width: 700px;">
         <div class="modal-header flex-stack-mobile" style="background: linear-gradient(135deg, #fdfaf7 0%, #fff 100%); padding: 1.5rem 2.5rem; border-bottom: 1px solid #f0e6e0;">
             <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
                 <div style="width: 40px; height: 40px; background: #f7f2ef; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--admin-primary);">
@@ -432,7 +434,7 @@
             <button onclick="closeModal()" class="close-modal-btn" style="margin-top: 0.5rem;">&times;</button>
         </div>
         <form id="menu-form" style="display: flex; flex-direction: column; height: 100%; overflow: hidden;">
-            <div class="modal-body" style="padding: 2.5rem; background: #fff; flex: 1; overflow-y: auto;">
+            <div class="modal-body">
                 <input type="hidden" id="item-id">
                 
                 <div class="responsive-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
@@ -535,7 +537,7 @@
 
 <!-- Category Modal -->
 <div id="cat-modal" class="admin-modal">
-    <div class="modal-content" style="max-width: 480px; border-radius: 28px; display: flex; flex-direction: column;">
+    <div class="modal-content" style="max-width: 480px;">
         <div class="modal-header" style="background: #fdfaf7; padding: 2rem;">
             <div style="display: flex; align-items: center; gap: 15px;">
                 <div style="width: 45px; height: 45px; background: #fff; border-radius: 14px; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.05); color: var(--admin-primary);">
@@ -549,7 +551,7 @@
             <button onclick="closeCatModal()" class="close-modal-btn">&times;</button>
         </div>
         <form id="cat-form" onsubmit="handleCatSubmit(event)" style="display: flex; flex-direction: column;">
-            <div class="modal-body" style="padding: 2.5rem;">
+            <div class="modal-body">
                 <input type="hidden" id="cat-id">
                 <div class="form-group">
                     <label style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1.5px; color: #8b7355; margin-bottom: 12px; display: block; font-weight: 700;">Name of Category</label>
@@ -573,9 +575,9 @@
     <div class="modal-content" style="max-width: 500px;">
         <div class="modal-header">
             <h3>Select Category</h3>
-            <button onclick="closeCategorySelector()" class="close-modal-btn" style="font-size: 1.5rem;">&times;</button>
+            <button onclick="closeCategorySelector()" class="close-modal-btn">&times;</button>
         </div>
-        <div class="modal-body" style="padding: 1.5rem;">
+        <div class="modal-body">
             <div style="position: relative; margin-bottom: 1.5rem;">
                 <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #999;"></i>
                 <input type="text" id="cat-selector-search" placeholder="Search categories..." 

@@ -118,6 +118,21 @@ router.get('/order-tracking/:id', pageRequireAuth, (req, res) => {
 });
 
 router.get('/profile', pageRequireAuth, async (req, res) => {
+    const userId = req.session.userId;
+    const limit = 10;
+    
+    // Task Page
+    const tp = parseInt(req.query.tp) || 1;
+    const tOffset = (tp - 1) * limit;
+
+    // Coupon Page
+    const cp = parseInt(req.query.cp) || 1;
+    const cOffset = (cp - 1) * limit;
+
+    // Public Promo Page
+    const pp = parseInt(req.query.pp) || 1;
+    const pOffset = (pp - 1) * limit;
+
     const promoProgress = await db.prepare(`
         SELECT 
             t.id as task_id, 
@@ -126,25 +141,72 @@ router.get('/profile', pageRequireAuth, async (req, res) => {
             t.required_quantity,
             t.end_date,
             IFNULL(p.current_quantity, 0) as current_quantity, 
-            IFNULL(p.is_completed, 0) as is_completed
+            IFNULL(p.is_completed, 0) as is_completed,
+            r.usage_limit as reward_limit
         FROM promo_tasks t
         LEFT JOIN user_promo_progress p ON t.id = p.promo_task_id AND p.user_id = ?
+        LEFT JOIN promos r ON t.reward_promo_id = r.id
         WHERE (t.is_active = 1 AND (t.end_date IS NULL OR datetime(t.end_date) >= datetime('now', '+8 hours')))
-    `).all(req.session.userId);
+        LIMIT ? OFFSET ?
+    `).all(userId, limit, tOffset);
 
-    const coupons = await db.prepare(`
-        SELECT c.*, p.title, p.discount_percent, p.promo_code, p.end_date 
+    const tCount = await db.prepare(`
+        SELECT COUNT(*) as count FROM promo_tasks 
+        WHERE is_active = 1 AND (end_date IS NULL OR datetime(end_date) >= datetime('now', '+8 hours'))
+    `).get();
+
+    // Earned coupons: fetch all for this user that are linked to loyalty tasks
+    const allCoupons = await db.prepare(`
+        SELECT 
+            p.id, p.title, p.discount_percent, p.promo_code, p.end_date, 
+            p.usage_limit as global_limit,
+            IFNULL(c.times_used, 0) as times_used,
+            IFNULL(c.usage_limit, 0) as usage_limit
         FROM user_coupons c
         JOIN promos p ON c.promo_id = p.id
-        WHERE c.user_id = ? AND c.is_used = 0
+        WHERE c.user_id = ? 
+        AND p.id IN (SELECT reward_promo_id FROM promo_tasks WHERE reward_promo_id IS NOT NULL)
         AND p.is_active = 1
         AND (p.end_date IS NULL OR datetime(p.end_date) >= datetime('now', '+8 hours'))
-    `).all(req.session.userId);
+    `).all(userId);
+
+    // Filter: only show coupons that still have uses left
+    const filteredCoupons = allCoupons.filter(c => {
+        const limit = Math.max(c.usage_limit || 0, c.global_limit || 1);
+        return c.times_used < limit;
+    });
+    const cCount = { count: filteredCoupons.length };
+    const coupons = filteredCoupons.slice(cOffset, cOffset + limit);
+
+    // Public promos: fetch all active non-reward promos
+    const allPublicPromos = await db.prepare(`
+        SELECT p.*, 
+               IFNULL((SELECT SUM(times_used) FROM user_coupons WHERE user_id = ? AND promo_id = p.id), 0) as times_used
+        FROM promos p
+        WHERE p.is_active = 1
+        AND (p.start_date IS NULL OR datetime(p.start_date) <= datetime('now', '+8 hours'))
+        AND (p.end_date IS NULL OR datetime(p.end_date) >= datetime('now', '+8 hours'))
+        AND p.id NOT IN (SELECT reward_promo_id FROM promo_tasks WHERE reward_promo_id IS NOT NULL)
+    `).all(userId);
+
+    // Filter: hide promos where usage limit is reached
+    const filteredPublic = allPublicPromos.filter(p => {
+        if (!p.usage_limit || p.usage_limit === 0) return true; // unlimited
+        return p.times_used < p.usage_limit;
+    });
+    const pCount = { count: filteredPublic.length };
+    const publicPromos = filteredPublic.slice(pOffset, pOffset + limit);
 
     res.render('profile', { 
         title: 'My Account Profile - Kape Kanto Hub',
         promoProgress: promoProgress || [],
-        coupons: coupons || []
+        coupons: coupons || [],
+        publicPromos: publicPromos || [],
+        pagination: {
+            tasks: { current: tp, total: Math.ceil((tCount?.count || 0) / limit) },
+            coupons: { current: cp, total: Math.ceil((cCount?.count || 0) / limit) },
+            public: { current: pp, total: Math.ceil((pCount?.count || 0) / limit) }
+        }
     });
 });
 

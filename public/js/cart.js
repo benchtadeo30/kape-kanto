@@ -153,7 +153,7 @@ function renderCartItems() {
                     onerror="this.src='https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=200'">
                 <div style="flex:1;min-width:0;">
                     <h4 style="margin:0;font-size:1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.name}</h4>
-                    <div style="margin:3px 0; display: flex; align-items: center; gap: 8px;">
+                    <div style="margin:3px 0; display: flex; align-items: center; gap: 8px; white-space: nowrap;">
                         ${getPriceHtml(item)}
                     </div>
                     ${customizationHtml}
@@ -545,11 +545,27 @@ function updateTotals() {
                 discountLabelStr = `🏷️ Promo (${label} off)`;
             }
         } else if ((activePromo.discount_percent > 0 || activePromo.discount_amount > 0) && applicableGross === 0 && hasRestrictions) {
-            showToast('This promo code is not applicable to items in your cart.', 'warning');
+            const statusDiv = document.getElementById('promo-status');
+            if (statusDiv) {
+                statusDiv.innerHTML = `<span style="color:var(--danger); font-weight:600;"><i class="fa-solid fa-circle-exclamation"></i> Promo code not applicable to items in cart</span>`;
+            }
         }
     }
 
     discountAmount = scDiscount + promoDiscount;
+
+    // Show remaining uses feedback
+    if (activePromo && promoDiscount > 0) {
+        const statusDiv = document.getElementById('promo-status');
+        if (statusDiv) {
+            if (activePromo.user_limit > 0) {
+                const remaining = activePromo.user_limit - (activePromo.times_used || 0);
+                statusDiv.innerHTML = `<span style="color:var(--success); font-weight:600;"><i class="fa-solid fa-circle-check"></i> Applied! (${remaining} use${remaining > 1 ? 's' : ''} left)</span>`;
+            } else {
+                statusDiv.innerHTML = `<span style="color:var(--success); font-weight:600;"><i class="fa-solid fa-circle-check"></i> Promo applied successfully!</span>`;
+            }
+        }
+    }
 
     // 3. Final Calculations
     let finalVatAmount = 0;

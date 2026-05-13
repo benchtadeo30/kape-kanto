@@ -534,17 +534,17 @@
                                                                     + ' ID has been verified.' %>
                                                             </p>
                                                             <div style="margin-top: 15px; display: flex; gap: 10px;">
-                                                                <button
-                                                                    onclick="requestAccountChange('update_id', null, this)"
-                                                                    class="btn-save"
-                                                                    style="padding: 8px 16px; font-size: 0.85rem; background: var(--p-primary); color: white; border: none; border-radius: 8px; cursor: pointer;">Update
-                                                                    ID</button>
-                                                                <button
-                                                                    onclick="requestAccountChange('remove_id', null, this)"
-                                                                    class="btn-save"
-                                                                    style="padding: 8px 16px; font-size: 0.85rem; background: white; color: var(--danger); border: 1px solid var(--danger); border-radius: 8px; cursor: pointer;">Remove
-                                                                    ID</button>
-                                                            </div>
+                                                                 <button
+                                                                     onclick="confirmUpdateID(this)"
+                                                                     class="btn-save"
+                                                                     style="padding: 8px 16px; font-size: 0.85rem; background: var(--p-primary); color: white; border: none; border-radius: 8px; cursor: pointer;">Update
+                                                                     ID</button>
+                                                                 <button
+                                                                     onclick="confirmRemoveID(this)"
+                                                                     class="btn-save"
+                                                                     style="padding: 8px 16px; font-size: 0.85rem; background: white; color: var(--danger); border: 1px solid var(--danger); border-radius: 8px; cursor: pointer;">Remove
+                                                                     ID</button>
+                                                             </div>
 
                                                             <% } else if (user.id_verification_status==='pending' ) { %>
                                                                 <span class="status-badge status-pending">Under
@@ -693,10 +693,39 @@
                     <!-- Tab: Loyalty -->
                     <div id="tab-loyalty" class="tab-content">
                         <div class="main-card">
-                            <h3 style="margin-bottom: 2rem;">My Coupons</h3>
-                            <% if (coupons && coupons.length> 0) { %>
-                                <div
-                                    style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
+                            <% function renderPager(total, current, paramName) { %>
+                                <% if (total <= 1) return ''; %>
+                                <div class="kk-pagination" style="display: flex; gap: 5px; margin-top: 2rem; justify-content: center; align-items: center; flex-wrap: wrap;">
+                                    <% 
+                                        const windowSize = 10;
+                                        let start = Math.max(1, current - Math.floor(windowSize / 2));
+                                        let end = start + windowSize - 1;
+                                        
+                                        if (end > total) {
+                                            end = total;
+                                            start = Math.max(1, end - windowSize + 1);
+                                        }
+                                    %>
+
+                                    <% if (start > 1) { %>
+                                        <a href="?<%= paramName %>=<%= current - 1 %>&tab=loyalty" class="page-btn dots">...</a>
+                                    <% } %>
+
+                                    <% for (let i = start; i <= end; i++) { %>
+                                        <a href="?<%= paramName %>=<%= i %>&tab=loyalty" class="page-btn <%= i === current ? 'active' : '' %>">
+                                            <%= i %>
+                                        </a>
+                                    <% } %>
+
+                                    <% if (end < total) { %>
+                                        <a href="?<%= paramName %>=<%= current + 1 %>&tab=loyalty" class="page-btn dots">...</a>
+                                    <% } %>
+                                </div>
+                            <% } %>
+
+                            <% if (coupons && coupons.length > 0) { %>
+                                <h3 style="margin-bottom: 2rem;">My Earned Coupons</h3>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
                                     <% coupons.forEach(coupon=> { %>
                                         <div
                                             style="background: linear-gradient(135deg, #6F4E37, #4A3423); color: white; border-radius: 16px; padding: 1.5rem; position: relative; overflow: hidden; box-shadow: 0 10px 20px rgba(111, 78, 55, 0.2);">
@@ -707,66 +736,109 @@
                                                 <%= coupon.title %>
                                             </h4>
                                             <p style="margin: 0; font-size: 2rem; font-weight: 800;">
-                                                <%= coupon.discount_percent %>% OFF
+                                                <%= coupon.discount_percent || coupon.reward_discount %>% OFF
                                             </p>
                                             <div
                                                 style="margin-top: 15px; background: rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 8px; font-family: monospace; font-size: 1.1rem; letter-spacing: 2px; text-align: center;">
                                                 <%= coupon.promo_code %>
                                             </div>
-                                            <p style="margin: 15px 0 0 0; font-size: 0.75rem; opacity: 0.8;">Expires:
-                                                <%= coupon.end_date ? new Date(coupon.end_date).toLocaleDateString()
-                                                    : 'Never' %>
+                                            <p style="margin: 15px 0 0 0; font-size: 0.75rem; opacity: 0.8; display: flex; justify-content: space-between; align-items: center;">
+                                                <span>Expires: <%= coupon.end_date ? new Date(coupon.end_date).toLocaleDateString() : 'Never' %></span>
+                                                <% const currentLimit = coupon.usage_limit || coupon.global_limit || 1; %>
+                                                <% if (currentLimit > 0) { %>
+                                                    <span style="background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px; font-weight: 700;">
+                                                        <%= (currentLimit - (coupon.times_used || 0)) %> uses left
+                                                    </span>
+                                                <% } %>
                                             </p>
                                         </div>
                                         <% }) %>
                                 </div>
-                                <% } else { %>
-                                    <div
-                                        style="text-align: center; padding: 3rem; background: #fafafa; border-radius: 20px;">
-                                        <i class="fa-solid fa-ticket-simple"
-                                            style="font-size: 3rem; color: #ddd; margin-bottom: 1.5rem;"></i>
-                                        <p style="color: #888;">You don't have any active coupons. Complete tasks to
-                                            earn rewards!</p>
-                                    </div>
-                                    <% } %>
+                                <%= renderPager(pagination.coupons.total, pagination.coupons.current, 'cp') %>
+                            <% } %>
 
-                                        <h3 style="margin-top: 4rem; margin-bottom: 2rem;">Promo Challenges</h3>
-                                        <% if (promoProgress && promoProgress.length> 0) { %>
-                                            <div style="display: flex; flex-direction: column; gap: 1rem;">
-                                                <% promoProgress.forEach(task=> { %>
-                                                    <div
-                                                        style="background: white; border: 1px solid #eee; border-radius: 16px; padding: 1.5rem;">
-                                                        <div
-                                                            style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
-                                                            <h5 style="margin: 0; font-size: 1.1rem;">
-                                                                <%= task.title %>
-                                                            </h5>
-                                                            <span
-                                                                class="status-badge <%= task.is_completed ? 'status-verified' : 'status-pending' %>">
-                                                                <%= task.is_completed ? 'Completed' : 'In Progress' %>
-                                                            </span>
-                                                        </div>
-                                                        <p
-                                                            style="font-size: 0.9rem; color: #666; margin-bottom: 1.5rem;">
-                                                            <%= task.description %>
-                                                        </p>
-                                                        <div
-                                                            style="background: #f5f5f5; height: 10px; border-radius: 50px; overflow: hidden; margin-bottom: 8px;">
-                                                            <% const progressPercent=Math.min((task.current_quantity /
-                                                                task.required_quantity) * 100, 100); %>
-                                                                <div
-                                                                    style="background: linear-gradient(90deg, #6F4E37, #E8B86D); height: 100%; width: <%= progressPercent %>%;">
-                                                                </div>
-                                                        </div>
-                                                        <div
-                                                            style="text-align: right; font-size: 0.8rem; font-weight: bold; color: #6F4E37;">
-                                                            <%= task.current_quantity %> / <%= task.required_quantity %>
-                                                                    Progress
-                                                        </div>
-                                                    </div>
-                                                    <% }) %>
+                                <% if (publicPromos && publicPromos.length > 0) { %>
+                                    <h3 style="margin-bottom: 2rem;">Public Offers</h3>
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
+                                        <% publicPromos.forEach(promo => { %>
+                                            <div
+                                                style="background: white; border: 2px dashed #6F4E37; border-radius: 16px; padding: 1.5rem; position: relative; overflow: hidden;">
+                                                <h4 style="margin: 0 0 10px 0; font-size: 1.2rem; color: #333;">
+                                                    <%= promo.title %>
+                                                </h4>
+                                                <p style="margin: 0; font-size: 1.8rem; font-weight: 800; color: #6F4E37;">
+                                                    <%= promo.discount_percent > 0 ? promo.discount_percent + '%' : '₱' + promo.discount_amount %> OFF
+                                                </p>
+                                                <div
+                                                    style="margin-top: 15px; background: #fdf5e6; color: #6F4E37; padding: 8px 12px; border-radius: 8px; font-family: monospace; font-size: 1.1rem; letter-spacing: 2px; text-align: center; font-weight: 700; border: 1px solid #e8b86d;">
+                                                    <%= promo.promo_code %>
+                                                </div>
+                                                <p style="margin: 15px 0 0 0; font-size: 0.75rem; color: #666; display: flex; justify-content: space-between; align-items: center;">
+                                                    <span>Ends: <%= promo.end_date ? new Date(promo.end_date).toLocaleDateString() : 'Never' %></span>
+                                                    <% if (promo.usage_limit > 0) { %>
+                                                        <span style="background: #6F4E37; color: white; padding: 2px 8px; border-radius: 4px; font-weight: 700;">
+                                                            <%= (promo.usage_limit - (promo.times_used || 0)) %> uses left
+                                                        </span>
+                                                    <% } %>
+                                                </p>
                                             </div>
+                                        <% }) %>
+                                    </div>
+                                    <%= renderPager(pagination.public.total, pagination.public.current, 'pp') %>
+                                <% } %>
+
+                            <% if ((!coupons || coupons.length === 0) && (!publicPromos || publicPromos.length === 0)) { %>
+                                <div
+                                    style="text-align: center; padding: 3rem; background: #fafafa; border-radius: 20px;">
+                                    <i class="fa-solid fa-ticket-simple"
+                                        style="font-size: 3rem; color: #ddd; margin-bottom: 1.5rem;"></i>
+                                    <p style="color: #888;">You don't have any active coupons or offers. Complete tasks to
+                                        earn rewards!</p>
+                                </div>
+                            <% } %>
+
+                            <h3 style="margin-top: 4rem; margin-bottom: 2rem;">Promo Challenges</h3>
+                            <% if (promoProgress && promoProgress.length > 0) { %>
+                                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                                    <% promoProgress.forEach(task=> { %>
+                                        <div
+                                            style="background: white; border: 1px solid #eee; border-radius: 16px; padding: 1.5rem;">
+                                            <div
+                                                style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                                                <h5 style="margin: 0; font-size: 1.1rem;">
+                                                    <%= task.title %>
+                                                </h5>
+                                                <span
+                                                    class="status-badge <%= task.is_completed ? 'status-verified' : 'status-pending' %>">
+                                                    <%= task.is_completed ? 'Completed' : 'In Progress' %>
+                                                </span>
+                                            </div>
+                                            <p
+                                                style="font-size: 0.9rem; color: #666; margin-bottom: 1.5rem;">
+                                                <%= task.description %>
+                                            </p>
+                                            <div
+                                                style="background: #f5f5f5; height: 10px; border-radius: 50px; overflow: hidden; margin-bottom: 8px;">
+                                                <% const progressPercent=Math.min((task.current_quantity /
+                                                    task.required_quantity) * 100, 100); %>
+                                                    <div
+                                                        style="background: linear-gradient(90deg, #6F4E37, #E8B86D); height: 100%; width: <%= progressPercent %>%;">
+                                                    </div>
+                                            </div>
+                                            <div
+                                                style="text-align: right; font-size: 0.8rem; font-weight: bold; color: #6F4E37;">
+                                                <%= task.current_quantity %> / <%= task.required_quantity %> Progress
+                                            </div>
+                                            <% if (task.reward_limit > 0) { %>
+                                                <div style="margin-top: 10px; font-size: 0.75rem; color: #888; font-weight: 600;">
+                                                    <i class="fa-solid fa-gift"></i> Reward: <%= task.reward_limit %> uses limit
+                                                </div>
                                             <% } %>
+                                        </div>
+                                        <% }) %>
+                                </div>
+                                <%= renderPager(pagination.tasks.total, pagination.tasks.current, 'tp') %>
+                            <% } %>
                         </div>
                     </div>
                     <% } %>
@@ -870,6 +942,18 @@
             }, { title: 'Remove Email', confirmText: 'Yes, Send Code', type: 'warning' });
         }
 
+        function confirmUpdateID(btn) {
+            KapeKanto.confirm('Are you sure you want to update your ID? Your current verified status will be temporarily suspended until the new ID is reviewed.', () => {
+                requestAccountChange('update_id', {}, btn);
+            }, { title: 'Update ID Verification', confirmText: 'Yes, Send Code', type: 'warning' });
+        }
+
+        function confirmRemoveID(btn) {
+            KapeKanto.confirm('Are you sure you want to remove your verified ID? You will lose your 20% lifetime discount immediately.', () => {
+                requestAccountChange('remove_id', {}, btn);
+            }, { title: 'Remove ID Verification', confirmText: 'Yes, Send Code', type: 'danger' });
+        }
+
         async function uploadAvatar(input) {
             if (!input.files || !input.files[0]) return;
             const formData = new FormData();
@@ -900,7 +984,9 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            const hash = window.location.hash.replace('#', '') || 'account';
+            const urlParams = new URLSearchParams(window.location.search);
+            const tabParam = urlParams.get('tab');
+            const hash = tabParam || window.location.hash.replace('#', '') || 'account';
             if (document.getElementById('tab-' + hash)) switchTab(null, hash);
         });
 

@@ -129,13 +129,21 @@ router.post('/validate', async (req, res) => {
             return res.status(404).json({ error: 'Invalid or expired promo code.' });
         }
 
+        const coupon = await db.prepare(`SELECT * FROM user_coupons WHERE user_id = ? AND promo_id = ?`).get(userId, promo.id);
+
         if (promo.is_loyalty_reward) {
             if (!userId) {
                 return res.status(403).json({ error: 'Please log in to use your loyalty rewards.' });
             }
-            const coupon = await db.prepare(`SELECT * FROM user_coupons WHERE user_id = ? AND promo_id = ? AND is_used = 0`).get(userId, promo.id);
-            if (!coupon) {
-                return res.status(403).json({ error: 'You have not unlocked this reward yet. Complete the loyalty task first!' });
+            const currentLimit = Math.max(coupon?.usage_limit || 0, promo.usage_limit || 1);
+            if (!coupon || (coupon.times_used >= currentLimit)) {
+                return res.status(403).json({ error: 'You have not unlocked this reward or it has already reached its usage limit.' });
+            }
+        } else if (promo.usage_limit > 0 && userId) {
+            // Public promo with usage limit
+            const currentLimit = Math.max(coupon?.usage_limit || 0, promo.usage_limit || 0);
+            if (coupon && (coupon.times_used >= currentLimit)) {
+                return res.status(403).json({ error: 'You have reached the usage limit for this promo code.' });
             }
         }
 
@@ -151,7 +159,11 @@ router.post('/validate', async (req, res) => {
             promo.applicable_menu_item_ids = [];
         }
 
-        res.json(promo);
+        res.json({
+            ...promo,
+            times_used: coupon ? coupon.times_used : 0,
+            user_limit: Math.max(coupon?.usage_limit || 0, (promo.is_loyalty_reward ? (promo.usage_limit || 1) : (promo.usage_limit || 0)))
+        });
     } catch (error) {
         console.error('Validation Error:', error);
         res.status(500).json({ error: 'Internal server error.' });
@@ -187,7 +199,7 @@ router.post('/', requireRole('admin'), upload.single('image'), async (req, res) 
         title, description, discount_percent, discount_amount, start_date, end_date, is_active, promo_code, 
         is_loyalty_task, task_type, required_quantity, required_menu_item_id, required_category_id, 
         min_order_amount, applicable_category_id, applicable_menu_item_id,
-        applicable_category_ids, applicable_menu_item_ids
+        applicable_category_ids, applicable_menu_item_ids, usage_limit
     } = req.body;
     const imagePath = req.file ? `/uploads/promos/${req.file.filename}` : null;
 
@@ -196,8 +208,9 @@ router.post('/', requireRole('admin'), upload.single('image'), async (req, res) 
             INSERT INTO promos (
                 title, description, discount_percent, discount_amount, image, start_date, end_date, is_active, promo_code,
                 applicable_category_id, applicable_menu_item_id,
-                applicable_category_ids, applicable_menu_item_ids
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                applicable_category_ids, applicable_menu_item_ids,
+                usage_limit
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
             title, description, 
             parseFloat(discount_percent) || 0, 
@@ -206,7 +219,8 @@ router.post('/', requireRole('admin'), upload.single('image'), async (req, res) 
             start_date || null, end_date || null,
             is_active == '1' ? 1 : 0, promo_code || null,
             applicable_category_id || null, applicable_menu_item_id || null,
-            applicable_category_ids || '[]', applicable_menu_item_ids || '[]'
+            applicable_category_ids || '[]', applicable_menu_item_ids || '[]',
+            parseInt(usage_limit) || 1
         );
         const promoId = info.lastInsertRowid;
 
@@ -243,7 +257,7 @@ router.put('/:id', requireRole('admin'), upload.single('image'), async (req, res
         title, description, discount_percent, discount_amount, start_date, end_date, is_active, promo_code,
         applicable_category_ids, applicable_menu_item_ids,
         is_loyalty_task, task_type, required_quantity, required_menu_item_id, required_category_id,
-        min_order_amount
+        min_order_amount, usage_limit
     } = req.body;
     const campaignId = req.params.id;
 
@@ -272,17 +286,19 @@ router.put('/:id', requireRole('admin'), upload.single('image'), async (req, res
                     UPDATE promos SET 
                         title=?, description=?, discount_percent=?, discount_amount=?, image=?, 
                         start_date=?, end_date=?, is_active=?, promo_code=?,
-                        applicable_category_ids=?, applicable_menu_item_ids=?
+                        applicable_category_ids=?, applicable_menu_item_ids=?,
+                        usage_limit=?
                     WHERE id=?
-                `).run(title, description, discount_percent || 0, discount_amount || 0, imagePath, start_date || null, end_date || null, is_active == '1' ? 1 : 0, promo_code || null, applicable_category_ids || '[]', applicable_menu_item_ids || '[]', promoId);
+                `).run(title, description, discount_percent || 0, discount_amount || 0, imagePath, start_date || null, end_date || null, is_active == '1' ? 1 : 0, promo_code || null, applicable_category_ids || '[]', applicable_menu_item_ids || '[]', parseInt(usage_limit) || 1, promoId);
             } else {
                 await db.prepare(`
                     UPDATE promos SET 
                         title=?, description=?, discount_percent=?, discount_amount=?,
                         start_date=?, end_date=?, is_active=?, promo_code=?,
-                        applicable_category_ids=?, applicable_menu_item_ids=?
+                        applicable_category_ids=?, applicable_menu_item_ids=?,
+                        usage_limit=?
                     WHERE id=?
-                `).run(title, description, discount_percent || 0, discount_amount || 0, start_date || null, end_date || null, is_active == '1' ? 1 : 0, promo_code || null, applicable_category_ids || '[]', applicable_menu_item_ids || '[]', promoId);
+                `).run(title, description, discount_percent || 0, discount_amount || 0, start_date || null, end_date || null, is_active == '1' ? 1 : 0, promo_code || null, applicable_category_ids || '[]', applicable_menu_item_ids || '[]', parseInt(usage_limit) || 1, promoId);
             }
         } else {
             if (req.file) {
@@ -291,17 +307,19 @@ router.put('/:id', requireRole('admin'), upload.single('image'), async (req, res
                     UPDATE promos SET 
                         title=?, description=?, discount_percent=?, discount_amount=?, image=?, 
                         start_date=?, end_date=?, is_active=?, promo_code=?,
-                        applicable_category_ids=?, applicable_menu_item_ids=?
+                        applicable_category_ids=?, applicable_menu_item_ids=?,
+                        usage_limit=?
                     WHERE id=?
-                `).run(title, description, discount_percent || 0, discount_amount || 0, imagePath, start_date || null, end_date || null, is_active == '1' ? 1 : 0, promo_code || null, applicable_category_ids || '[]', applicable_menu_item_ids || '[]', campaignId);
+                `).run(title, description, discount_percent || 0, discount_amount || 0, imagePath, start_date || null, end_date || null, is_active == '1' ? 1 : 0, promo_code || null, applicable_category_ids || '[]', applicable_menu_item_ids || '[]', parseInt(usage_limit) || 1, campaignId);
             } else {
                 await db.prepare(`
                     UPDATE promos SET 
                         title=?, description=?, discount_percent=?, discount_amount=?,
                         start_date=?, end_date=?, is_active=?, promo_code=?,
-                        applicable_category_ids=?, applicable_menu_item_ids=?
+                        applicable_category_ids=?, applicable_menu_item_ids=?,
+                        usage_limit=?
                     WHERE id=?
-                `).run(title, description, discount_percent || 0, discount_amount || 0, start_date || null, end_date || null, is_active == '1' ? 1 : 0, promo_code || null, applicable_category_ids || '[]', applicable_menu_item_ids || '[]', campaignId);
+                `).run(title, description, discount_percent || 0, discount_amount || 0, start_date || null, end_date || null, is_active == '1' ? 1 : 0, promo_code || null, applicable_category_ids || '[]', applicable_menu_item_ids || '[]', parseInt(usage_limit) || 1, campaignId);
             }
         }
 

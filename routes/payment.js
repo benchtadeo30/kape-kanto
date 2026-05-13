@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { db } = require('../database/init');
 const { payrex } = require('../services/payrex');
-const { trackLoyaltyProgress } = require('../services/loyalty');
+const { trackLoyaltyProgress, incrementPromoUsage } = require('../services/loyalty');
 
 // Helper function to handle successful payment
 async function handleSuccessfulPayment(orderId, payrexPaymentId) {
@@ -40,6 +40,11 @@ async function handleSuccessfulPayment(orderId, payrexPaymentId) {
 
         // Track loyalty progress AFTER commit (non-breaking)
         await trackLoyaltyProgress(order.user_id, orderId, order.total);
+        
+        // Increment Promo Usage for online orders
+        if (order.promo_id) {
+            await incrementPromoUsage(order.user_id, order.promo_id);
+        }
 
         return true;
     } catch (error) {

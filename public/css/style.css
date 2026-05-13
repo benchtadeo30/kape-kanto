@@ -329,6 +329,14 @@ textarea.is-invalid,
     font-family: var(--font-body);
     font-size: 1rem;
     color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.kk-select-trigger span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .kk-select-trigger:hover {
@@ -347,6 +355,8 @@ textarea.is-invalid,
     color: var(--primary);
     transition: transform 0.3s ease;
     font-size: 0.9rem;
+    flex-shrink: 0;
+    margin-left: 10px;
 }
 
 .kk-select-container.open .kk-select-trigger i {
@@ -387,6 +397,11 @@ textarea.is-invalid,
     display: flex;
     align-items: center;
     gap: 12px;
+    white-space: nowrap;
+}
+
+.kk-select-option span {
+    white-space: nowrap;
 }
 
 .kk-select-option:hover {
