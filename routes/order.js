@@ -185,6 +185,17 @@ router.post('/', requireAuth, async (req, res) => {
 
         const total = Math.round(((vat_exempt_sales - sc_discount - promo_discount_amount) + final_vat_amount + delivery_fee) * 100) / 100;
 
+        console.log(`[ORDER] === Order Summary ===`);
+        console.log(`[ORDER] Promo Code Received: "${promo_code || 'NONE'}"`);
+        console.log(`[ORDER] Promo Object: ${promoObj ? promoObj.title + ' (ID:' + promoObj.id + ')' : 'NULL'}`);
+        console.log(`[ORDER] Subtotal (Gross): ₱${subtotal}`);
+        console.log(`[ORDER] SC/PWD Discount: ₱${sc_discount}`);
+        console.log(`[ORDER] Promo Discount: ₱${promo_discount_amount}`);
+        console.log(`[ORDER] VAT: ₱${final_vat_amount}`);
+        console.log(`[ORDER] Delivery Fee: ₱${delivery_fee}`);
+        console.log(`[ORDER] FINAL TOTAL: ₱${total}`);
+        console.log(`[ORDER] Payment Method: ${payment_method}`);
+
         const isOnline = payment_method === 'online' || payment_method === 'payrex';
         const finalStatus = isOnline ? 'awaiting_payment' : 'pending';
         const finalPaymentMethod = isOnline ? 'payrex' : payment_method;
