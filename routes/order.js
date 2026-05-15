@@ -107,15 +107,21 @@ router.post('/', requireAuth, async (req, res) => {
                 const coupon = await db.prepare(`SELECT * FROM user_coupons WHERE user_id = ? AND promo_id = ?`).get(req.session.userId, promo.id);
                 
                 if (promo.is_loyalty_reward) {
-                    if (!coupon || coupon.is_used) {
-                        canUsePromo = false;
-                    } else if (coupon.times_used >= (coupon.usage_limit || promo.usage_limit || 1)) {
-                        canUsePromo = false;
+                    if (!coupon) {
+                        canUsePromo = false; // Must have earned this reward
+                    } else {
+                        const currentLimit = Math.max(coupon.usage_limit || 0, promo.usage_limit || 1);
+                        if (coupon.times_used >= currentLimit) {
+                            canUsePromo = false;
+                        }
                     }
                 } else if (promo.usage_limit > 0) {
-                    // Public promo with usage limit
-                    if (coupon && (coupon.is_used || coupon.times_used >= (coupon.usage_limit || promo.usage_limit))) {
-                        canUsePromo = false;
+                    // Public promo with usage limit — check dynamically against current global limit
+                    if (coupon) {
+                        const currentLimit = Math.max(coupon.usage_limit || 0, promo.usage_limit || 0);
+                        if (coupon.times_used >= currentLimit) {
+                            canUsePromo = false;
+                        }
                     }
                 }
 
