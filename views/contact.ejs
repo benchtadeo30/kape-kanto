@@ -1,0 +1,368 @@
+<%- include('partials/header') %>
+
+    <style>
+        :root {
+            --contact-primary: #6f4e37;
+            --contact-accent: #d2b48c;
+            --contact-bg: #fafafa;
+            --contact-card-bg: #ffffff;
+            --contact-text: #2d2d2d;
+            --contact-text-light: #666;
+            --contact-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        }
+
+        .contact-wrapper {
+            padding: 3rem 5%;
+            max-width: 800px;
+            margin: 0 auto;
+            min-height: 80vh;
+        }
+
+        .contact-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .contact-header h1 {
+            font-size: 2.5rem;
+            color: var(--contact-primary);
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+
+        .contact-header p {
+            color: var(--contact-text-light);
+            font-size: 1.1rem;
+        }
+
+        .contact-card {
+            background: var(--contact-card-bg);
+            border-radius: 15px;
+            box-shadow: var(--contact-shadow);
+            padding: 2.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--contact-text);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--contact-primary);
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 150px;
+        }
+
+        .submit-btn {
+            background: var(--contact-primary);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.3s, transform 0.2s;
+        }
+
+        .submit-btn:hover {
+            background: #5a3f2d;
+            transform: translateY(-2px);
+        }
+
+        .success-alert {
+            background: #d4edda;
+            color: #155724;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            border: 1px solid #c3e6cb;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .contact-card {
+                padding: 1.5rem;
+            }
+        }
+
+        /* Modern Custom Select Styles */
+        .custom-select-container {
+            position: relative;
+            user-select: none;
+        }
+
+        .custom-select-trigger {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 1.2rem;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 1rem;
+            color: var(--contact-text);
+        }
+
+        .custom-select-trigger:hover {
+            border-color: var(--contact-primary);
+            box-shadow: 0 4px 12px rgba(111, 78, 55, 0.1);
+        }
+
+        .custom-select-container.open .custom-select-trigger {
+            border-color: var(--contact-primary);
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+            box-shadow: 0 4px 12px rgba(111, 78, 55, 0.1);
+        }
+
+        .custom-select-trigger i {
+            font-size: 0.8rem;
+            transition: transform 0.3s;
+            color: var(--contact-primary);
+        }
+
+        .custom-select-container.open .custom-select-trigger i {
+            transform: rotate(180deg);
+        }
+
+        .custom-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid var(--contact-primary);
+            border-top: none;
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 100;
+            overflow: hidden;
+        }
+
+        .custom-select-container.open .custom-options {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .custom-option {
+            padding: 0.8rem 1.2rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--contact-text-light);
+        }
+
+        .custom-option i {
+            width: 20px;
+            text-align: center;
+            font-size: 1.1rem;
+            color: var(--contact-primary);
+            opacity: 0.7;
+        }
+
+        .custom-option:hover {
+            background: #fdfaf7;
+            color: var(--contact-primary);
+            padding-left: 1.5rem;
+        }
+
+        .custom-option.selected {
+            background: #fdfaf7;
+            color: var(--contact-primary);
+            font-weight: 700;
+        }
+    </style>
+
+    <div class="contact-wrapper">
+        <div class="contact-header">
+            <h1>Contact Us</h1>
+            <p>Have a question, feedback, or suggestion? We'd love to hear from you!</p>
+        </div>
+
+        <% if (typeof success !== 'undefined' && success) { %>
+            <div class="success-alert">
+                <i class="fa-solid fa-check-circle"></i> <%= success %>
+            </div>
+        <% } %>
+
+        <div class="contact-card">
+            <div id="contact-response" style="display: none;"></div>
+            <form id="contact-form">
+                <div class="form-group">
+                    <label for="name">Name</label>
+                    <input type="text" id="name" name="name" class="form-control" required placeholder="Your full name" value="<%= typeof user !== 'undefined' && user ? user.username : '' %>">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" class="form-control" required placeholder="Your email address" value="<%= typeof user !== 'undefined' && user ? user.email : '' %>">
+                </div>
+
+                <div class="form-group">
+                    <label for="subject">Subject</label>
+                    <div class="custom-select-container" id="subject-container">
+                        <div class="custom-select-trigger">
+                            <span id="selected-subject">Select a subject</span>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </div>
+                        <div class="custom-options">
+                            <div class="custom-option" data-value="feedback">
+                                <i class="fa-solid fa-comments"></i> General Feedback
+                            </div>
+                            <div class="custom-option" data-value="support">
+                                <i class="fa-solid fa-circle-question"></i> Technical Support
+                            </div>
+                            <div class="custom-option" data-value="order">
+                                <i class="fa-solid fa-box-open"></i> Order Inquiry
+                            </div>
+                            <div class="custom-option" data-value="other">
+                                <i class="fa-solid fa-ellipsis"></i> Other
+                            </div>
+                        </div>
+                        <input type="hidden" name="subject" id="subject-input" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="message">Message</label>
+                    <textarea id="message" name="message" class="form-control" required placeholder="How can we help you?"></textarea>
+                </div>
+
+                <button type="submit" class="submit-btn" id="submit-btn">Send Message</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('subject-container');
+            const trigger = container.querySelector('.custom-select-trigger');
+            const options = container.querySelectorAll('.custom-option');
+            const selectedText = document.getElementById('selected-subject');
+            const hiddenInput = document.getElementById('subject-input');
+
+            // Toggle dropdown
+            trigger.addEventListener('click', (e) => {
+                container.classList.toggle('open');
+                e.stopPropagation();
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', () => {
+                container.classList.remove('open');
+            });
+
+            // Handle option selection
+            options.forEach(option => {
+                option.addEventListener('click', function() {
+                    const value = this.getAttribute('data-value');
+                    const text = this.innerText;
+                    
+                    selectedText.innerText = text;
+                    hiddenInput.value = value;
+                    
+                    // Remove selected class from others
+                    options.forEach(opt => opt.classList.remove('selected'));
+                    this.classList.add('selected');
+                    
+                    container.classList.remove('open');
+                    
+                    // Visual feedback
+                    trigger.style.borderColor = 'var(--contact-primary)';
+                });
+            });
+
+            // Form Submission
+            const form = document.getElementById('contact-form');
+            const submitBtn = document.getElementById('submit-btn');
+            const responseDiv = document.getElementById('contact-response');
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                // Clear previous errors
+                const subjectContainer = document.getElementById('subject-container');
+                if (window.removeValidationError) removeValidationError(subjectContainer);
+
+                if (!hiddenInput.value) {
+                    if (window.showValidationError) {
+                        subjectContainer.setAttribute('data-error', 'Please select a subject');
+                        showValidationError(subjectContainer);
+                    } else {
+                        KapeKanto.toast('Please select a subject.', 'warning');
+                    }
+                    return;
+                }
+
+                submitBtn.disabled = true;
+                submitBtn.innerText = 'Sending...';
+                
+                const formData = {
+                    name: document.getElementById('name').value,
+                    email: document.getElementById('email').value,
+                    subject: hiddenInput.value,
+                    message: document.getElementById('message').value
+                };
+
+                try {
+                    const response = await fetch('/contact', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(formData)
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        responseDiv.innerHTML = `<div class="success-alert" style="margin-bottom: 2rem;"><i class="fa-solid fa-check-circle"></i> ${result.message}</div>`;
+                        responseDiv.style.display = 'block';
+                        form.style.display = 'none';
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        KapeKanto.toast('Message sent successfully!', 'success');
+                    } else {
+                        throw new Error(result.error || 'Failed to send message');
+                    }
+                } catch (err) {
+                    KapeKanto.toast(err.message, 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = 'Send Message';
+                }
+            });
+        });
+    </script>
+
+<%- include('partials/footer') %>

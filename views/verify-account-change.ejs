@@ -149,6 +149,12 @@
     } else if (type === 'remove_email') {
         titleEl.innerText = 'Verify Email Removal';
         textEl.innerText = 'Confirm that you want to remove your email address from this account.';
+    } else if (type === 'update_id') {
+        titleEl.innerText = 'Verify ID Update';
+        textEl.innerText = 'Confirm that you want to update your verified ID. This will temporarily suspend your discount until the new ID is reviewed.';
+    } else if (type === 'remove_id') {
+        titleEl.innerText = 'Verify ID Removal';
+        textEl.innerText = 'Confirm that you want to remove your verified ID. You will lose your 20% discount immediately.';
     } else {
         titleEl.innerText = 'Confirm Profile Changes';
         textEl.innerText = 'Enter the security code we sent to your registered email to save your profile updates.';

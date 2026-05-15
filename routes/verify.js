@@ -55,7 +55,7 @@ router.post('/upload-id', requireAuth, upload.fields([
         const idImagePath = `/uploads/ids/${idFile.filename}`;
         const selfieImagePath = `/uploads/ids/${selfieFile.filename}`;
 
-        console.log(`[ID Verification] Submission for user ${userId}, type: ${id_type}, ID#: ${id_number}`);
+        const isUpdate = req.session.canUpdateID || false;
         
         await db.prepare(`
             UPDATE users 
@@ -66,7 +66,11 @@ router.post('/upload-id', requireAuth, upload.fields([
                 id_verification_message = 'Your ID has been submitted and is under review by our team. You will be notified once verified.',
                 id_verification_notes = ?
             WHERE id = ?
-        `).run(idImagePath, selfieImagePath, id_number.trim(), JSON.stringify({ id_type, submitted_at: new Date().toISOString() }), userId);
+        `).run(idImagePath, selfieImagePath, id_number.trim(), JSON.stringify({ id_type, submitted_at: new Date().toISOString(), is_update: isUpdate }), userId);
+
+        if (isUpdate) {
+            req.session.canUpdateID = false;
+        }
 
         res.json({
             message: 'Your ID and selfie have been submitted for review. Our team will verify your identity shortly.',

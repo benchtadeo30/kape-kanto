@@ -102,6 +102,27 @@ router.get('/reset-password', (req, res) => {
     res.render('reset-password', { token, title: 'Reset Password - Kape Kanto Hub' });
 });
 
+router.get('/contact', (req, res) => {
+    res.render('contact', { title: 'Contact Us - Kape Kanto Hub', success: null });
+});
+
+router.post('/contact', async (req, res) => {
+    const { name, email, subject, message } = req.body;
+    
+    if (!name || !email || !subject || !message) {
+        return res.status(400).json({ error: 'All fields are required.' });
+    }
+
+    try {
+        const { sendContactFeedbackEmail } = require('../services/email');
+        await sendContactFeedbackEmail(name, email, subject, message);
+        res.json({ message: 'Thank you for your feedback! We have received your message and will get back to you soon.' });
+    } catch (error) {
+        console.error('Contact form error:', error);
+        res.status(500).json({ error: 'Failed to send your message. Please try again later.' });
+    }
+});
+
 // --- CUSTOMER PAGES ---
 
 router.get('/cart', pageRequireAuth, (req, res) => {

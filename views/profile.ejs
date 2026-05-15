@@ -943,7 +943,7 @@
         }
 
         function confirmUpdateID(btn) {
-            KapeKanto.confirm('Are you sure you want to update your ID? Your current verified status will be temporarily suspended until the new ID is reviewed.', () => {
+            KapeKanto.confirm('Are you sure you want to update your ID? Your current verified status and discount will remain active until your new submission is reviewed.', () => {
                 requestAccountChange('update_id', {}, btn);
             }, { title: 'Update ID Verification', confirmText: 'Yes, Send Code', type: 'warning' });
         }
