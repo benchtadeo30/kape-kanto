@@ -4,7 +4,7 @@ let addressSearchTimer = null;
 document.addEventListener('DOMContentLoaded', () => {
     renderCartItems();
 
-    // ── Flatpickr Unified Date/Time Picker ─────────────────────────────────
+    // â”€â”€ Flatpickr Unified Date/Time Picker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const now = new Date();
     const minLeadTime = new Date(now.getTime() + 30 * 60000); // 30 mins from now
 
@@ -112,7 +112,7 @@ async function syncCartPrices() {
     } catch (e) { console.error('Price sync failed', e); }
 }
 
-// ── Render Cart Items ────────────────────────────────────────
+// â”€â”€ Render Cart Items â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderCartItems() {
     const cart = getCart();
     const container = document.getElementById('cart-items-container');
@@ -159,7 +159,7 @@ function renderCartItems() {
                     ${customizationHtml}
                 </div>
                 <div style="display:flex;align-items:center;background:#f5f5f5;border-radius:50px;padding:4px 10px;gap:0.75rem;">
-                    <button class="btn" style="padding:3px 10px;background:transparent;" onclick="updateQuantityByIndex(${index},-1)">−</button>
+                    <button class="btn" style="padding:3px 10px;background:transparent;" onclick="updateQuantityByIndex(${index},-1)">âˆ’</button>
                     <span style="font-weight:700;min-width:18px;text-align:center;">${item.quantity}</span>
                     <button class="btn" style="padding:3px 10px;background:transparent;" onclick="updateQuantityByIndex(${index},1)">+</button>
                 </div>
@@ -191,7 +191,7 @@ function removeItemByIndex(index) {
     renderCartItems();
 }
 
-// ── Delivery / Pickup Toggle ─────────────────────────────────
+// â”€â”€ Delivery / Pickup Toggle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function setOrderType(type) {
     document.getElementById('order-type').value = type;
     document.querySelectorAll('.cart-tab-btn[data-group="order"]').forEach(btn => {
@@ -204,7 +204,7 @@ function setOrderType(type) {
     toggleDeliveryFields();
 }
 
-// ── Payment Method Toggle ────────────────────────────────────
+// â”€â”€ Payment Method Toggle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function setPaymentMethod(type) {
     document.getElementById('payment-method').value = type;
     document.querySelectorAll('.cart-tab-btn[data-group="payment"]').forEach(btn => {
@@ -236,7 +236,7 @@ function toggleDeliveryFields() {
     checkHotWarning();
 }
 
-// ── Schedule Mode Toggle ─────────────────────────────────────
+// â”€â”€ Schedule Mode Toggle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function setScheduleMode(mode) {
     document.getElementById('schedule-mode').value = mode;
     document.querySelectorAll('.cart-tab-btn[data-group="schedule"]').forEach(btn => {
@@ -308,7 +308,7 @@ function updateCheckoutUI() {
     }
 }
 
-// ── Philippines Address Search ───────────────────────────────
+// â”€â”€ Philippines Address Search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function handleAddressInput(val) {
     clearTimeout(addressSearchTimer);
     const suggestions = document.getElementById('address-suggestions');
@@ -319,7 +319,7 @@ function handleAddressInput(val) {
         return;
     }
 
-    suggestions.innerHTML = '<div class="suggestion-loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Searching…</div>';
+    suggestions.innerHTML = '<div class="suggestion-loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Searchingâ€¦</div>';
     suggestions.classList.add('open');
 
     addressSearchTimer = setTimeout(() => searchAddress(val), 500);
@@ -366,7 +366,7 @@ async function detectMyLocation() {
         return;
     }
 
-    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Detecting…';
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Detectingâ€¦';
     btn.disabled = true;
 
     navigator.geolocation.getCurrentPosition(async (pos) => {
@@ -470,7 +470,7 @@ function removePromo() {
     renderCartItems();
 }
 
-// ── Update Totals ────────────────────────────────────────────
+// â”€â”€ Update Totals â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function updateTotals() {
     const cart = getCart();
     let subtotal = 0; 
@@ -538,11 +538,11 @@ function updateTotals() {
 
         if (promoDiscount > 0) {
             if (isSeniorOrPWD) {
-                const label = activePromo.discount_percent > 0 ? `${activePromo.discount_percent}%` : `₱${activePromo.discount_amount}`;
+                const label = activePromo.discount_percent > 0 ? `${activePromo.discount_percent}%` : `â‚±${activePromo.discount_amount}`;
                 discountLabelStr += ` + ${label} Promo`;
             } else {
-                const label = activePromo.discount_percent > 0 ? `${activePromo.discount_percent}%` : `₱${activePromo.discount_amount}`;
-                discountLabelStr = `🏷️ Promo (${label} off)`;
+                const label = activePromo.discount_percent > 0 ? `${activePromo.discount_percent}%` : `â‚±${activePromo.discount_amount}`;
+                discountLabelStr = `ðŸ·ï¸ Promo (${label} off)`;
             }
         } else if ((activePromo.discount_percent > 0 || activePromo.discount_amount > 0) && applicableGross === 0 && hasRestrictions) {
             const statusDiv = document.getElementById('promo-status');
@@ -591,7 +591,7 @@ function updateTotals() {
     // 4. Update UI
     const setVal = (id, val, isDeduction = false) => {
         const el = document.getElementById(id);
-        if (el) el.innerText = `${isDeduction ? '-' : ''}₱${val.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        if (el) el.innerText = `${isDeduction ? '-' : ''}â‚±${val.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
     };
 
     setVal('summary-subtotal', subtotal);
@@ -603,11 +603,11 @@ function updateTotals() {
             <div style="font-size: 0.85rem; color: var(--text-light); margin-top: 4px;">
                 <div style="display:flex; justify-content:space-between;">
                     <span>VAT-Exempt Discount (12%):</span>
-                    <span>-₱${vatRemovedAmount.toFixed(2)}</span>
+                    <span>-â‚±${vatRemovedAmount.toFixed(2)}</span>
                 </div>
                 <div style="display:flex; justify-content:space-between;">
                     <span>${window.userDiscounts.type} Disc (20%):</span>
-                    <span>-₱${scDiscount.toFixed(2)}</span>
+                    <span>-â‚±${scDiscount.toFixed(2)}</span>
                 </div>
             </div>
         `;
@@ -615,12 +615,12 @@ function updateTotals() {
             scHtml += `
                 <div style="display:flex; justify-content:space-between;">
                     <span>Promo Discount:</span>
-                    <span>-₱${promoDiscount.toFixed(2)}</span>
+                    <span>-â‚±${promoDiscount.toFixed(2)}</span>
                 </div>
             `;
         }
         discountContainer.innerHTML = scHtml;
-        document.getElementById('summary-discount-total').innerText = `-₱${(discountAmount + vatRemovedAmount).toFixed(2)}`;
+        document.getElementById('summary-discount-total').innerText = `-â‚±${(discountAmount + vatRemovedAmount).toFixed(2)}`;
     } else {
         setVal('summary-discount-total', displayDiscountAmount, true);
         if (promoDiscount > 0) {
@@ -669,7 +669,8 @@ function updateTotals() {
     }
 }
 
-// ── Place Order ──────────────────────────────────────────────
+
+// â”€â”€ Place Order â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function placeOrder() {
     const cart = getCart();
     if (cart.length === 0) return;
@@ -701,7 +702,7 @@ async function placeOrder() {
     }
 
     btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Processing…';
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Processingâ€¦';
 
     const orderData = {
         items: cart.map(item => ({
@@ -734,9 +735,14 @@ async function placeOrder() {
                 window.location.href = data.checkoutUrl;
             } else {
                 clearCart();
-                showToast('Order placed successfully! 🎉', 'success');
+                showToast('Order placed successfully! ðŸŽ‰', 'success');
                 setTimeout(() => window.location.href = '/order-tracking', 1200);
             }
+        } else if (res.status === 403 && data.requires_phone_verification) {
+            // Halted for phone verification
+            btn.disabled = false;
+            updateCheckoutUI();
+            openPhoneVerificationModal();
         } else {
             showToast(data.error || 'Failed to place order.', 'error');
             btn.disabled = false;
@@ -749,8 +755,103 @@ async function placeOrder() {
     }
 }
 
+// â”€â”€ Phone Verification Modal Logic â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+function openPhoneVerificationModal() {
+    document.getElementById('phone-verification-modal').style.display = 'flex';
+    document.getElementById('phone-step-1').style.display = 'block';
+    document.getElementById('phone-step-2').style.display = 'none';
+    document.getElementById('verify-phone-number').value = '';
+    document.getElementById('verify-phone-otp').value = '';
+}
+
+function closePhoneVerificationModal() {
+    document.getElementById('phone-verification-modal').style.display = 'none';
+}
+
+function resetPhoneVerification() {
+    document.getElementById('phone-step-1').style.display = 'block';
+    document.getElementById('phone-step-2').style.display = 'none';
+    document.getElementById('verify-phone-number').value = '';
+}
+
+async function requestPhoneOTP() {
+    const phoneInput = document.getElementById('verify-phone-number');
+    const phoneNumber = phoneInput.value.trim();
+    const btn = document.getElementById('btn-request-otp');
+
+    if (!phoneNumber || phoneNumber.length < 10) {
+        showToast('Please enter a valid phone number.', 'error');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Sending...';
+
+    try {
+        const res = await fetch('/api/verify/request-phone-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone_number: phoneNumber })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            showToast('OTP sent successfully!', 'success');
+            document.getElementById('phone-step-1').style.display = 'none';
+            document.getElementById('phone-step-2').style.display = 'block';
+        } else {
+            showToast(data.error || 'Failed to send OTP.', 'error');
+        }
+    } catch (e) {
+        showToast('An error occurred. Please try again.', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Send Verification Code';
+    }
+}
+
+async function verifyPhoneOTP() {
+    const otpInput = document.getElementById('verify-phone-otp');
+    const otp = otpInput.value.trim();
+    const phoneNumber = document.getElementById('verify-phone-number').value.trim();
+    const btn = document.getElementById('btn-verify-otp');
+
+    if (!otp || otp.length !== 4) {
+        showToast('Please enter the 4-digit OTP.', 'error');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Verifying...';
+
+    try {
+        const res = await fetch('/api/verify/verify-phone-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone_number: phoneNumber, otp: otp })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            showToast('Phone verified! Placing order...', 'success');
+            closePhoneVerificationModal();
+            // Automatically retry placing the order
+            placeOrder();
+        } else {
+            showToast(data.error || 'Invalid OTP.', 'error');
+            btn.disabled = false;
+            btn.innerHTML = 'Verify & Place Order';
+        }
+    } catch (e) {
+        showToast('An error occurred. Please try again.', 'error');
+        btn.disabled = false;
+        btn.innerHTML = 'Verify & Place Order';
+    }
+}
+
 function getPriceHtml(item) {
-    if (!activePromo) return `<span style="color:var(--primary);font-weight:700;">₱${item.price.toFixed(2)}</span>`;
+    if (!activePromo) return `<span style="color:var(--primary);font-weight:700;">â‚±${item.price.toFixed(2)}</span>`;
 
     let validCats = [];
     let validItems = [];
@@ -771,22 +872,22 @@ function getPriceHtml(item) {
     const hasRestrictions = validCats.length > 0 || validItems.length > 0;
     const isEligible = !hasRestrictions || validItems.includes(String(item.id)) || validCats.includes(String(item.category_id || item.categoryId || ''));
 
-    if (!isEligible) return `<span style="color:var(--primary);font-weight:700;">₱${item.price.toFixed(2)}</span>`;
+    if (!isEligible) return `<span style="color:var(--primary);font-weight:700;">â‚±${item.price.toFixed(2)}</span>`;
 
     let discountedPrice = item.price;
     if (activePromo.discount_percent > 0) {
         discountedPrice = item.price * (1 - activePromo.discount_percent / 100);
     } else if (activePromo.discount_amount > 0) {
         if (!hasRestrictions) {
-            return `<span style="color:var(--primary);font-weight:700;">₱${item.price.toFixed(2)}</span>`;
+            return `<span style="color:var(--primary);font-weight:700;">â‚±${item.price.toFixed(2)}</span>`;
         }
         discountedPrice = Math.max(0, item.price - activePromo.discount_amount);
     }
 
-    if (discountedPrice >= item.price) return `<span style="color:var(--primary);font-weight:700;">₱${item.price.toFixed(2)}</span>`;
+    if (discountedPrice >= item.price) return `<span style="color:var(--primary);font-weight:700;">â‚±${item.price.toFixed(2)}</span>`;
 
     return `
-        <span style="text-decoration: line-through; color: #999; font-size: 0.85rem;">₱${item.price.toFixed(2)}</span>
-        <span style="color: var(--success); font-weight: 800;">₱${discountedPrice.toFixed(2)}</span>
+        <span style="text-decoration: line-through; color: #999; font-size: 0.85rem;">â‚±${item.price.toFixed(2)}</span>
+        <span style="color: var(--success); font-weight: 800;">â‚±${discountedPrice.toFixed(2)}</span>
     `;
 }

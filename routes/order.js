@@ -16,6 +16,16 @@ router.post('/', requireAuth, async (req, res) => {
     try {
         await db.beginTransaction();
 
+        // Clean up any stale awaiting_payment orders from this user (prevents duplicates)
+        const staleOrders = await db.prepare(
+            `SELECT id FROM orders WHERE user_id = ? AND status = 'awaiting_payment' AND payment_status = 'awaiting'`
+        ).all(userId);
+        for (const stale of staleOrders) {
+            await db.prepare('DELETE FROM order_items WHERE order_id = ?').run(stale.id);
+            await db.prepare('DELETE FROM orders WHERE id = ?').run(stale.id);
+            console.log(`[ORDER] Cleaned up stale awaiting_payment order #${stale.id}`);
+        }
+
         // 1. Get user details
         const user = await db.prepare(`SELECT * FROM users WHERE id = ?`).get(userId);
 
@@ -23,6 +33,42 @@ router.post('/', requireAuth, async (req, res) => {
         if (user.role === 'customer' && user.is_verified != 1) {
             await db.rollback();
             return res.status(403).json({ error: 'You must verify your email before placing an order.' });
+        }
+
+        // Phone Verification Check for Suspicious Orders
+        if (order_type === 'delivery' && !user.is_phone_verified && user.role === 'customer') {
+            // Check orders from the last 24 hours
+            const pastDayOrders = await db.prepare(`
+                SELECT delivery_address 
+                FROM orders 
+                WHERE user_id = ? AND created_at >= datetime('now', '-1 day')
+            `).all(userId);
+
+            const totalOrdersToday = pastDayOrders.length;
+            const uniqueAddresses = new Set();
+            pastDayOrders.forEach(o => { 
+                if (o.delivery_address) uniqueAddresses.add(o.delivery_address.toLowerCase().trim()); 
+            });
+            
+            let isSuspicious = false;
+            
+            // Flag if this is the 3rd order within 24 hours
+            if (totalOrdersToday >= 2) {
+                isSuspicious = true;
+            }
+            
+            // Flag if this is a new delivery address and they've already used at least one other address today
+            if (uniqueAddresses.size >= 1 && delivery_address && !uniqueAddresses.has(delivery_address.toLowerCase().trim())) {
+                isSuspicious = true;
+            }
+
+            if (isSuspicious) {
+                await db.rollback();
+                return res.status(403).json({ 
+                    requires_phone_verification: true, 
+                    reason: 'unusual_activity' 
+                });
+            }
         }
         
         // 2. Validate items and calculate subtotal
@@ -213,11 +259,16 @@ router.post('/', requireAuth, async (req, res) => {
 
         if (finalScheduleMode === 'asap') {
             const now = new Date();
+            // Convert to PHT (UTC+8) — server may run in UTC
+            const phtOffset = 8 * 60 * 60000;
+            const phtNow = new Date(now.getTime() + phtOffset);
             const leadMinutes = order_type === 'delivery' ? 45 : 20;
-            const eta = new Date(now.getTime() + leadMinutes * 60000);
-            estimatedReadyTime = eta.toISOString();
-            finalScheduledDate = null;
-            finalScheduledTime = null;
+            const eta = new Date(phtNow.getTime() + leadMinutes * 60000);
+            // Store as ISO but in PHT context
+            const pad = (n) => String(n).padStart(2, '0');
+            estimatedReadyTime = `${eta.getUTCFullYear()}-${pad(eta.getUTCMonth()+1)}-${pad(eta.getUTCDate())}T${pad(eta.getUTCHours())}:${pad(eta.getUTCMinutes())}:${pad(eta.getUTCSeconds())}`;
+            finalScheduledDate = `${eta.getUTCFullYear()}-${pad(eta.getUTCMonth()+1)}-${pad(eta.getUTCDate())}`;
+            finalScheduledTime = `${pad(eta.getUTCHours())}:${pad(eta.getUTCMinutes())}`;
         }
 
         // 4. Create Order
@@ -491,7 +542,7 @@ router.get('/all', requireRole('admin', 'staff'), async (req, res) => {
             params.push(status);
         }
 
-        query += ` ORDER BY o.created_at DESC`;
+        query += ` ORDER BY o.updated_at DESC, o.created_at DESC`;
 
         if (!isNaN(limit)) {
             query += ` LIMIT ? OFFSET ?`;
@@ -629,6 +680,70 @@ router.delete('/:id', requireRole('admin', 'staff'), async (req, res) => {
         await db.rollback();
         console.error('Delete error:', error);
         res.status(500).json({ error: 'Failed to delete order.' });
+    }
+});
+
+// GET /api/orders/:id/messages (Customer/Staff/Admin)
+router.get('/:id/messages', requireAuth, async (req, res) => {
+    const orderId = req.params.id;
+    const userId = req.session.userId;
+    const role = req.session.role;
+
+    try {
+        const order = await db.prepare('SELECT user_id FROM orders WHERE id = ?').get(orderId);
+        if (!order) return res.status(404).json({ error: 'Order not found' });
+        
+        if (role === 'customer' && order.user_id !== userId) {
+            return res.status(403).json({ error: 'Unauthorized access' });
+        }
+
+        const messages = await db.prepare(`
+            SELECT m.*, u.username, u.role 
+            FROM order_messages m
+            LEFT JOIN users u ON m.user_id = u.id
+            WHERE m.order_id = ?
+            ORDER BY m.created_at ASC
+        `).all(orderId);
+
+        res.json(messages);
+    } catch (e) {
+        console.error('Fetch messages error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// POST /api/orders/:id/messages (Customer/Staff/Admin)
+router.post('/:id/messages', requireAuth, async (req, res) => {
+    const orderId = req.params.id;
+    const userId = req.session.userId;
+    const role = req.session.role;
+    const { message } = req.body;
+
+    if (!message || !message.trim()) return res.status(400).json({ error: 'Message is required' });
+
+    try {
+        const order = await db.prepare('SELECT user_id FROM orders WHERE id = ?').get(orderId);
+        if (!order) return res.status(404).json({ error: 'Order not found' });
+        
+        if (role === 'customer' && order.user_id !== userId) {
+            return res.status(403).json({ error: 'Unauthorized access' });
+        }
+
+        const result = await db.prepare(
+            'INSERT INTO order_messages (order_id, user_id, message) VALUES (?, ?, ?)'
+        ).run(orderId, userId, message.trim());
+
+        const insertedMessage = await db.prepare(`
+            SELECT m.*, u.username, u.role 
+            FROM order_messages m
+            LEFT JOIN users u ON m.user_id = u.id
+            WHERE m.id = ?
+        `).get(result.lastInsertRowid);
+
+        res.json(insertedMessage);
+    } catch (e) {
+        console.error('Post message error:', e);
+        res.status(500).json({ error: 'Internal server error' });
     }
 });
 

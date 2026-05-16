@@ -246,7 +246,12 @@
                         </div>
                         <div>
                             <label style="font-weight: 600; font-size: 0.9rem; color: #666; display: block; margin-bottom: 8px;">Password</label>
-                            <input type="password" id="new-password" required placeholder="••••••••" style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #eee;">
+                            <div style="position: relative;">
+                                <input type="password" id="new-password" required placeholder="••••••••" style="width: 100%; padding: 12px; padding-right: 44px; border-radius: 12px; border: 1px solid #eee;">
+                                <button type="button" onclick="togglePasswordVisibility('new-password', this)" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #999; font-size: 1.1rem; padding: 4px 8px; border-radius: 8px; transition: color 0.2s;" title="Show password">
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
+                            </div>
                             <p style="font-size: 0.7rem; color: #888; margin-top: 5px; line-height: 1.3;">
                                 <i class="fa-solid fa-circle-info"></i> 5+ chars, 1 upper, 2 numbers, 1 special.
                             </p>
@@ -293,7 +298,12 @@
                         </div>
                         <div>
                             <label style="font-weight: 600; font-size: 0.9rem; color: #666; display: block; margin-bottom: 8px;">New Password (Optional)</label>
-                            <input type="password" id="edit-password" placeholder="Leave blank to keep current" style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #eee;">
+                            <div style="position: relative;">
+                                <input type="password" id="edit-password" placeholder="Leave blank to keep current" style="width: 100%; padding: 12px; padding-right: 44px; border-radius: 12px; border: 1px solid #eee;">
+                                <button type="button" onclick="togglePasswordVisibility('edit-password', this)" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #999; font-size: 1.1rem; padding: 4px 8px; border-radius: 8px; transition: color 0.2s;" title="Show password">
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -307,6 +317,24 @@
 </div>
 
 <script>
+    function togglePasswordVisibility(inputId, btn) {
+        const input = document.getElementById(inputId);
+        const icon = btn.querySelector('i');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+            btn.style.color = 'var(--primary)';
+            btn.title = 'Hide password';
+        } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+            btn.style.color = '#999';
+            btn.title = 'Show password';
+        }
+    }
+
     let userPage = 1;
     const PAGE_LIMIT = 10;
     let searchTimeout = null;

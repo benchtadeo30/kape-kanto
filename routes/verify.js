@@ -190,4 +190,70 @@ router.post('/cancel-id-update', requireAuth, (req, res) => {
     res.json({ message: 'ID update cancelled.' });
 });
 
+// ── Phone Verification (Twilio SMS OTP) ─────────────────────────────────
+
+// POST /api/verify/request-phone-otp
+router.post('/request-phone-otp', requireAuth, async (req, res) => {
+    const { phone_number } = req.body;
+    if (!phone_number || phone_number.trim().length < 10) {
+        return res.status(400).json({ error: 'Please enter a valid phone number.' });
+    }
+
+    try {
+        const userId = req.session.userId;
+        const otp = Math.floor(1000 + Math.random() * 9000).toString(); // 4-digit OTP
+        const expiresAt = new Date(Date.now() + 10 * 60000).toISOString(); // 10 mins expiry
+
+        await db.prepare(`
+            UPDATE users 
+            SET phone_otp = ?, phone_otp_expires = ?
+            WHERE id = ?
+        `).run(otp, expiresAt, userId);
+
+        const { sendOTP } = require('../services/twilio');
+        await sendOTP(phone_number.trim(), otp);
+
+        res.json({ message: 'OTP sent successfully.' });
+    } catch (error) {
+        console.error('Request Phone OTP Error:', error);
+        res.status(500).json({ error: 'Failed to send OTP.' });
+    }
+});
+
+// POST /api/verify/verify-phone-otp
+router.post('/verify-phone-otp', requireAuth, async (req, res) => {
+    const { otp, phone_number } = req.body;
+    if (!otp || !phone_number) {
+        return res.status(400).json({ error: 'OTP and phone number are required.' });
+    }
+
+    try {
+        const userId = req.session.userId;
+        const user = await db.prepare(`
+            SELECT phone_otp, phone_otp_expires 
+            FROM users WHERE id = ?
+        `).get(userId);
+
+        if (!user || user.phone_otp !== otp.trim()) {
+            return res.status(400).json({ error: 'Invalid OTP.' });
+        }
+
+        const expiresAt = new Date(user.phone_otp_expires);
+        if (new Date() > expiresAt) {
+            return res.status(400).json({ error: 'OTP has expired. Please request a new one.' });
+        }
+
+        await db.prepare(`
+            UPDATE users 
+            SET is_phone_verified = 1, phone_number = ?, phone_otp = NULL, phone_otp_expires = NULL
+            WHERE id = ?
+        `).run(phone_number.trim(), userId);
+
+        res.json({ message: 'Phone number verified successfully.' });
+    } catch (error) {
+        console.error('Verify Phone OTP Error:', error);
+        res.status(500).json({ error: 'Failed to verify OTP.' });
+    }
+});
+
 module.exports = router;

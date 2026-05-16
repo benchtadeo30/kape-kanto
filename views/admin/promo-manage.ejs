@@ -229,6 +229,7 @@
         <div style="flex: 1; overflow-y: auto; padding: 2rem;">
             <form id="campaign-form" style="position: relative; z-index: 10; overflow: visible !important;">
             <input type="hidden" id="campaign-id">
+            <input type="hidden" id="campaign-type">
             
             <!-- Type Selector Tabs -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 2rem; background: #f0f0f0; padding: 5px; border-radius: 12px;">
@@ -1248,7 +1249,7 @@
         document.getElementById('subfield-item').style.display = (type === 'buy_specific_item') ? 'block' : 'none';
         document.getElementById('subfield-category').style.display = (type === 'buy_from_category') ? 'block' : 'none';
         document.getElementById('subfield-amount').style.display = (type === 'minimum_spend') ? 'block' : 'none';
-        document.getElementById('subfield-quantity').style.display = (['buy_specific_item', 'buy_from_category', 'order_count', 'minimum_spend'].includes(type)) ? 'block' : 'none';
+        document.getElementById('subfield-quantity').style.display = (['buy_specific_item', 'buy_from_category', 'order_count'].includes(type)) ? 'block' : 'none';
         
         const labels = {
             buy_specific_item: 'Required Quantity',
@@ -1273,6 +1274,14 @@
     function openModal() {
         document.getElementById('campaign-form').reset();
         document.getElementById('campaign-id').value = '';
+        document.getElementById('campaign-type').value = '';
+        
+        // Re-enable type switching when creating new
+        document.querySelectorAll('input[name="is_loyalty_task"]').forEach(el => el.disabled = false);
+        document.getElementById('tab-promo').style.opacity = '1';
+        document.getElementById('tab-task').style.opacity = '1';
+        document.querySelector('input[name="is_loyalty_task"][value="0"]').checked = true;
+        
         document.getElementById('modal-title').innerText = 'Build Campaign';
         document.getElementById('campaign-file-display').innerText = 'Click to upload banner';
         
@@ -1307,8 +1316,16 @@
         if (!item) return;
 
         openModal();
+        
+        // Disable type switching when editing
+        document.querySelectorAll('input[name="is_loyalty_task"]').forEach(el => el.disabled = true);
+        document.getElementById('tab-promo').style.opacity = '0.5';
+        document.getElementById('tab-task').style.opacity = '0.5';
+        document.getElementById(`tab-${type}`).style.opacity = '1';
+        
         document.getElementById('modal-title').innerText = 'Edit Campaign';
         document.getElementById('campaign-id').value = item.id;
+        document.getElementById('campaign-type').value = item.type;
         
         document.getElementById('campaign-title').value = item.title || '';
         document.getElementById('campaign-desc').value = item.description || item.customer_description || '';
@@ -1411,7 +1428,13 @@
             formData.append('discount_amount', document.getElementById('campaign-flat-discount').value);
         }
         
-        formData.append('promo_code', document.getElementById('campaign-code').value);
+        const promoCode = document.getElementById('campaign-code').value;
+        if (!promoCode || !promoCode.trim()) {
+            KapeKanto.toast('Promo code is required.', 'error');
+            return;
+        }
+        
+        formData.append('promo_code', promoCode);
         formData.append('applicable_category_ids', JSON.stringify(selectedAppCategoryIds));
         formData.append('applicable_menu_item_ids', JSON.stringify(selectedAppMenuItemIds));
         formData.append('usage_limit', document.getElementById('campaign-usage-limit').value);
@@ -1437,6 +1460,9 @@
         if (imageFile) formData.append('image', imageFile);
 
         const id = document.getElementById('campaign-id').value;
+        const originalType = document.getElementById('campaign-type').value;
+        if (originalType) formData.append('original_type', originalType);
+        
         const endpoint = id ? `/api/promos/${id}` : '/api/promos';
         const method = id ? 'PUT' : 'POST';
 

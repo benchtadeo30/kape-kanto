@@ -231,7 +231,20 @@ async function initDb() {
         )
     `);
 
-    // 8. Menu Item Options
+    // 8. Order Messages table
+    await cloudDb.sql(`
+        CREATE TABLE IF NOT EXISTS order_messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            order_id INTEGER,
+            user_id INTEGER,
+            message TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(order_id) REFERENCES orders(id) ON DELETE CASCADE,
+            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL
+        )
+    `);
+
+    // 9. Menu Item Options
     await cloudDb.sql(`
         CREATE TABLE IF NOT EXISTS menu_item_options (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -337,6 +350,10 @@ async function initDb() {
     await safeAddColumn('users', 'id_number', 'TEXT');
     await safeAddColumn('users', 'verified_by', 'INTEGER');
     await safeAddColumn('users', 'verified_at', 'DATETIME');
+    await safeAddColumn('users', 'phone_number', 'TEXT');
+    await safeAddColumn('users', 'is_phone_verified', 'BOOLEAN DEFAULT 0');
+    await safeAddColumn('users', 'phone_otp', 'TEXT');
+    await safeAddColumn('users', 'phone_otp_expires', 'DATETIME');
 
     // Promos migrations
     await safeAddColumn('promos', 'discount_amount', 'REAL DEFAULT 0');

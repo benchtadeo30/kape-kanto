@@ -184,6 +184,42 @@
     </div>
 </div>
 
+<!-- Phone Verification Modal -->
+<div id="phone-verification-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); z-index: 9999; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 2rem; border-radius: 20px; width: 90%; max-width: 400px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); position: relative;">
+        <button type="button" onclick="closePhoneVerificationModal()" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; color: #999; cursor: pointer;">&times;</button>
+        
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+            <i class="fa-solid fa-shield-halved" style="font-size: 3rem; color: var(--primary); margin-bottom: 1rem;"></i>
+            <h2 style="margin: 0; font-size: 1.5rem; color: var(--primary-dark);">Security Verification</h2>
+            <p style="color: var(--text-light); font-size: 0.9rem; margin-top: 0.5rem;" id="phone-modal-desc">
+                We noticed unusual activity. Please verify a phone number to proceed with your order.
+            </p>
+        </div>
+
+        <!-- Step 1: Request OTP -->
+        <div id="phone-step-1">
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+                <label style="font-weight: 600; font-size: 0.9rem; color: var(--primary-dark); display: block; margin-bottom: 0.5rem;">Phone Number</label>
+                <input type="text" id="verify-phone-number" placeholder="e.g. 09123456789" style="width: 100%; padding: 0.8rem; border: 2px solid #eee; border-radius: 10px;">
+            </div>
+            <button class="btn btn-primary" style="width: 100%; padding: 1rem; border-radius: 12px; font-weight: bold;" onclick="requestPhoneOTP()" id="btn-request-otp">Send Verification Code</button>
+        </div>
+
+        <!-- Step 2: Verify OTP -->
+        <div id="phone-step-2" style="display: none;">
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+                <label style="font-weight: 600; font-size: 0.9rem; color: var(--primary-dark); display: block; margin-bottom: 0.5rem;">Enter 4-Digit Code</label>
+                <input type="text" id="verify-phone-otp" placeholder="1234" maxlength="4" style="width: 100%; padding: 0.8rem; border: 2px solid #eee; border-radius: 10px; text-align: center; font-size: 1.2rem; letter-spacing: 5px;">
+            </div>
+            <button class="btn btn-primary" style="width: 100%; padding: 1rem; border-radius: 12px; font-weight: bold;" onclick="verifyPhoneOTP()" id="btn-verify-otp">Verify & Place Order</button>
+            <div style="text-align: center; margin-top: 1rem;">
+                <button type="button" style="background: none; border: none; color: var(--primary); font-size: 0.85rem; cursor: pointer; text-decoration: underline;" onclick="resetPhoneVerification()">Use a different number</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     window.userDiscounts = {
         isEligible: "<%= user && (user.is_senior || user.is_pwd) && user.id_verification_status === 'verified' ? 'true' : 'false' %>",

@@ -7,3 +7,4 @@ public/uploads/ids/
 public/uploads/profiles/
 public/uploads/promos/
 scratch/
+.env.example

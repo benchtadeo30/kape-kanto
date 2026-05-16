@@ -75,7 +75,9 @@ async function trackLoyaltyProgress(userId, orderId, orderTotal) {
                     break;
                 case 'minimum_spend':
                 case 'minimum spend':
-                    if (orderTotal >= (rule.min_order_amount || task.min_order_amount || 0)) {
+                    increment += orderTotal;
+                    // The target is stored in min_order_amount
+                    if (((progress.current_quantity || 0) + increment) >= (rule.min_order_amount || task.min_order_amount || 0)) {
                         immediateComplete = true;
                     }
                     break;
@@ -96,8 +98,9 @@ async function trackLoyaltyProgress(userId, orderId, orderTotal) {
 
             if (immediateComplete) {
                 console.log(`✅ Task "${task.title}" completed immediately!`);
+                const targetVal = taskType === 'minimum_spend' || taskType === 'minimum spend' ? (rule.min_order_amount || task.min_order_amount || 0) : (task.required_quantity || 1);
                 await db.prepare('UPDATE user_promo_progress SET current_quantity = ?, is_completed = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-                    .run(task.required_quantity || 1, progress.id);
+                    .run(targetVal, progress.id);
                 if (task.reward_promo_id) {
                     const existing = await db.prepare('SELECT id FROM user_coupons WHERE user_id = ? AND promo_id = ? AND is_used = 0').get(userId, task.reward_promo_id);
                     if (!existing) {
@@ -107,8 +110,9 @@ async function trackLoyaltyProgress(userId, orderId, orderTotal) {
                 }
             } else if (increment > 0) {
                 const newQty = (progress.current_quantity || 0) + increment;
-                console.log(`📊 Task "${task.title}" progress: ${progress.current_quantity} → ${newQty} / ${task.required_quantity}`);
-                if (newQty >= (task.required_quantity || 1)) {
+                const targetVal = taskType === 'minimum_spend' || taskType === 'minimum spend' ? (rule.min_order_amount || task.min_order_amount || 0) : (task.required_quantity || 1);
+                console.log(`📊 Task "${task.title}" progress: ${progress.current_quantity} → ${newQty} / ${targetVal}`);
+                if (newQty >= targetVal) {
                     console.log(`✅ Task "${task.title}" COMPLETED!`);
                     await db.prepare('UPDATE user_promo_progress SET current_quantity = ?, is_completed = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
                         .run(newQty, progress.id);

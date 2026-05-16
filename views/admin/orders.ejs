@@ -181,6 +181,25 @@
         .ao-item-row { font-size: 1rem !important; }
         .ao-total { font-size: 1.2rem !important; }
     }
+
+    #chat-modal { display:none; position:fixed; inset:0; background:rgba(44,26,14,0.48); z-index:9999; align-items:center; justify-content:center; padding:1rem; }
+    #chat-modal.open { display:flex; }
+    .chat-modal-box { background:white; border-radius:20px; width:100%; max-width:500px; box-shadow:0 24px 70px rgba(0,0,0,0.22); display:flex; flex-direction:column; overflow:hidden; }
+    .chat-modal-header { padding:1.2rem 1.4rem; border-bottom:1px solid #f5f0eb; display:flex; justify-content:space-between; align-items:center; background:#fdfaf7; }
+    .chat-modal-title { margin:0; font-size:1.1rem; font-weight:800; color:var(--primary-dark); display:flex; align-items:center; gap:8px; }
+    .chat-modal-close { background:none; border:none; color:var(--text-light); font-size:1.2rem; cursor:pointer; }
+    .chat-modal-messages { padding:1.4rem; max-height:400px; overflow-y:auto; display:flex; flex-direction:column; gap:1rem; background:#fffcf9; }
+    .chat-msg { max-width:80%; padding:0.85rem 1.2rem; border-radius:18px; font-size:0.9rem; position:relative; clear:both; }
+    .chat-msg.staff { background:var(--primary); color:white; align-self:flex-end; border-bottom-right-radius:4px; }
+    .chat-msg.customer { background:white; color:var(--primary-dark); align-self:flex-start; border:1px solid #f0e5dc; border-bottom-left-radius:4px; }
+    .chat-meta { font-size:0.7rem; margin-top:4px; opacity:0.8; text-align:right; }
+    .chat-msg.customer .chat-meta { color:var(--text-light); text-align:left; }
+    .chat-input-area { padding:1rem 1.4rem; border-top:1px solid #f5f0eb; display:flex; gap:10px; background:white; }
+    .chat-input { flex:1; padding:0.85rem 1.2rem; border-radius:50px; border:1px solid #e8ddd4; font-family:var(--font-body); font-size:0.9rem; outline:none; transition:border-color 0.2s; }
+    .chat-input:focus { border-color:var(--primary); }
+    .chat-send { width:46px; height:46px; border-radius:50%; background:var(--primary); color:white; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:transform 0.2s, background 0.2s; flex-shrink:0; }
+    .chat-send:hover { transform:scale(1.05); background:var(--accent); }
+
     </style>
 
     <div class="dashboard-layout">
@@ -230,11 +249,29 @@
     </div>
 </div>
 
+<div id="chat-modal">
+    <div class="chat-modal-box">
+        <div class="chat-modal-header">
+            <h3 class="chat-modal-title"><i class="fa-solid fa-comments" style="color:var(--primary)"></i> Chat - Order #<span id="chat-order-id"></span></h3>
+            <button class="chat-modal-close" onclick="closeChatModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="chat-messages" class="chat-modal-messages">
+            <div style="text-align:center; color:var(--text-light); font-size:0.85rem; padding:1rem;">Loading messages...</div>
+        </div>
+        <form id="chat-form" class="chat-input-area" onsubmit="sendStaffChatMessage(event)">
+            <input type="text" id="chat-input" class="chat-input" placeholder="Type a message to customer..." autocomplete="off" required>
+            <button type="submit" class="chat-send"><i class="fa-solid fa-paper-plane"></i></button>
+        </form>
+    </div>
+</div>
+
 <script>
     let allOrders = [];
     let currentFilter = 'all';
     let currentType = 'all';
     let currentPage = 1;
+    let activeChatOrderId = null;
+    let chatRefreshInterval = null;
     const PAGE_LIMIT = 10;
 
     const BADGE_MAP = {
@@ -245,6 +282,11 @@
     };
 
     const ALL_STATUSES = ['pending','preparing','ready','out_for_delivery','completed','cancelled'];
+
+    function getStatusLabel(status, orderType) {
+        if (status === 'completed') return orderType === 'delivery' ? 'Delivered' : 'Picked Up';
+        return status.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+    }
 
     async function loadOrders() {
         try {
@@ -374,11 +416,6 @@
         const badgeCls = BADGE_MAP[o.status] || '';
         const isDelivery = o.order_type === 'delivery';
 
-        const getStatusLabel = (status, orderType) => {
-            if (status === 'completed') return orderType === 'delivery' ? 'Delivered' : 'Picked Up';
-            return status.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
-        };
-
         const statusOptions = ALL_STATUSES
             .filter(s => isDelivery || s !== 'out_for_delivery')
             .map(s => `
@@ -429,6 +466,11 @@
                     ${statusOptions}
 
                     <div class="ao-drop-divider"></div>
+                    <button class="ao-drop-item" onclick="openChatModal(${o.id})">
+                        <i class="fa-solid fa-comments"></i> Chat with Customer
+                    </button>
+
+                    <div class="ao-drop-divider"></div>
                     <button class="ao-drop-item danger" onclick="deleteOrder(${o.id})">
                         <i class="fa-solid fa-trash-can"></i> Delete Order Permanently
                     </button>
@@ -470,6 +512,7 @@
                     const order = allOrders.find(o => Number(o.id) === Number(id));
                     const label = getStatusLabel(status, order?.order_type || 'delivery');
                     KapeKanto.toast(`Order #${id} → ${label}`, 'success');
+                    currentPage = 1;
                     loadOrders();
                 } else {
                     const d = await res.json();
@@ -546,10 +589,6 @@
         const vatExemptDiscount = order.sc_discount_amount > 0 ? (order.subtotal - (order.subtotal / 1.12)) : 0;
         const badgeCls = BADGE_MAP[order.status] || '';
         const isDelivery = order.order_type === 'delivery';
-        const getStatusLabel = (status, orderType) => {
-            if (status === 'completed') return orderType === 'delivery' ? 'Delivered' : 'Picked Up';
-            return status.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
-        };
         const statusLabel = getStatusLabel(order.status, order.order_type);
 
         document.getElementById('ao-modal-body').innerHTML = `
@@ -636,9 +675,96 @@
         if (e.target === document.getElementById('ao-modal')) closeModal();
     });
 
+    let activeChatOrderId = null;
+    let chatRefreshInterval = null;
+
+    function openChatModal(orderId) {
+        activeChatOrderId = orderId;
+        document.getElementById('chat-order-id').textContent = orderId;
+        document.getElementById('chat-modal').classList.add('open');
+        loadStaffChatMessages();
+        if (chatRefreshInterval) clearInterval(chatRefreshInterval);
+        chatRefreshInterval = setInterval(loadStaffChatMessages, 5000);
+    }
+
+    function closeChatModal() {
+        activeChatOrderId = null;
+        document.getElementById('chat-modal').classList.remove('open');
+        if (chatRefreshInterval) clearInterval(chatRefreshInterval);
+    }
+
+    async function loadStaffChatMessages() {
+        if (!activeChatOrderId) return;
+        try {
+            const res = await fetch(`/api/orders/${activeChatOrderId}/messages`);
+            if (!res.ok) return;
+            const messages = await res.json();
+            const container = document.getElementById('chat-messages');
+            
+            if (!messages.length) {
+                container.innerHTML = '<div style="text-align:center; color:var(--text-light); font-size:0.85rem; padding:1rem;">No messages yet.</div>';
+                return;
+            }
+
+            const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 50;
+
+            container.innerHTML = messages.map(m => {
+                const isCustomer = m.role === 'customer';
+                const time = new Date(m.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
+                const senderName = isCustomer ? (m.username || 'Customer') : 'Admin';
+                return `
+                <div class="chat-msg ${isCustomer ? 'customer' : 'staff'}">
+                    <div>${m.message}</div>
+                    <div class="chat-meta">${senderName} · ${time}</div>
+                </div>`;
+            }).join('');
+
+            if (isAtBottom) {
+                container.scrollTop = container.scrollHeight;
+            }
+        } catch (e) {
+            console.error('Failed to load messages');
+        }
+    }
+
+    async function sendStaffChatMessage(e) {
+        e.preventDefault();
+        if (!activeChatOrderId) return;
+        const input = document.getElementById('chat-input');
+        const message = input.value.trim();
+        if (!message) return;
+
+        input.value = '';
+        input.disabled = true;
+
+        try {
+            const res = await fetch(`/api/orders/${activeChatOrderId}/messages`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message })
+            });
+            if (res.ok) {
+                await loadStaffChatMessages();
+                const container = document.getElementById('chat-messages');
+                container.scrollTop = container.scrollHeight;
+            } else {
+                KapeKanto.toast('Failed to send message', 'error');
+            }
+        } catch (e) {
+            KapeKanto.toast('Error sending message', 'error');
+        } finally {
+            input.disabled = false;
+            input.focus();
+        }
+    }
+
+    document.getElementById('chat-modal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('chat-modal')) closeChatModal();
+    });
+
     document.addEventListener('DOMContentLoaded', () => {
         loadOrders();
-        setInterval(loadOrders, 30000);
+        setInterval(loadOrders, 30000); // refresh list every 30s
     });
 </script>
 

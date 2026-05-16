@@ -269,7 +269,7 @@ router.get('/admin/orders', pageRequireRole('admin'), (req, res) => {
 // --- STAFF PAGES ---
 
 router.get('/staff/dashboard', pageRequireRole('staff'), (req, res) => {
-    res.render('staff/dashboard', { title: 'Staff Dashboard' });
+    res.redirect('/staff/orders');
 });
 
 router.get('/staff/orders', pageRequireRole('staff'), (req, res) => {

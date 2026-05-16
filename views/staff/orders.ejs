@@ -24,8 +24,8 @@
     .so-tab.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 8px 18px rgba(111,78,55,0.16); }
     .so-count { color: var(--text-light); font-weight: 700; font-size: 0.88rem; margin-bottom: 1rem; }
     .so-list { display: grid; gap: 0.85rem; }
-    .so-card { background: #fffdf9; border: 1px solid #f0e5dc; border-radius: 16px; padding: 1rem; display: grid; grid-template-columns: minmax(170px, 1.1fr) 110px 150px 140px 110px minmax(210px, auto); gap: 1rem; align-items: center; }
-    .so-card.select-mode { grid-template-columns: 34px minmax(170px, 1.1fr) 110px 150px 140px 110px minmax(210px, auto); }
+    .so-card { background: #fffdf9; border: 1px solid #f0e5dc; border-radius: 16px; padding: 1rem; display: grid; grid-template-columns: minmax(170px, 1.1fr) 110px 150px 110px minmax(320px, auto); gap: 1rem; align-items: center; }
+    .so-card.select-mode { grid-template-columns: 34px minmax(170px, 1.1fr) 110px 150px 110px minmax(320px, auto); }
     .so-check { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }
     .so-id { font-weight: 900; font-size: 1rem; color: var(--primary-dark); }
     .so-customer { color: var(--text-light); font-size: 0.82rem; margin-top: 0.2rem; }
@@ -61,13 +61,48 @@
     #rider-modal { display:none; position:fixed; inset:0; background:rgba(44,26,14,0.48); z-index:9999; align-items:center; justify-content:center; padding:1rem; }
     #rider-modal.open { display:flex; }
     .rider-modal-box { background:white; border-radius:20px; padding:1.4rem; width:100%; max-width:430px; box-shadow:0 24px 70px rgba(0,0,0,0.22); }
+    
+    #chat-modal { display:none; position:fixed; inset:0; background:rgba(44,26,14,0.48); z-index:9999; align-items:center; justify-content:center; padding:1rem; }
+    #chat-modal.open { display:flex; }
+    .chat-modal-box { background:white; border-radius:20px; width:100%; max-width:500px; box-shadow:0 24px 70px rgba(0,0,0,0.22); display:flex; flex-direction:column; overflow:hidden; }
+    .chat-modal-header { padding:1.2rem 1.4rem; border-bottom:1px solid #f5f0eb; display:flex; justify-content:space-between; align-items:center; background:#fdfaf7; }
+    .chat-modal-title { margin:0; font-size:1.1rem; font-weight:800; color:var(--primary-dark); display:flex; align-items:center; gap:8px; }
+    .chat-modal-close { background:none; border:none; color:var(--text-light); font-size:1.2rem; cursor:pointer; }
+    .chat-modal-messages { padding:1.4rem; max-height:400px; overflow-y:auto; display:flex; flex-direction:column; gap:1rem; background:#fffcf9; }
+    .chat-msg { max-width:80%; padding:0.85rem 1.2rem; border-radius:18px; font-size:0.9rem; position:relative; clear:both; }
+    .chat-msg.staff { background:var(--primary); color:white; align-self:flex-end; border-bottom-right-radius:4px; }
+    .chat-msg.customer { background:white; color:var(--primary-dark); align-self:flex-start; border:1px solid #f0e5dc; border-bottom-left-radius:4px; }
+    .chat-meta { font-size:0.7rem; margin-top:4px; opacity:0.8; text-align:right; }
+    .chat-msg.customer .chat-meta { color:var(--text-light); text-align:left; }
+    .chat-input-area { padding:1rem 1.4rem; border-top:1px solid #f5f0eb; display:flex; gap:10px; background:white; }
+    .chat-input { flex:1; padding:0.85rem 1.2rem; border-radius:50px; border:1px solid #e8ddd4; font-family:var(--font-body); font-size:0.9rem; outline:none; transition:border-color 0.2s; }
+    .chat-input:focus { border-color:var(--primary); }
+    .chat-send { width:46px; height:46px; border-radius:50%; background:var(--primary); color:white; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:transform 0.2s, background 0.2s; flex-shrink:0; }
+    .chat-send:hover { transform:scale(1.05); background:var(--accent); }
+
+    .chat-send:hover { transform:scale(1.05); background:var(--accent); }
+
+    /* Modal Styles */
+    #so-modal { display:none; position:fixed; inset:0; background:rgba(44,26,14,0.48); z-index:9999; align-items:center; justify-content:center; padding:1rem; }
+    #so-modal.open { display:flex; }
+    .so-modal-box { background:white; border-radius:24px; padding:2rem; width:100%; max-width:650px; max-height:90vh; overflow-y:auto; box-shadow:0 24px 70px rgba(0,0,0,0.22); position:relative; }
+    .so-modal-close { position:absolute; top:1.5rem; right:1.5rem; background:none; border:none; font-size:1.8rem; cursor:pointer; color:#999; transition:all 0.2s; width:40px; height:40px; display:flex; align-items:center; justify-content:center; border-radius:50%; }
+    .so-modal-close:hover { background:#fdfaf7; color:var(--primary); transform:rotate(90deg); }
+    .so-detail-label { font-size:0.75rem; text-transform:uppercase; font-weight:800; color:#aaa; letter-spacing:1px; margin-bottom:4px; display:block; }
+    .so-detail-value { font-size:1rem; font-weight:700; color:var(--primary-dark); }
+    .so-item-row { display:flex; justify-content:space-between; align-items:center; padding:0.8rem 0; border-bottom:1px solid #f5f0eb; }
+    .so-item-row:last-child { border-bottom:none; }
+    .so-breakdown-row { display:flex; justify-content:space-between; padding:0.4rem 0; font-size:0.9rem; color:var(--text-light); }
+    .so-breakdown-row.total { font-weight:800; font-size:1.1rem; color:var(--primary-dark); border-top:1px solid #f0e6e0; margin-top:0.5rem; padding-top:0.8rem; }
+    .so-breakdown-row.red { color:var(--danger); }
+
     @media (max-width: 1100px) { .staff-shell { grid-template-columns: 1fr; padding: 1rem; } .staff-sidebar { position: static; } .so-card { grid-template-columns: 1fr; align-items: start; } .so-actions { justify-content: flex-start; } .staff-hero { flex-direction: column; align-items: flex-start; } }
+
 </style>
 
 <div class="staff-shell">
     <aside class="staff-sidebar">
         <h3>Staff Panel</h3>
-        <a href="/staff/dashboard"><i class="fa-solid fa-fire-burner"></i> Kitchen Feed</a>
         <a href="/staff/orders" class="active"><i class="fa-solid fa-list-check"></i> Manage Orders</a>
         <a href="/staff/menu-stock"><i class="fa-solid fa-boxes-stacked"></i> Update Stock</a>
     </aside>
@@ -142,6 +177,31 @@
     </div>
 </div>
 
+<div id="chat-modal">
+    <div class="chat-modal-box">
+        <div class="chat-modal-header">
+            <h3 class="chat-modal-title"><i class="fa-solid fa-comments" style="color:var(--primary)"></i> Chat - Order #<span id="chat-order-id"></span></h3>
+            <button class="chat-modal-close" onclick="closeChatModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="chat-messages" class="chat-modal-messages">
+            <div style="text-align:center; color:var(--text-light); font-size:0.85rem; padding:1rem;">Loading messages...</div>
+        </div>
+        <form id="chat-form" class="chat-input-area" onsubmit="sendStaffChatMessage(event)">
+            <input type="text" id="chat-input" class="chat-input" placeholder="Type a message to customer..." autocomplete="off" required>
+            <button type="submit" class="chat-send"><i class="fa-solid fa-paper-plane"></i></button>
+        </form>
+    </div>
+</div>
+
+<!-- Details modal -->
+<div id="so-modal">
+    <div class="so-modal-box">
+        <button onclick="closeDetailsModal()" class="so-modal-close"><i class="fa-solid fa-xmark"></i></button>
+        <h3 id="so-modal-title" style="margin:0 0 1.5rem 0; font-size:1.4rem; color:var(--primary-dark);">Order Details</h3>
+        <div id="so-modal-body"></div>
+    </div>
+</div>
+
 <script>
     let allOrders = [];
     let currentFilter = 'all';
@@ -150,6 +210,8 @@
     let orderSearchTerm = '';
     let currentType = 'all';
     let bulkMode = false;
+    let activeChatOrderId = null;
+    let chatRefreshInterval = null;
     const selectedOrderIds = new Set();
     const PAGE_LIMIT = 10;
 
@@ -322,19 +384,16 @@
             actionBtns += `<button class="so-btn ${nextAction.cls}" onclick="${action}"><i class="fa-solid ${nextAction.icon}"></i> ${nextAction.label}</button>`;
         }
 
-        if (!['completed', 'cancelled'].includes(o.status)) {
-            actionBtns += `<button class="so-btn so-btn-danger" onclick="updateStatus(${o.id}, 'cancelled')"><i class="fa-solid fa-ban"></i> Cancel</button>`;
-        }
-        actionBtns += `<button class="so-btn so-btn-dark" onclick="deleteOrder(${o.id})" title="Permanently delete this order record"><i class="fa-solid fa-trash-can"></i> Delete</button>`;
-
         const riderInfo = o.status === 'out_for_delivery' && o.rider_name
             ? `<div class="so-customer"><i class="fa-solid fa-motorcycle"></i> ${o.rider_name}${o.rider_contact ? ' / ' + o.rider_contact : ''}</div>`
             : '';
 
-        const statusOptions = STATUS_OPTIONS
-            .filter(option => !option.deliveryOnly || isDelivery)
-            .map(option => `<option value="${option.value}" data-icon="${option.icon}" ${option.value === o.status ? 'selected' : ''}>${option.label}</option>`)
-            .join('');
+        if (!['completed', 'cancelled'].includes(o.status)) {
+            actionBtns += `<button class="so-btn so-btn-danger" onclick="updateStatus(${o.id}, 'cancelled')"><i class="fa-solid fa-ban"></i> Cancel</button>`;
+        }
+        actionBtns += `<button class="so-btn so-btn-blue" onclick="viewDetails(${o.id})"><i class="fa-solid fa-eye"></i> View</button>`;
+        actionBtns += `<button class="so-btn so-btn-outline" onclick="openChatModal(${o.id})"><i class="fa-solid fa-comments"></i> Chat</button>`;
+        actionBtns += `<button class="so-btn so-btn-dark" onclick="deleteOrder(${o.id})" title="Permanently delete this order record"><i class="fa-solid fa-trash-can"></i> Delete</button>`;
 
         return `
             <article class="so-card ${bulkMode ? 'select-mode' : ''}">
@@ -346,9 +405,6 @@
                 </div>
                 <span class="so-type-chip"><i class="fa-solid ${isDelivery ? 'fa-truck-fast' : 'fa-bag-shopping'}"></i> ${isDelivery ? 'Delivery' : 'Pickup'}</span>
                 <span class="so-badge ${BADGE_MAP[o.status] || ''}">${o.status === 'awaiting_payment' ? '<i class="fa-solid fa-triangle-exclamation"></i>' : ''}${statusLabel(o.status, o.order_type)}</span>
-                <select class="so-status-select kk-select-modern" onchange="changeStatusFromDropdown(${o.id}, '${o.status}', this)">
-                    ${statusOptions}
-                </select>
                 <span class="so-total">PHP ${Number(o.total || 0).toFixed(2)}</span>
                 <div class="so-actions">${actionBtns || '<span class="so-customer">No actions</span>'}</div>
             </article>
@@ -414,6 +470,7 @@
 
                 const order = allOrders.find(o => Number(o.id) === Number(id));
                 KapeKanto.toast(`Order #${id} -> ${statusLabel(status, order?.order_type)}`, 'success');
+                currentPage = 1;
                 loadOrders();
             } catch (e) {
                 KapeKanto.toast(e.message || 'Failed to update order.', 'error');
@@ -517,6 +574,209 @@
 
     document.getElementById('rider-modal').addEventListener('click', (e) => {
         if (e.target === document.getElementById('rider-modal')) closeRiderModal();
+    });
+
+    function openChatModal(orderId) {
+        activeChatOrderId = orderId;
+        document.getElementById('chat-order-id').textContent = orderId;
+        document.getElementById('chat-modal').classList.add('open');
+        loadStaffChatMessages();
+        if (chatRefreshInterval) clearInterval(chatRefreshInterval);
+        chatRefreshInterval = setInterval(loadStaffChatMessages, 5000);
+    }
+
+    function closeChatModal() {
+        activeChatOrderId = null;
+        document.getElementById('chat-modal').classList.remove('open');
+        if (chatRefreshInterval) clearInterval(chatRefreshInterval);
+    }
+
+    async function loadStaffChatMessages() {
+        if (!activeChatOrderId) return;
+        try {
+            const res = await fetch(\`/api/orders/\${activeChatOrderId}/messages\`);
+            if (!res.ok) return;
+            const messages = await res.json();
+            const container = document.getElementById('chat-messages');
+            
+            if (!messages.length) {
+                container.innerHTML = '<div style="text-align:center; color:var(--text-light); font-size:0.85rem; padding:1rem;">No messages yet.</div>';
+                return;
+            }
+
+            const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 50;
+
+            container.innerHTML = messages.map(m => {
+                const isCustomer = m.role === 'customer';
+                const time = new Date(m.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
+                const senderName = isCustomer ? (m.username || 'Customer') : 'You';
+                return \`
+                <div class="chat-msg \${isCustomer ? 'customer' : 'staff'}">
+                    <div>\${m.message}</div>
+                    <div class="chat-meta">\${senderName} · \${time}</div>
+                </div>\`;
+            }).join('');
+
+            if (isAtBottom) {
+                container.scrollTop = container.scrollHeight;
+            }
+        } catch (e) {
+            console.error('Failed to load messages');
+        }
+    }
+
+    async function sendStaffChatMessage(e) {
+        e.preventDefault();
+        if (!activeChatOrderId) return;
+        const input = document.getElementById('chat-input');
+        const message = input.value.trim();
+        if (!message) return;
+
+        input.value = '';
+        input.disabled = true;
+
+        try {
+            const res = await fetch(\`/api/orders/\${activeChatOrderId}/messages\`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message })
+            });
+            if (res.ok) {
+                await loadStaffChatMessages();
+                const container = document.getElementById('chat-messages');
+                container.scrollTop = container.scrollHeight;
+            } else {
+                KapeKanto.toast('Failed to send message', 'error');
+            }
+        } catch (e) {
+            KapeKanto.toast('Error sending message', 'error');
+        } finally {
+            input.disabled = false;
+            input.focus();
+        }
+    }
+
+    document.getElementById('chat-modal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('chat-modal')) closeChatModal();
+    });
+
+    // View Details Logic
+    async function viewDetails(id) {
+        const order = allOrders.find(o => o.id === id);
+        if (!order) return;
+
+        document.getElementById('so-modal-title').textContent = `Order #${id} — ${order.username}`;
+        document.getElementById('so-modal-body').innerHTML = '<p style="color:var(--text-light)"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading…</p>';
+        document.getElementById('so-modal').classList.add('open');
+
+        try {
+            const res = await fetch(`/api/orders/my/${id}`);
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            renderModalBody(data);
+        } catch(e) {
+            renderModalBodyBasic(order);
+        }
+    }
+
+    function renderModalBody(order) {
+        const itemsHtml = order.items.map(i =>
+            `<div class="so-item-row">
+                <div style="display:flex; flex-direction:column;">
+                    <span style="font-weight:700; color:var(--primary-dark);">${i.quantity}x ${i.name}</span>
+                    ${i.customizations ? `<small style="color:#888; font-size:0.75rem; margin-top:2px;">${Object.entries(JSON.parse(i.customizations||'{}')).map(([k,v])=>k+': '+v).join(', ')}</small>` : ''}
+                </div>
+                <span style="font-weight:700; color:var(--primary);">₱${i.subtotal.toFixed(2)}</span>
+            </div>`
+        ).join('');
+
+        const vatExemptDiscount = order.sc_discount_amount > 0 ? (order.subtotal - (order.subtotal / 1.12)) : 0;
+        const badgeCls = BADGE_MAP[order.status] || '';
+        const isDelivery = order.order_type === 'delivery';
+
+        document.getElementById('so-modal-body').innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; background:#fdfaf7; padding:1rem; border-radius:16px; border:1px solid #f0e6e0;">
+                <div>
+                    <span class="so-detail-label">Status</span>
+                    <span class="so-badge ${badgeCls}">${statusLabel(order.status, order.order_type)}</span>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size: 0.7rem; color: #999; text-transform: uppercase; font-weight: 800; margin-bottom: 4px;">Order Type</div>
+                    <span style="font-size: 0.85rem; font-weight: 800; color: var(--primary); background: rgba(111, 78, 55, 0.08); padding: 6px 12px; border-radius: 50px; display: inline-flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-${order.order_type === 'delivery' ? 'truck-fast' : 'shop'}"></i>
+                        ${order.order_type === 'delivery' ? 'Delivery' : 'Pickup'}
+                    </span>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+                <div>
+                    <span class="so-detail-label">Customer</span>
+                    <div class="so-detail-value">${order.username}</div>
+                    <div style="font-size:0.8rem; color:#777;">${order.email}</div>
+                </div>
+                <div style="text-align:right;">
+                    <span class="so-detail-label">Payment</span>
+                    <div class="so-detail-value">${order.payment_method.toUpperCase()}</div>
+                    <div style="font-size:0.8rem; color:#777; font-weight:700;">${order.payment_status.toUpperCase()}</div>
+                </div>
+            </div>
+
+            <div>
+                <span class="so-detail-label" style="margin-bottom:1rem;">Order Items</span>
+                ${itemsHtml}
+            </div>
+
+            <div style="margin-top:1.5rem;">
+                <span class="so-detail-label">Price Breakdown</span>
+                <div class="so-breakdown-row"><span>Subtotal (Gross)</span><span>₱${order.subtotal.toFixed(2)}</span></div>
+                
+                ${order.sc_discount_amount > 0 ? `
+                    <div class="so-breakdown-row red"><span>VAT-Exempt Discount (12%)</span><span>-₱${vatExemptDiscount.toFixed(2)}</span></div>
+                    <div class="so-breakdown-row red"><span>SC/PWD Discount (20%)</span><span>-₱${order.sc_discount_amount.toFixed(2)}</span></div>
+                ` : `
+                    <div class="so-breakdown-row"><span>VAT (12% Inclusive)</span><span>₱${(order.vat_amount||0).toFixed(2)}</span></div>
+                `}
+
+                ${order.promo_discount_amount > 0 ? `
+                    <div class="so-breakdown-row red"><span>🏷️ Promo Discount</span><span>-₱${order.promo_discount_amount.toFixed(2)}</span></div>
+                ` : ''}
+
+                <div class="so-breakdown-row"><span>Delivery Fee</span><span>₱${(order.delivery_fee||0).toFixed(2)}</span></div>
+                <div class="so-breakdown-row total"><span>Amount Due</span><span>₱${order.total.toFixed(2)}</span></div>
+            </div>
+
+            ${order.delivery_address ? `
+                <div style="margin-top:1.5rem; background:#fff5f5; padding:1rem; border-radius:12px; border:1px solid #ffebeb;">
+                    <span class="so-detail-label" style="color:var(--danger);">Delivery Address</span>
+                    <div style="font-size:0.9rem; color:var(--primary-dark); font-weight:500;">${order.delivery_address}</div>
+                </div>
+            ` : ''}
+
+            ${order.notes ? `
+                <div style="margin-top:1rem; background:#f0f7ff; padding:1rem; border-radius:12px; border:1px solid #e0eeff;">
+                    <span class="so-detail-label" style="color:#007bff;">Admin/Kitchen Notes</span>
+                    <div style="font-size:0.9rem; color:var(--primary-dark); font-weight:500;">${order.notes}</div>
+                </div>
+            ` : ''}
+        `;
+    }
+
+    function renderModalBodyBasic(order) {
+        document.getElementById('so-modal-body').innerHTML = `
+            <p><strong>Type:</strong> ${order.order_type}</p>
+            <p><strong>Status:</strong> ${order.status}</p>
+            <p><strong>Total:</strong> ₱${order.total.toFixed(2)}</p>
+            ${order.delivery_address ? `<p><strong>Address:</strong> ${order.delivery_address}</p>` : ''}
+            <p style="color:var(--text-light);font-size:0.85rem;margin-top:1rem;">Item details unavailable.</p>`;
+    }
+
+    function closeDetailsModal() {
+        document.getElementById('so-modal').classList.remove('open');
+    }
+
+    document.getElementById('so-modal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('so-modal')) closeDetailsModal();
     });
 
     document.addEventListener('DOMContentLoaded', () => {

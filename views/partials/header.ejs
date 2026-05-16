@@ -40,7 +40,7 @@
                 <div class="nav-profile-dropdown mobile-profile">
                     <div class="nav-avatar-btn">
                         <% if (user.profile_image) { %>
-                            <img src="/uploads/profiles/<%= user.profile_image %>" alt="Profile">
+                            <img src="<%= user.profile_image.startsWith('/') || user.profile_image.startsWith('http') ? user.profile_image : '/uploads/profiles/' + user.profile_image %>" alt="Profile">
                         <% } else { %>
                             <i class="fa-solid fa-user-tie"></i>
                         <% } %>
@@ -48,7 +48,7 @@
                     <div class="dropdown-content">
                         <div class="dropdown-header">
                             <% if (user.profile_image) { %>
-                                <img src="/uploads/profiles/<%= user.profile_image %>" alt="Profile">
+                                <img src="<%= user.profile_image.startsWith('/') || user.profile_image.startsWith('http') ? user.profile_image : '/uploads/profiles/' + user.profile_image %>" alt="Profile">
                             <% } else { %>
                                 <div class="header-avatar" style="background: var(--primary); display: flex; align-items: center; justify-content: center; color: white; font-weight: 800;">
                                     <%= user.username.charAt(0).toUpperCase() %>
@@ -126,7 +126,7 @@
                     <li class="nav-profile-dropdown desktop-profile">
                         <div class="nav-avatar-btn">
                             <% if (user.profile_image) { %>
-                                <img src="/uploads/profiles/<%= user.profile_image %>" alt="Profile">
+                                <img src="<%= user.profile_image.startsWith('/') || user.profile_image.startsWith('http') ? user.profile_image : '/uploads/profiles/' + user.profile_image %>" alt="Profile">
                             <% } else { %>
                                 <i class="fa-solid fa-user-tie"></i>
                             <% } %>
@@ -134,7 +134,7 @@
                         <div class="dropdown-content">
                             <div class="dropdown-header">
                                 <% if (user.profile_image) { %>
-                                    <img src="/uploads/profiles/<%= user.profile_image %>" alt="Profile">
+                                    <img src="<%= user.profile_image.startsWith('/') || user.profile_image.startsWith('http') ? user.profile_image : '/uploads/profiles/' + user.profile_image %>" alt="Profile">
                                 <% } else { %>
                                     <div class="header-avatar" style="background: var(--primary); display: flex; align-items: center; justify-content: center; color: white; font-weight: 800;">
                                         <%= user.username.charAt(0).toUpperCase() %>

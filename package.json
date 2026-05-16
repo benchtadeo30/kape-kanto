@@ -27,7 +27,8 @@
     "multer": "^2.1.1",
     "nodemailer": "^8.0.7",
     "payrex-node": "^1.7.4",
-    "puter": "^1.0.0"
+    "puter": "^1.0.0",
+    "twilio": "^6.0.2"
   },
   "devDependencies": {
     "nodemon": "^3.1.14",

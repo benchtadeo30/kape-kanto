@@ -203,6 +203,14 @@ router.post('/', requireRole('admin'), upload.single('image'), async (req, res) 
     } = req.body;
     const imagePath = req.file ? `/uploads/promos/${req.file.filename}` : null;
 
+    // Validate required fields
+    if (!title || !title.trim()) {
+        return res.status(400).json({ error: 'Campaign title is required.' });
+    }
+    if (!promo_code || !promo_code.trim()) {
+        return res.status(400).json({ error: 'Promo code is required.' });
+    }
+
     try {
         const info = await db.prepare(`
             INSERT INTO promos (
@@ -260,6 +268,14 @@ router.put('/:id', requireRole('admin'), upload.single('image'), async (req, res
         min_order_amount, usage_limit
     } = req.body;
     const campaignId = req.params.id;
+
+    // Validate required fields
+    if (!title || !title.trim()) {
+        return res.status(400).json({ error: 'Campaign title is required.' });
+    }
+    if (!promo_code || !promo_code.trim()) {
+        return res.status(400).json({ error: 'Promo code is required.' });
+    }
 
     try {
         if (is_loyalty_task == '1') {

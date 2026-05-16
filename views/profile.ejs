@@ -296,7 +296,7 @@
                     <div class="avatar-wrapper">
                         <div class="avatar-circle" id="sidebar-avatar">
                             <% if (user.profile_image) { %>
-                                <img src="/uploads/profiles/<%= user.profile_image %>" alt="Profile">
+                                <img src="<%= user.profile_image.startsWith('/') || user.profile_image.startsWith('http') ? user.profile_image : '/uploads/profiles/' + user.profile_image %>" alt="Profile">
                                 <% } else { %>
                                     <%= user.username.charAt(0).toUpperCase() %>
                                         <% } %>
