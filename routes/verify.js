@@ -18,7 +18,6 @@ router.post('/upload-id', requireAuth, upload.fields([
         return res.status(400).json({ error: 'ID image is required.' });
     }
     if (!selfieFile) {
-        if (idFile) fs.unlinkSync(idFile.path);
         return res.status(400).json({ error: 'Selfie holding your ID is required.' });
     }
 
@@ -26,14 +25,10 @@ router.post('/upload-id', requireAuth, upload.fields([
     const userId = parseInt(req.session.userId);
     
     if (!['senior', 'pwd'].includes(id_type)) {
-        fs.unlinkSync(idFile.path);
-        fs.unlinkSync(selfieFile.path);
         return res.status(400).json({ error: 'Invalid ID type. Must be senior or pwd.' });
     }
 
     if (!id_number || id_number.trim().length < 3) {
-        fs.unlinkSync(idFile.path);
-        fs.unlinkSync(selfieFile.path);
         return res.status(400).json({ error: 'Please enter a valid ID number.' });
     }
 
@@ -45,15 +40,13 @@ router.post('/upload-id', requireAuth, upload.fields([
         `).get(id_number.trim(), userId);
 
         if (duplicate) {
-            fs.unlinkSync(idFile.path);
-            fs.unlinkSync(selfieFile.path);
             return res.status(400).json({ 
                 error: 'This ID number is already registered to another verified account. If this is an error, please contact support.' 
             });
         }
 
-        const idImagePath = `/uploads/ids/${idFile.filename}`;
-        const selfieImagePath = `/uploads/ids/${selfieFile.filename}`;
+        const idImagePath = `data:${idFile.mimetype};base64,${idFile.buffer.toString('base64')}`;
+        const selfieImagePath = `data:${selfieFile.mimetype};base64,${selfieFile.buffer.toString('base64')}`;
 
         const isUpdate = req.session.canUpdateID || false;
         

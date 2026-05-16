@@ -155,7 +155,7 @@
                             let imgUrl;
                             if (item.image) {
                                 imgUrl = item.image.startsWith('http') ? item.image :
-                                    (item.image.startsWith('/uploads/') ? item.image : `/uploads/menu/${item.image}`);
+                                    (item.image.startsWith('/uploads/') || item.image.startsWith('data:') ? item.image : `/uploads/menu/${item.image}`);
                             } else {
                                 const fallbackText = `${(item.name || '').toLowerCase()} ${(item.category_name || '').toLowerCase()}`;
                                 if (/(iced|cold|spanish latte|cappuccino|americano|espresso)/.test(fallbackText)) {

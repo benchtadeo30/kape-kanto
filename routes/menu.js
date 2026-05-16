@@ -207,7 +207,7 @@ router.get('/categories', async (req, res) => {
 // POST /api/menu (Admin only)
 router.post('/', requireRole('admin'), upload.single('image'), async (req, res) => {
     const { name, description, price, category_id, stock, is_available, options } = req.body;
-    const imagePath = req.file ? `/uploads/menu/${req.file.filename}` : buildInternetImageUrl(name);
+    const imagePath = req.file ? `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}` : buildInternetImageUrl(name);
 
     if (!name || !price) {
         return res.status(400).json({ error: 'Name and price are required.' });
@@ -253,7 +253,7 @@ router.put('/:id', requireRole('admin', 'staff'), upload.single('image'), async 
         let info;
 
         if (req.file) {
-            const imagePath = `/uploads/menu/${req.file.filename}`;
+            const imagePath = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
             info = await db.prepare(`
                 UPDATE menu_items 
                 SET name=?, description=?, price=?, category_id=?, image=?, stock=?, is_available=?, updated_at=CURRENT_TIMESTAMP

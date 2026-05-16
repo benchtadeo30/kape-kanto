@@ -205,7 +205,7 @@ router.post('/', requireRole('admin'), upload.single('image'), async (req, res) 
         min_order_amount, applicable_category_id, applicable_menu_item_id,
         applicable_category_ids, applicable_menu_item_ids, usage_limit
     } = req.body;
-    const imagePath = req.file ? `/uploads/promos/${req.file.filename}` : null;
+    const imagePath = req.file ? `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}` : null;
 
     // Validate required fields
     if (!title || !title.trim()) {
@@ -301,7 +301,7 @@ router.put('/:id', requireRole('admin'), upload.single('image'), async (req, res
 
             const promoId = task.reward_promo_id;
             if (req.file) {
-                const imagePath = `/uploads/promos/${req.file.filename}`;
+                const imagePath = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
                 await db.prepare(`
                     UPDATE promos SET 
                         title=?, description=?, discount_percent=?, discount_amount=?, image=?, 
@@ -322,7 +322,7 @@ router.put('/:id', requireRole('admin'), upload.single('image'), async (req, res
             }
         } else {
             if (req.file) {
-                const imagePath = `/uploads/promos/${req.file.filename}`;
+                const imagePath = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
                 await db.prepare(`
                     UPDATE promos SET 
                         title=?, description=?, discount_percent=?, discount_amount=?, image=?, 

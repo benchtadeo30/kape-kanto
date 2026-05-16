@@ -432,7 +432,7 @@
             if (item.image) {
                 if (item.image.startsWith('http')) return item.image;
                 // Fix: avoid double-prepending the path
-                if (item.image.startsWith('/uploads/')) return item.image;
+                if (item.image.startsWith('/uploads/') || item.image.startsWith('data:')) return item.image;
                 return `/uploads/menu/${item.image}`;
             }
             return getCategoryFallbackImage(item);

@@ -40,7 +40,9 @@
                 <div class="nav-profile-dropdown mobile-profile">
                     <div class="nav-avatar-btn">
                         <% if (user.profile_image) { %>
-                            <img src="<%= user.profile_image.startsWith('/') || user.profile_image.startsWith('http') ? user.profile_image : '/uploads/profiles/' + user.profile_image %>" alt="Profile">
+                            <img src="<%= user.profile_image && (user.profile_image.startsWith('/') || user.profile_image.startsWith('http') || user.profile_image.startsWith('data:')) ? user.profile_image : (user.profile_image ? '/uploads/profiles/' + user.profile_image : '/images/default-avatar.png') %>" 
+                     alt="Profile" 
+                     onerror="this.src='/images/default-avatar.png'; this.onerror=null;">
                         <% } else { %>
                             <i class="fa-solid fa-user-tie"></i>
                         <% } %>

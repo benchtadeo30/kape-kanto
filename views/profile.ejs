@@ -301,11 +301,12 @@
                                     <%= user.username.charAt(0).toUpperCase() %>
                                         <% } %>
                                             <div class="avatar-edit-overlay"
-                                                onclick="document.getElementById('avatar-input').click()">
+                                                onclick="document.getElementById('avatar-input').click()"
+                                                title="Max 5MB (JPG, PNG, WEBP)">
                                                 <i class="fa-solid fa-camera"></i>
                                             </div>
                         </div>
-                        <input type="file" id="avatar-input" hidden accept="image/*" onchange="uploadAvatar(this)">
+                        <input type="file" id="avatar-input" hidden accept="image/*" onchange="if(this.files[0].size > 5242880) { alert('File is too large! Max 5MB.'); this.value=''; } else { uploadAvatar(this); }">
                     </div>
                     <h2 style="margin-bottom: 0.5rem;">
                         <%= user.username %>
@@ -945,6 +946,13 @@
 
         async function uploadAvatar(input) {
             if (!input.files || !input.files[0]) return;
+            
+            if (input.files[0].size > 5 * 1024 * 1024) {
+                KapeKanto.toast('Image is too large. Maximum size is 5MB.', 'error');
+                input.value = '';
+                return;
+            }
+
             const formData = new FormData();
             formData.append('profile_image', input.files[0]);
             try {

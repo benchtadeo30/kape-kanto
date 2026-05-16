@@ -52,7 +52,7 @@ router.post('/register', upload.single('profile_image'), async (req, res) => {
         }
         const hash = await bcrypt.hash(password, 10);
         const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-        const profileImage = req.file ? req.file.filename : null;
+        const profileImage = req.file ? `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}` : null;
 
         await db.prepare(`
             INSERT OR REPLACE INTO pending_users (username, email, password, profile_image, verification_token)
@@ -68,7 +68,6 @@ router.post('/register', upload.single('profile_image'), async (req, res) => {
 
         res.status(201).json({ message: 'Registration data saved. Please verify your email to complete registration.', email: email, unverified: true });
     } catch (error) {
-        if (req.file) { try { fs.unlinkSync(req.file.path); } catch(e) {} }
         if (error.message && error.message.includes('UNIQUE constraint failed')) {
             if (error.message.includes('users.email')) return res.status(400).json({ error: 'This email address is already registered.' });
             return res.status(400).json({ error: 'Email already exists.' });
@@ -481,14 +480,10 @@ router.patch('/update-avatar', requireAuth, upload.single('profile_image'), asyn
     if (!req.file) return res.status(400).json({ error: 'No image uploaded.' });
     try {
         const userId = parseInt(req.session.userId);
-        const user = await db.prepare('SELECT profile_image FROM users WHERE id = ?').get(userId);
-        if (!user) return res.status(404).json({ error: 'User not found.' });
-        if (user.profile_image) {
-            const oldPath = path.join(__dirname, '..', 'public', 'uploads', 'profiles', user.profile_image);
-            if (fs.existsSync(oldPath)) { try { fs.unlinkSync(oldPath); } catch (e) { console.error('Failed to delete old avatar:', e); } }
-        }
-        await db.prepare('UPDATE users SET profile_image = ? WHERE id = ?').run(req.file.filename, userId);
-        res.json({ message: 'Profile picture updated successfully!', filename: req.file.filename });
+        const imageData = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+        
+        await db.prepare('UPDATE users SET profile_image = ? WHERE id = ?').run(imageData, userId);
+        res.json({ message: 'Profile picture updated successfully!', image: imageData });
     } catch (error) {
         console.error('Update avatar error:', error);
         res.status(500).json({ error: 'Failed to update profile picture.' });
