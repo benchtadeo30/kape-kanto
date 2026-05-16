@@ -225,7 +225,7 @@
 
         // Global Image Normalization Utility
         window.KapeKanto.normalizeImageUrl = function(path, type = 'profiles') {
-            if (!path) return type === 'profiles' ? '/images/default-avatar.png' : '';
+            if (!path) return type === 'profiles' ? '/images/default-avatar.png' : '/images/placeholder.png';
             if (path.startsWith('data:') || path.startsWith('http') || path.startsWith('/')) return path;
             
             // Legacy path mapping
@@ -236,9 +236,21 @@
                 'ids': '/uploads/ids/'
             };
             
-            // Fallback for simple uploads folder
             const prefix = typeMap[type] || '/uploads/';
             return prefix + path;
+        };
+
+        // Standard Error Handler for Images
+        window.KapeKanto.handleImageError = function(img, type = 'default') {
+            img.onerror = null; // Prevent infinite loop
+            const fallbacks = {
+                'profiles': '/images/default-avatar.png',
+                'menu': 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=60&w=400',
+                'promos': 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=60&w=800',
+                'ids': '/images/id-placeholder.png'
+            };
+            img.src = fallbacks[type] || '/images/placeholder.png';
+            img.classList.add('img-fallback-active');
         };
 
         // Global Image Optimization Utility
