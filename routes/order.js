@@ -208,7 +208,7 @@ router.post('/', requireAuth, async (req, res) => {
         }
         const final_discount_amount = total_discount;
 
-        const total = Math.round(((vat_exempt_sales - sc_discount - promo_discount_amount) + final_vat_amount + delivery_fee) * 100) / 100;
+        const total = Math.max(0, Math.round(((vat_exempt_sales - sc_discount - promo_discount_amount) + final_vat_amount + delivery_fee) * 100) / 100);
 
         console.log(`[ORDER] === Order Summary ===`);
         console.log(`[ORDER] Promo Code Received: "${promo_code || 'NONE'}"`);

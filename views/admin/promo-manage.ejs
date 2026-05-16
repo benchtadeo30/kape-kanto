@@ -1439,6 +1439,24 @@
         e.preventDefault();
         
         const isLoyalty = document.querySelector('input[name="is_loyalty_task"]:checked').value === '1';
+        const dType = document.getElementById('discount-type-select').value;
+        const dVal = parseFloat(document.getElementById('campaign-discount').value) || 0;
+        const fVal = parseFloat(document.getElementById('campaign-flat-discount').value) || 0;
+
+        if (!isLoyalty) {
+            if (dType === 'percent') {
+                if (dVal <= 0 || dVal > 100) {
+                    KapeKanto.toast('Discount percentage must be between 1 and 100.', 'error');
+                    return;
+                }
+            } else {
+                if (fVal <= 0) {
+                    KapeKanto.toast('Fixed discount amount must be greater than 0.', 'error');
+                    return;
+                }
+            }
+        }
+
         const formData = new FormData();
         
         formData.append('title', document.getElementById('campaign-title').value);

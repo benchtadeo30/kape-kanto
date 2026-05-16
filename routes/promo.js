@@ -215,6 +215,21 @@ router.post('/', requireRole('admin'), upload.single('image'), async (req, res) 
         return res.status(400).json({ error: 'Promo code is required.' });
     }
 
+    // Validate discount values
+    const dPercent = parseFloat(discount_percent) || 0;
+    const dAmount = parseFloat(discount_amount) || 0;
+
+    if (dPercent > 0) {
+        if (dPercent > 100) return res.status(400).json({ error: 'Discount percentage cannot exceed 100%.' });
+        if (dPercent < 0) return res.status(400).json({ error: 'Discount percentage cannot be negative.' });
+    }
+    if (dAmount < 0) {
+        return res.status(400).json({ error: 'Fixed discount amount cannot be negative.' });
+    }
+    if (dPercent === 0 && dAmount === 0 && is_loyalty_task != '1') {
+        return res.status(400).json({ error: 'Please provide either a discount percentage or a fixed amount.' });
+    }
+
     try {
         const info = await db.prepare(`
             INSERT INTO promos (
@@ -279,6 +294,21 @@ router.put('/:id', requireRole('admin'), upload.single('image'), async (req, res
     }
     if (!promo_code || !promo_code.trim()) {
         return res.status(400).json({ error: 'Promo code is required.' });
+    }
+
+    // Validate discount values
+    const dPercent = parseFloat(discount_percent) || 0;
+    const dAmount = parseFloat(discount_amount) || 0;
+
+    if (dPercent > 0) {
+        if (dPercent > 100) return res.status(400).json({ error: 'Discount percentage cannot exceed 100%.' });
+        if (dPercent < 0) return res.status(400).json({ error: 'Discount percentage cannot be negative.' });
+    }
+    if (dAmount < 0) {
+        return res.status(400).json({ error: 'Fixed discount amount cannot be negative.' });
+    }
+    if (dPercent === 0 && dAmount === 0 && is_loyalty_task != '1') {
+        return res.status(400).json({ error: 'Please provide either a discount percentage or a fixed amount.' });
     }
 
     try {

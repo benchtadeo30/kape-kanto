@@ -585,7 +585,7 @@ function updateTotals() {
     const orderType = document.getElementById('order-type').value;
     const deliveryFee = orderType === 'delivery' ? 50 : 0;
     
-    const total = Math.round(((vatExemptSales - scDiscount - promoDiscount) + finalVatAmount + deliveryFee) * 100) / 100;
+    const total = Math.max(0, Math.round(((vatExemptSales - scDiscount - promoDiscount) + finalVatAmount + deliveryFee) * 100) / 100);
     const taxFees = deliveryFee;
 
     // 4. Update UI
