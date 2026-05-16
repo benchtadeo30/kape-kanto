@@ -159,7 +159,7 @@ function renderCartItems() {
                     ${customizationHtml}
                 </div>
                 <div style="display:flex;align-items:center;background:#f5f5f5;border-radius:50px;padding:4px 10px;gap:0.75rem;">
-                    <button class="btn" style="padding:3px 10px;background:transparent;" onclick="updateQuantityByIndex(${index},-1)">âˆ’</button>
+                    <button class="btn" style="padding:3px 10px;background:transparent;" onclick="updateQuantityByIndex(${index},-1)">-</button>
                     <span style="font-weight:700;min-width:18px;text-align:center;">${item.quantity}</span>
                     <button class="btn" style="padding:3px 10px;background:transparent;" onclick="updateQuantityByIndex(${index},1)">+</button>
                 </div>
@@ -319,7 +319,7 @@ function handleAddressInput(val) {
         return;
     }
 
-    suggestions.innerHTML = '<div class="suggestion-loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Searchingâ€¦</div>';
+    suggestions.innerHTML = '<div class="suggestion-loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Searching...</div>';
     suggestions.classList.add('open');
 
     addressSearchTimer = setTimeout(() => searchAddress(val), 500);
@@ -366,7 +366,7 @@ async function detectMyLocation() {
         return;
     }
 
-    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Detectingâ€¦';
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Detecting...';
     btn.disabled = true;
 
     navigator.geolocation.getCurrentPosition(async (pos) => {
@@ -538,10 +538,10 @@ function updateTotals() {
 
         if (promoDiscount > 0) {
             if (isSeniorOrPWD) {
-                const label = activePromo.discount_percent > 0 ? `${activePromo.discount_percent}%` : `â‚±${activePromo.discount_amount}`;
+                const label = activePromo.discount_percent > 0 ? `${activePromo.discount_percent}%` : `\u20B1${activePromo.discount_amount}`;
                 discountLabelStr += ` + ${label} Promo`;
             } else {
-                const label = activePromo.discount_percent > 0 ? `${activePromo.discount_percent}%` : `â‚±${activePromo.discount_amount}`;
+                const label = activePromo.discount_percent > 0 ? `${activePromo.discount_percent}%` : `\u20B1${activePromo.discount_amount}`;
                 discountLabelStr = `ðŸ·ï¸ Promo (${label} off)`;
             }
         } else if ((activePromo.discount_percent > 0 || activePromo.discount_amount > 0) && applicableGross === 0 && hasRestrictions) {
@@ -591,7 +591,7 @@ function updateTotals() {
     // 4. Update UI
     const setVal = (id, val, isDeduction = false) => {
         const el = document.getElementById(id);
-        if (el) el.innerText = `${isDeduction ? '-' : ''}â‚±${val.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        if (el) el.innerText = `${isDeduction ? '-' : ''}\u20B1${val.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
     };
 
     setVal('summary-subtotal', subtotal);
@@ -603,11 +603,11 @@ function updateTotals() {
             <div style="font-size: 0.85rem; color: var(--text-light); margin-top: 4px;">
                 <div style="display:flex; justify-content:space-between;">
                     <span>VAT-Exempt Discount (12%):</span>
-                    <span>-â‚±${vatRemovedAmount.toFixed(2)}</span>
+                    <span>-\u20B1${vatRemovedAmount.toFixed(2)}</span>
                 </div>
                 <div style="display:flex; justify-content:space-between;">
                     <span>${window.userDiscounts.type} Disc (20%):</span>
-                    <span>-â‚±${scDiscount.toFixed(2)}</span>
+                    <span>-\u20B1${scDiscount.toFixed(2)}</span>
                 </div>
             </div>
         `;
@@ -615,12 +615,12 @@ function updateTotals() {
             scHtml += `
                 <div style="display:flex; justify-content:space-between;">
                     <span>Promo Discount:</span>
-                    <span>-â‚±${promoDiscount.toFixed(2)}</span>
+                    <span>-\u20B1${promoDiscount.toFixed(2)}</span>
                 </div>
             `;
         }
         discountContainer.innerHTML = scHtml;
-        document.getElementById('summary-discount-total').innerText = `-â‚±${(discountAmount + vatRemovedAmount).toFixed(2)}`;
+        document.getElementById('summary-discount-total').innerText = `-\u20B1${(discountAmount + vatRemovedAmount).toFixed(2)}`;
     } else {
         setVal('summary-discount-total', displayDiscountAmount, true);
         if (promoDiscount > 0) {
@@ -702,7 +702,7 @@ async function placeOrder() {
     }
 
     btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Processingâ€¦';
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Processing...';
 
     const orderData = {
         items: cart.map(item => ({
@@ -851,7 +851,7 @@ async function verifyPhoneOTP() {
 }
 
 function getPriceHtml(item) {
-    if (!activePromo) return `<span style="color:var(--primary);font-weight:700;">â‚±${item.price.toFixed(2)}</span>`;
+    if (!activePromo) return `<span style="color:var(--primary);font-weight:700;">\u20B1${item.price.toFixed(2)}</span>`;
 
     let validCats = [];
     let validItems = [];
@@ -872,22 +872,22 @@ function getPriceHtml(item) {
     const hasRestrictions = validCats.length > 0 || validItems.length > 0;
     const isEligible = !hasRestrictions || validItems.includes(String(item.id)) || validCats.includes(String(item.category_id || item.categoryId || ''));
 
-    if (!isEligible) return `<span style="color:var(--primary);font-weight:700;">â‚±${item.price.toFixed(2)}</span>`;
+    if (!isEligible) return `<span style="color:var(--primary);font-weight:700;">\u20B1${item.price.toFixed(2)}</span>`;
 
     let discountedPrice = item.price;
     if (activePromo.discount_percent > 0) {
         discountedPrice = item.price * (1 - activePromo.discount_percent / 100);
     } else if (activePromo.discount_amount > 0) {
         if (!hasRestrictions) {
-            return `<span style="color:var(--primary);font-weight:700;">â‚±${item.price.toFixed(2)}</span>`;
+            return `<span style="color:var(--primary);font-weight:700;">\u20B1${item.price.toFixed(2)}</span>`;
         }
         discountedPrice = Math.max(0, item.price - activePromo.discount_amount);
     }
 
-    if (discountedPrice >= item.price) return `<span style="color:var(--primary);font-weight:700;">â‚±${item.price.toFixed(2)}</span>`;
+    if (discountedPrice >= item.price) return `<span style="color:var(--primary);font-weight:700;">\u20B1${item.price.toFixed(2)}</span>`;
 
     return `
-        <span style="text-decoration: line-through; color: #999; font-size: 0.85rem;">â‚±${item.price.toFixed(2)}</span>
-        <span style="color: var(--success); font-weight: 800;">â‚±${discountedPrice.toFixed(2)}</span>
+        <span style="text-decoration: line-through; color: #999; font-size: 0.85rem;">\u20B1${item.price.toFixed(2)}</span>
+        <span style="color: var(--success); font-weight: 800;">\u20B1${discountedPrice.toFixed(2)}</span>
     `;
 }

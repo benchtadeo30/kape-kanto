@@ -3,6 +3,8 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://js.puter.com/v2/"></script>
+<script src="/js/animations.js?v=1.2"></script>
+<script src="/js/main.js?v=1.2"></script>
 
 <div class="dashboard-layout">
     <%- include('../partials/admin-sidebar', { activePage: 'promo' }) %>
@@ -438,9 +440,14 @@
             <div class="form-group">
                 <label>Banner Image</label>
                 <div style="position: relative; border: 2px dashed #e0e0e0; border-radius: 12px; padding: 25px; text-align: center; background: #fff; cursor: pointer; transition: 0.3s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='#e0e0e0'">
-                    <i class="fa-solid fa-cloud-arrow-up" style="font-size: 1.8rem; color: var(--primary); margin-bottom: 8px; display: block;"></i>
+                    <div id="campaign-image-preview" style="display: none; margin-bottom: 15px;">
+                        <img src="" style="max-width: 100%; height: 120px; object-fit: cover; border-radius: 8px;">
+                    </div>
+                    <div id="campaign-upload-icon">
+                        <i class="fa-solid fa-cloud-arrow-up" style="font-size: 1.8rem; color: var(--primary); margin-bottom: 8px; display: block;"></i>
+                    </div>
                     <span id="campaign-file-display" style="font-size: 0.9rem; color: var(--text-light);">Click to upload banner</span>
-                    <input type="file" id="campaign-image" accept="image/*" style="position: absolute; inset: 0; opacity: 0; cursor: pointer;" onchange="document.getElementById('campaign-file-display').innerText = this.files[0].name">
+                    <input type="file" id="campaign-image" accept="image/*" style="position: absolute; inset: 0; opacity: 0; cursor: pointer;" onchange="handleImageChange(this)">
                 </div>
             </div>
 
@@ -1284,6 +1291,8 @@
         
         document.getElementById('modal-title').innerText = 'Build Campaign';
         document.getElementById('campaign-file-display').innerText = 'Click to upload banner';
+        document.getElementById('campaign-image-preview').style.display = 'none';
+        document.getElementById('campaign-upload-icon').style.display = 'block';
         
         // Reset Custom Selects
         syncCustomSelects();
@@ -1329,6 +1338,14 @@
         
         document.getElementById('campaign-title').value = item.title || '';
         document.getElementById('campaign-desc').value = item.description || item.customer_description || '';
+        
+        if (item.image) {
+            const preview = document.getElementById('campaign-image-preview');
+            preview.style.display = 'block';
+            preview.querySelector('img').src = item.image;
+            document.getElementById('campaign-upload-icon').style.display = 'none';
+            document.getElementById('campaign-file-display').innerText = 'Change banner image';
+        }
         
         const hasPercent = (item.discount_percent || item.reward_discount || 0) > 0;
         if (hasPercent) {
@@ -1612,6 +1629,21 @@
             }
         });
     });
+
+    function handleImageChange(input) {
+        const file = input.files[0];
+        if (file) {
+            document.getElementById('campaign-file-display').innerText = file.name;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const preview = document.getElementById('campaign-image-preview');
+                preview.style.display = 'block';
+                preview.querySelector('img').src = e.target.result;
+                document.getElementById('campaign-upload-icon').style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+    }
 </script>
 
 <!-- Item Selector Modal -->

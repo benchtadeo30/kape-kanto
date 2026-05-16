@@ -614,7 +614,7 @@
             detailImg.src = imgUrl;
             document.getElementById('detailName').textContent = currentDetailItem.name;
             document.getElementById('detailDesc').textContent = currentDetailItem.description || 'Crafted with premium ingredients for an unforgettable experience.';
-            document.getElementById('detailBasePrice').textContent = `&#8369;${currentDetailItem.price.toFixed(2)}`;
+            document.getElementById('detailBasePrice').innerHTML = `&#8369;${currentDetailItem.price.toFixed(2)}`;
 
             const badge = document.getElementById('detailBadge');
             const isAvailable = currentDetailItem.is_available === 1 && currentDetailItem.stock > 0;
@@ -771,7 +771,7 @@
             const btnText = document.getElementById('detailAddBtnText');
             const isAvailable = currentDetailItem && currentDetailItem.is_available === 1 && currentDetailItem.stock > 0;
 
-            document.getElementById('detailTotalPrice').textContent = `&#8369;${total.toFixed(2)}`;
+            document.getElementById('detailTotalPrice').innerHTML = `&#8369;${total.toFixed(2)}`;
             btnText.textContent = `Add to Cart`;
 
             if (!userIsLoggedIn) {

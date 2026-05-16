@@ -80,7 +80,7 @@ router.get('/context', requireRole('admin'), async (req, res) => {
 router.get('/tasks', requireRole('admin'), async (req, res) => {
     try {
         const tasks = await db.prepare(`
-            SELECT pt.*, p.promo_code, p.discount_percent as reward_discount
+            SELECT pt.*, p.promo_code, p.image, p.discount_percent as reward_discount
             FROM promo_tasks pt
             LEFT JOIN promos p ON pt.reward_promo_id = p.id
             ORDER BY pt.id DESC

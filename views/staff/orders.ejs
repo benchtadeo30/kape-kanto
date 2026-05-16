@@ -405,7 +405,7 @@
                 </div>
                 <span class="so-type-chip"><i class="fa-solid ${isDelivery ? 'fa-truck-fast' : 'fa-bag-shopping'}"></i> ${isDelivery ? 'Delivery' : 'Pickup'}</span>
                 <span class="so-badge ${BADGE_MAP[o.status] || ''}">${o.status === 'awaiting_payment' ? '<i class="fa-solid fa-triangle-exclamation"></i>' : ''}${statusLabel(o.status, o.order_type)}</span>
-                <span class="so-total">PHP ${Number(o.total || 0).toFixed(2)}</span>
+                <span class="so-total">&#8369;${Number(o.total || 0).toFixed(2)}</span>
                 <div class="so-actions">${actionBtns || '<span class="so-customer">No actions</span>'}</div>
             </article>
         `;
@@ -594,7 +594,7 @@
     async function loadStaffChatMessages() {
         if (!activeChatOrderId) return;
         try {
-            const res = await fetch(\`/api/orders/\${activeChatOrderId}/messages\`);
+            const res = await fetch(`/api/orders/${activeChatOrderId}/messages`);
             if (!res.ok) return;
             const messages = await res.json();
             const container = document.getElementById('chat-messages');
@@ -610,11 +610,11 @@
                 const isCustomer = m.role === 'customer';
                 const time = new Date(m.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
                 const senderName = isCustomer ? (m.username || 'Customer') : 'You';
-                return \`
-                <div class="chat-msg \${isCustomer ? 'customer' : 'staff'}">
-                    <div>\${m.message}</div>
-                    <div class="chat-meta">\${senderName} · \${time}</div>
-                </div>\`;
+                return `
+                <div class="chat-msg ${isCustomer ? 'customer' : 'staff'}">
+                    <div>${m.message}</div>
+                    <div class="chat-meta">${senderName} · ${time}</div>
+                </div>`;
             }).join('');
 
             if (isAtBottom) {
@@ -636,7 +636,7 @@
         input.disabled = true;
 
         try {
-            const res = await fetch(\`/api/orders/\${activeChatOrderId}/messages\`, {
+            const res = await fetch(`/api/orders/${activeChatOrderId}/messages`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message })

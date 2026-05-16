@@ -55,7 +55,7 @@
 
         img.src = currentItem.image ? (currentItem.image.startsWith('http') ? currentItem.image : `/uploads/menu/${currentItem.image}`) : 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=600';
         title.innerText = currentItem.name;
-        price.innerText = `&#8369;${currentItem.price.toFixed(2)}`;
+        price.innerHTML = `&#8369;${currentItem.price.toFixed(2)}`;
         desc.innerText = currentItem.description || 'No description available.';
         qtyInput.value = 1;
 

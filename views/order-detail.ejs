@@ -405,11 +405,11 @@
                 ${order.promo_discount_amount > 0 && !hasScPwdDiscount ? `
                     <div class="od-breakdown-row discount">
                         <span>Promo/Coupon Discount</span>
-                        <span>-PHP ${order.promo_discount_amount.toFixed(2)}</span>
+                        <span>-&#8369;${order.promo_discount_amount.toFixed(2)}</span>
                     </div>
                     <div class="od-breakdown-row discount">
                         <span>VAT Reduction from Promo</span>
-                        <span>-PHP ${regularPromoVatReduction.toFixed(2)}</span>
+                        <span>-&#8369;${regularPromoVatReduction.toFixed(2)}</span>
                     </div>
                 ` : ''}
                 <div class="od-breakdown-row"><span>Delivery Fee</span><span>&#8369;${(order.delivery_fee || 0).toFixed(2)}</span></div>
