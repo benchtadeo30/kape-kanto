@@ -429,13 +429,7 @@
         }
 
         function getItemImage(item) {
-            if (item.image) {
-                if (item.image.startsWith('http')) return item.image;
-                // Fix: avoid double-prepending the path
-                if (item.image.startsWith('/uploads/') || item.image.startsWith('data:')) return item.image;
-                return `/uploads/menu/${item.image}`;
-            }
-            return getCategoryFallbackImage(item);
+            return KapeKanto.normalizeImageUrl(item.image, 'menu') || getCategoryFallbackImage(item);
         }
 
         // ── LOAD MENU ─────────────────────────────────────────

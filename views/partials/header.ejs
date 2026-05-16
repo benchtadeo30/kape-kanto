@@ -149,7 +149,9 @@
                     <li class="nav-profile-dropdown desktop-profile">
                         <div class="nav-avatar-btn">
                             <% if (user.profile_image) { %>
-                                <img src="<%= user.profile_image.startsWith('/') || user.profile_image.startsWith('http') ? user.profile_image : '/uploads/profiles/' + user.profile_image %>" alt="Profile">
+                                <img src="<%= user.profile_image && (user.profile_image.startsWith('/') || user.profile_image.startsWith('http') || user.profile_image.startsWith('data:')) ? user.profile_image : (user.profile_image ? '/uploads/profiles/' + user.profile_image : '/images/default-avatar.png') %>" 
+                                     alt="Profile" 
+                                     onerror="this.src='/images/default-avatar.png'; this.onerror=null;">
                             <% } else { %>
                                 <i class="fa-solid fa-user-tie"></i>
                             <% } %>
@@ -157,7 +159,9 @@
                         <div class="dropdown-content">
                             <div class="dropdown-header">
                                 <% if (user.profile_image) { %>
-                                    <img src="<%= user.profile_image.startsWith('/') || user.profile_image.startsWith('http') ? user.profile_image : '/uploads/profiles/' + user.profile_image %>" alt="Profile">
+                                    <img src="<%= user.profile_image && (user.profile_image.startsWith('/') || user.profile_image.startsWith('http') || user.profile_image.startsWith('data:')) ? user.profile_image : (user.profile_image ? '/uploads/profiles/' + user.profile_image : '/images/default-avatar.png') %>" 
+                                         alt="Profile"
+                                         onerror="this.src='/images/default-avatar.png'; this.onerror=null;">
                                 <% } else { %>
                                     <div class="header-avatar" style="background: var(--primary); display: flex; align-items: center; justify-content: center; color: white; font-weight: 800;">
                                         <%= user.username.charAt(0).toUpperCase() %>
@@ -286,8 +290,25 @@
             setInterval(checkUnreadMessages, 30000);
         });
 
+        // Global Image Normalization Utility
+        window.KapeKanto.normalizeImageUrl = function(path, type = 'profiles') {
+            if (!path) return type === 'profiles' ? '/images/default-avatar.png' : '';
+            if (path.startsWith('data:') || path.startsWith('http') || path.startsWith('/')) return path;
+            
+            // Legacy path mapping
+            const typeMap = {
+                'profiles': '/uploads/profiles/',
+                'menu': '/api/menu/image/', // Some routes might serve images differently
+                'promos': '/uploads/promos/',
+                'ids': '/uploads/ids/'
+            };
+            
+            // Fallback for simple uploads folder
+            const prefix = typeMap[type] || '/uploads/';
+            return prefix + path;
+        };
+
         // Global Image Optimization Utility
-        window.KapeKanto = window.KapeKanto || {};
         window.KapeKanto.optimizeImage = function(file, maxWidth = 1000, quality = 0.8) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();

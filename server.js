@@ -132,9 +132,13 @@ app.use((err, req, res, next) => {
     try {
         await initDb();
         await seedData();
-        app.listen(PORT, () => {
+        const server = app.listen(PORT, () => {
             console.log(`☕ Kape Kanto Hub Server is running on http://localhost:${PORT}`);
         });
+        
+        // Increase timeouts for large Base64 transfers
+        server.keepAliveTimeout = 120000; // 120 seconds
+        server.headersTimeout = 125000;
     } catch (err) {
         console.error('Failed to start server:', err);
         process.exit(1);

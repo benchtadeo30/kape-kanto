@@ -28,15 +28,31 @@
     // Prevent body scroll during intro
     document.body.style.overflow = 'hidden';
 
+    // Backup: Force exit intro if load event takes too long (e.g. 4.5s)
+    const backupTimeout = setTimeout(() => {
+        exitIntro();
+    }, 4500);
+
     window.addEventListener('load', () => {
-        setTimeout(() => {
-            intro.classList.add('intro--exit');
-            intro.addEventListener('transitionend', () => {
-                intro.style.display = 'none';
-                document.body.style.overflow = '';
-            }, { once: true });
-        }, INTRO_DURATION);
+        setTimeout(exitIntro, INTRO_DURATION);
     });
+
+    function exitIntro() {
+        if (intro.classList.contains('intro--exit')) return;
+        clearTimeout(backupTimeout);
+        
+        intro.classList.add('intro--exit');
+        intro.addEventListener('transitionend', () => {
+            intro.style.display = 'none';
+            document.body.style.overflow = '';
+        }, { once: true });
+        
+        // Fallback if transitionend doesn't fire
+        setTimeout(() => {
+            intro.style.display = 'none';
+            document.body.style.overflow = '';
+        }, 800);
+    }
 
     // Mark this session as visited
     sessionStorage.setItem(SESSION_KEY, '1');

@@ -725,7 +725,7 @@
                         <!-- ID Image -->
                         <div style="text-align: center;">
                             <p style="margin: 0 0 6px 0; font-size: 0.7rem; text-transform: uppercase; color: #999; font-weight: 600; letter-spacing: 0.5px;">ID Photo</p>
-                            ${idImage ? `<img src="${idImage}" style="width: 130px; height: 90px; object-fit: cover; border-radius: 10px; border: 2px solid #f0e6e0; cursor: pointer; transition: transform 0.2s;" onclick="openLightbox('${idImage}')" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : ''}
+                            ${idImage ? `<img src="${KapeKanto.normalizeImageUrl(idImage, 'ids')}" style="width: 130px; height: 90px; object-fit: cover; border-radius: 10px; border: 2px solid #f0e6e0; cursor: pointer; transition: transform 0.2s;" onclick="openLightbox('${KapeKanto.normalizeImageUrl(idImage, 'ids')}')" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : ''}
                             <div style="width: 130px; height: 90px; background: #fff5f5; border-radius: 10px; display: ${idImage ? 'none' : 'flex'}; align-items: center; justify-content: center; color: #e57373; border: 2px dashed #ffcdd2; flex-direction: column; gap: 5px;">
                                 <i class="fa-solid fa-image-slash" style="font-size: 1.2rem;"></i>
                                 <span style="font-size: 0.6rem; font-weight: 700;">FILE MISSING</span>
@@ -735,7 +735,7 @@
                         <!-- Selfie Image -->
                         <div style="text-align: center;">
                             <p style="margin: 0 0 6px 0; font-size: 0.7rem; text-transform: uppercase; color: #999; font-weight: 600; letter-spacing: 0.5px;">Selfie</p>
-                            ${u.selfie_image ? `<img src="${u.selfie_image}" style="width: 130px; height: 90px; object-fit: cover; border-radius: 10px; border: 2px solid #f0e6e0; cursor: pointer; transition: transform 0.2s;" onclick="openLightbox('${u.selfie_image}')" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : ''}
+                            ${u.selfie_image ? `<img src="${KapeKanto.normalizeImageUrl(u.selfie_image, 'ids')}" style="width: 130px; height: 90px; object-fit: cover; border-radius: 10px; border: 2px solid #f0e6e0; cursor: pointer; transition: transform 0.2s;" onclick="openLightbox('${KapeKanto.normalizeImageUrl(u.selfie_image, 'ids')}')" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : ''}
                             <div style="width: 130px; height: 90px; background: #fff5f5; border-radius: 10px; display: ${u.selfie_image ? 'none' : 'flex'}; align-items: center; justify-content: center; color: #e57373; border: 2px dashed #ffcdd2; flex-direction: column; gap: 5px;">
                                 <i class="fa-solid fa-image-slash" style="font-size: 1.2rem;"></i>
                                 <span style="font-size: 0.6rem; font-weight: 700;">FILE MISSING</span>
