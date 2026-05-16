@@ -330,26 +330,31 @@ router.put('/:id', requireRole('admin'), upload.single('image'), async (req, res
             );
 
             const promoId = task.reward_promo_id;
-            if (req.file) {
-                const imagePath = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
-                await db.prepare(`
-                    UPDATE promos SET 
-                        title=?, description=?, discount_percent=?, discount_amount=?, image=?, 
-                        start_date=?, end_date=?, is_active=?, promo_code=?,
-                        applicable_category_ids=?, applicable_menu_item_ids=?,
-                        usage_limit=?
-                    WHERE id=?
-                `).run(title, description, discount_percent || 0, discount_amount || 0, imagePath, start_date || null, end_date || null, is_active == '1' ? 1 : 0, promo_code || null, applicable_category_ids || '[]', applicable_menu_item_ids || '[]', parseInt(usage_limit) || 1, promoId);
-            } else {
-                await db.prepare(`
-                    UPDATE promos SET 
-                        title=?, description=?, discount_percent=?, discount_amount=?,
-                        start_date=?, end_date=?, is_active=?, promo_code=?,
-                        applicable_category_ids=?, applicable_menu_item_ids=?,
-                        usage_limit=?
-                    WHERE id=?
-                `).run(title, description, discount_percent || 0, discount_amount || 0, start_date || null, end_date || null, is_active == '1' ? 1 : 0, promo_code || null, applicable_category_ids || '[]', applicable_menu_item_ids || '[]', parseInt(usage_limit) || 1, promoId);
-            }
+                if (req.file) {
+                    const imagePath = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+                    await db.prepare(`
+                        UPDATE promos SET 
+                            title=?, description=?, discount_percent=?, discount_amount=?, image=?, 
+                            start_date=?, end_date=?, is_active=?, promo_code=?,
+                            applicable_category_ids=?, applicable_menu_item_ids=?,
+                            usage_limit=?
+                        WHERE id=?
+                    `).run(title, description, discount_percent || 0, discount_amount || 0, imagePath, start_date || null, end_date || null, is_active == '1' ? 1 : 0, promo_code || null, applicable_category_ids || '[]', applicable_menu_item_ids || '[]', parseInt(usage_limit) || 1, promoId);
+                } else {
+                    await db.prepare(`
+                        UPDATE promos SET 
+                            title=?, description=?, discount_percent=?, discount_amount=?,
+                            start_date=?, end_date=?, is_active=?, promo_code=?,
+                            applicable_category_ids=?, applicable_menu_item_ids=?,
+                            usage_limit=?
+                        WHERE id=?
+                    `).run(title, description, discount_percent || 0, discount_amount || 0, start_date || null, end_date || null, is_active == '1' ? 1 : 0, promo_code || null, applicable_category_ids || '[]', applicable_menu_item_ids || '[]', parseInt(usage_limit) || 1, promoId);
+                }
+
+                // [RESET LOGIC] Clear progress and reset earned coupons for this task
+                await db.prepare('DELETE FROM user_promo_progress WHERE promo_task_id = ?').run(campaignId);
+                await db.prepare('DELETE FROM user_coupons WHERE promo_id = ?').run(promoId);
+                console.log(`[PROMO RESET] Cleared progress for Task #${campaignId} and Coupons for Promo #${promoId}`);
         } else {
             if (req.file) {
                 const imagePath = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
@@ -371,6 +376,10 @@ router.put('/:id', requireRole('admin'), upload.single('image'), async (req, res
                     WHERE id=?
                 `).run(title, description, discount_percent || 0, discount_amount || 0, start_date || null, end_date || null, is_active == '1' ? 1 : 0, promo_code || null, applicable_category_ids || '[]', applicable_menu_item_ids || '[]', parseInt(usage_limit) || 1, campaignId);
             }
+
+            // [RESET LOGIC] Reset user usage records for this public promo
+            await db.prepare('DELETE FROM user_coupons WHERE promo_id = ?').run(campaignId);
+            console.log(`[PROMO RESET] Cleared user usage records for Public Promo #${campaignId}`);
         }
 
         res.json({ message: 'Campaign updated successfully.' });

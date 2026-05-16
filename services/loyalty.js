@@ -102,11 +102,13 @@ async function trackLoyaltyProgress(userId, orderId, orderTotal) {
                 await db.prepare('UPDATE user_promo_progress SET current_quantity = ?, is_completed = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
                     .run(targetVal, progress.id);
                 if (task.reward_promo_id) {
+                    const promo = await db.prepare('SELECT usage_limit FROM promos WHERE id = ?').get(task.reward_promo_id);
+                    const limit = promo ? promo.usage_limit : 1;
                     const existing = await db.prepare('SELECT id FROM user_coupons WHERE user_id = ? AND promo_id = ? AND is_used = 0').get(userId, task.reward_promo_id);
                     if (!existing) {
-                        await db.prepare('INSERT INTO user_coupons (user_id, promo_id) VALUES (?, ?)').run(userId, task.reward_promo_id);
+                        await db.prepare('INSERT INTO user_coupons (user_id, promo_id, usage_limit) VALUES (?, ?, ?)').run(userId, task.reward_promo_id, limit);
                     }
-                    console.log(`🎫 Coupon awarded for promo ID ${task.reward_promo_id}`);
+                    console.log(`🎫 Coupon awarded for promo ID ${task.reward_promo_id} with limit ${limit}`);
                 }
             } else if (increment > 0) {
                 const newQty = (progress.current_quantity || 0) + increment;
@@ -117,11 +119,13 @@ async function trackLoyaltyProgress(userId, orderId, orderTotal) {
                     await db.prepare('UPDATE user_promo_progress SET current_quantity = ?, is_completed = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
                         .run(newQty, progress.id);
                     if (task.reward_promo_id) {
+                        const promo = await db.prepare('SELECT usage_limit FROM promos WHERE id = ?').get(task.reward_promo_id);
+                        const limit = promo ? promo.usage_limit : 1;
                         const existing = await db.prepare('SELECT id FROM user_coupons WHERE user_id = ? AND promo_id = ? AND is_used = 0').get(userId, task.reward_promo_id);
                         if (!existing) {
-                            await db.prepare('INSERT INTO user_coupons (user_id, promo_id) VALUES (?, ?)').run(userId, task.reward_promo_id);
+                            await db.prepare('INSERT INTO user_coupons (user_id, promo_id, usage_limit) VALUES (?, ?, ?)').run(userId, task.reward_promo_id, limit);
                         }
-                        console.log(`🎫 Coupon awarded for promo ID ${task.reward_promo_id}`);
+                        console.log(`🎫 Coupon awarded for promo ID ${task.reward_promo_id} with limit ${limit}`);
                     }
                 } else {
                     await db.prepare('UPDATE user_promo_progress SET current_quantity = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')

@@ -160,6 +160,8 @@ router.get('/profile', pageRequireAuth, async (req, res) => {
             t.title, 
             COALESCE(t.customer_description, t.description) as description, 
             t.required_quantity,
+            t.task_type,
+            t.min_order_amount,
             t.end_date,
             IFNULL(p.current_quantity, 0) as current_quantity, 
             IFNULL(p.is_completed, 0) as is_completed,
