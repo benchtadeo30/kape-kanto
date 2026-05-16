@@ -428,7 +428,7 @@ document.addEventListener('click', () => {
 });
 
 // ─── Global namespace ──────────────────────────────────────────────────────
-window.KapeKanto = {
+window.KapeKanto = Object.assign(window.KapeKanto || {}, {
     toast: showToast,
     confirm: showConfirm,
     alert: showAlert,
@@ -439,4 +439,4 @@ window.KapeKanto = {
     saveCart,
     clearCart,
     logout
-};
+});
