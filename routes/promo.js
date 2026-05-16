@@ -13,9 +13,10 @@ router.get('/', async (req, res) => {
         const promoQuery = `
             SELECT id, title, description, discount_percent, discount_amount, image, 
                    start_date, end_date, promo_code, 'promo' as event_type, created_at
-            FROM promos 
-            WHERE is_active = 1 
-            AND (end_date IS NULL OR end_date = '' OR datetime(end_date) >= datetime('now', '+8 hours'))
+            FROM promos p
+            WHERE p.is_active = 1 
+            AND NOT EXISTS (SELECT 1 FROM promo_tasks pt WHERE pt.reward_promo_id = p.id)
+            AND (p.end_date IS NULL OR p.end_date = '' OR datetime(p.end_date) >= datetime('now', '+8 hours'))
         `;
 
         const taskQuery = `
@@ -54,7 +55,10 @@ router.get('/', async (req, res) => {
 // GET /api/promos/all (Admin - All promos)
 router.get('/all', requireRole('admin'), async (req, res) => {
     try {
-        const promos = await db.prepare(`SELECT * FROM promos`).all();
+        const promos = await db.prepare(`
+            SELECT p.* FROM promos p
+            WHERE NOT EXISTS (SELECT 1 FROM promo_tasks pt WHERE pt.reward_promo_id = p.id)
+        `).all();
         res.json(promos);
     } catch (error) {
         res.status(500).json({ error: 'Internal server error.' });
@@ -457,7 +461,7 @@ Rules:
 1. Map the request to the correct task_type. For "verify email", use verify_email.
 2. If they mention a specific item, use buy_specific_item and set menu_item_id. If they mention a category, use buy_from_category and set category_id.
 3. Set min_quantity based on the request (default 1).
-4. Set min_order_amount if they mention a minimum spend (e.g., "spend at least ₱200").
+4. Set min_order_amount if they mention a minimum spend (e.g., "spend at least \u20B1200").
 5. Generate a short uppercase reward_promo_code (e.g., "VERIFY10OFF").
 6. Set reward_discount_percent based on the request (e.g. 10).
 7. Write a friendly customer_description explaining the task in 1-2 sentences with emoji.

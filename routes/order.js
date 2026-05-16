@@ -35,40 +35,13 @@ router.post('/', requireAuth, async (req, res) => {
             return res.status(403).json({ error: 'You must verify your email before placing an order.' });
         }
 
-        // Phone Verification Check for Suspicious Orders
-        if (order_type === 'delivery' && !user.is_phone_verified && user.role === 'customer') {
-            // Check orders from the last 24 hours
-            const pastDayOrders = await db.prepare(`
-                SELECT delivery_address 
-                FROM orders 
-                WHERE user_id = ? AND created_at >= datetime('now', '-1 day')
-            `).all(userId);
-
-            const totalOrdersToday = pastDayOrders.length;
-            const uniqueAddresses = new Set();
-            pastDayOrders.forEach(o => { 
-                if (o.delivery_address) uniqueAddresses.add(o.delivery_address.toLowerCase().trim()); 
+        // Phone Verification Check for Cash on Delivery Orders
+        if (payment_method === 'cod' && !user.is_phone_verified && user.role === 'customer') {
+            await db.rollback();
+            return res.status(403).json({ 
+                requires_phone_verification: true, 
+                reason: 'cod_verification_required' 
             });
-            
-            let isSuspicious = false;
-            
-            // Flag if this is the 3rd order within 24 hours
-            if (totalOrdersToday >= 2) {
-                isSuspicious = true;
-            }
-            
-            // Flag if this is a new delivery address and they've already used at least one other address today
-            if (uniqueAddresses.size >= 1 && delivery_address && !uniqueAddresses.has(delivery_address.toLowerCase().trim())) {
-                isSuspicious = true;
-            }
-
-            if (isSuspicious) {
-                await db.rollback();
-                return res.status(403).json({ 
-                    requires_phone_verification: true, 
-                    reason: 'unusual_activity' 
-                });
-            }
         }
         
         // 2. Validate items and calculate subtotal
@@ -240,12 +213,12 @@ router.post('/', requireAuth, async (req, res) => {
         console.log(`[ORDER] === Order Summary ===`);
         console.log(`[ORDER] Promo Code Received: "${promo_code || 'NONE'}"`);
         console.log(`[ORDER] Promo Object: ${promoObj ? promoObj.title + ' (ID:' + promoObj.id + ')' : 'NULL'}`);
-        console.log(`[ORDER] Subtotal (Gross): ₱${subtotal}`);
-        console.log(`[ORDER] SC/PWD Discount: ₱${sc_discount}`);
-        console.log(`[ORDER] Promo Discount: ₱${promo_discount_amount}`);
-        console.log(`[ORDER] VAT: ₱${final_vat_amount}`);
-        console.log(`[ORDER] Delivery Fee: ₱${delivery_fee}`);
-        console.log(`[ORDER] FINAL TOTAL: ₱${total}`);
+        console.log(`[ORDER] Subtotal (Gross): \u20B1${subtotal}`);
+        console.log(`[ORDER] SC/PWD Discount: \u20B1${sc_discount}`);
+        console.log(`[ORDER] Promo Discount: \u20B1${promo_discount_amount}`);
+        console.log(`[ORDER] VAT: \u20B1${final_vat_amount}`);
+        console.log(`[ORDER] Delivery Fee: \u20B1${delivery_fee}`);
+        console.log(`[ORDER] FINAL TOTAL: \u20B1${total}`);
         console.log(`[ORDER] Payment Method: ${payment_method}`);
 
         const isOnline = payment_method === 'online' || payment_method === 'payrex';

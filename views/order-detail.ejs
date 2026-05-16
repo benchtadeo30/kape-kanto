@@ -316,7 +316,7 @@
                     <div class="od-item-name">${item.quantity}× ${item.name}</div>
                     ${customText ? `<div class="od-item-custom">${customText}</div>` : ''}
                 </div>
-                <div class="od-item-price">₱${item.subtotal.toFixed(2)}</div>
+                <div class="od-item-price">&#8369;${item.subtotal.toFixed(2)}</div>
             </div>`;
         }).join('');
 
@@ -324,7 +324,7 @@
         const discountRow = order.discount_amount > 0
             ? `<div class="od-breakdown-row discount">
                     <span>${order.discount_type === 'promo' ? '🏷️ Promo Discount' : '🪪 SC/PWD Discount'}</span>
-                    <span>-₱${order.discount_amount.toFixed(2)}</span>
+                    <span>-&#8369;${order.discount_amount.toFixed(2)}</span>
                </div>` : '';
 
         const payLabel = {
@@ -353,7 +353,7 @@
                     <span class="od-status-pill ${pillClass}">
                         <i class="fa-solid ${pillIcon}"></i> ${pillLabel}
                     </span>
-                    <span class="od-total">₱${order.total.toFixed(2)}</span>
+                    <span class="od-total">&#8369;${order.total.toFixed(2)}</span>
                 </div>
             </div>
 
@@ -381,23 +381,23 @@
 
             <!-- Price Breakdown -->
             <div class="od-breakdown">
-                <div class="od-breakdown-row"><span>Subtotal (Gross)</span><span>₱${order.subtotal.toFixed(2)}</span></div>
+                <div class="od-breakdown-row"><span>Subtotal (Gross)</span><span>&#8369;${order.subtotal.toFixed(2)}</span></div>
                 
                 ${order.sc_discount_amount > 0 ? `
                     <div class="od-breakdown-row discount">
                         <span>VAT-Exempt Discount (12%)</span>
-                        <span>-₱${(order.subtotal - (order.subtotal / 1.12)).toFixed(2)}</span>
+                        <span>-&#8369;${(order.subtotal - (order.subtotal / 1.12)).toFixed(2)}</span>
                     </div>
                     <div class="od-breakdown-row discount">
                         <span>${order.discount_type === 'senior' ? 'Senior Citizen' : 'PWD'} Disc (20%)</span>
-                        <span>-₱${order.sc_discount_amount.toFixed(2)}</span>
+                        <span>-&#8369;${order.sc_discount_amount.toFixed(2)}</span>
                     </div>
                 ` : ''}
 
                 ${order.promo_discount_amount > 0 && hasScPwdDiscount ? `
                     <div class="od-breakdown-row discount">
                         <span>🏷️ Promo/Coupon Discount</span>
-                        <span>-₱${order.promo_discount_amount.toFixed(2)}</span>
+                        <span>-&#8369;${order.promo_discount_amount.toFixed(2)}</span>
                     </div>
                 ` : ''}
 
@@ -412,8 +412,8 @@
                         <span>-PHP ${regularPromoVatReduction.toFixed(2)}</span>
                     </div>
                 ` : ''}
-                <div class="od-breakdown-row"><span>Delivery Fee</span><span>₱${(order.delivery_fee || 0).toFixed(2)}</span></div>
-                <div class="od-breakdown-row total"><span>Total Amount Due</span><span>₱${order.total.toFixed(2)}</span></div>
+                <div class="od-breakdown-row"><span>Delivery Fee</span><span>&#8369;${(order.delivery_fee || 0).toFixed(2)}</span></div>
+                <div class="od-breakdown-row total"><span>Total Amount Due</span><span>&#8369;${order.total.toFixed(2)}</span></div>
                 
                 <div class="od-breakdown-row" style="margin-top:0.6rem;border-top:1px dashed #e0d4c8;padding-top:0.6rem;">
                     <span>💳 Payment Method</span><span><strong>${payLabel}</strong></span>

@@ -371,11 +371,6 @@
                                 <div class="form-group">
                                     <div class="flex-stack-mobile" style="margin-bottom: 0.5rem;">
                                         <label style="margin: 0;">Email Address</label>
-                                        <% if (user.email && user.role==='customer' ) { %>
-                                            <a href="#" onclick="confirmRemoveEmail(event)"
-                                                style="font-size: 0.75rem; color: var(--danger); font-weight: 600; text-decoration: underline;">Remove
-                                                Email</a>
-                                            <% } %>
                                     </div>
                                     <input type="email" name="email" value="<%= user.email %>"
                                         placeholder="No email set" required <%=(user.is_verified !=1 || user.role
@@ -767,7 +762,7 @@
                                                     <%= promo.title %>
                                                 </h4>
                                                 <p style="margin: 0; font-size: 1.8rem; font-weight: 800; color: #6F4E37;">
-                                                    <%= promo.discount_percent > 0 ? promo.discount_percent + '%' : '₱' + promo.discount_amount %> OFF
+                                                    <%= promo.discount_percent > 0 ? promo.discount_percent + '%' : '&#8369;' + promo.discount_amount %> OFF
                                                 </p>
                                                 <div
                                                     style="margin-top: 15px; background: #fdf5e6; color: #6F4E37; padding: 8px 12px; border-radius: 8px; font-family: monospace; font-size: 1.1rem; letter-spacing: 2px; text-align: center; font-weight: 700; border: 1px solid #e8b86d;">
@@ -934,13 +929,7 @@
             }, { title: 'Delete Account', confirmText: 'Yes, Send Code', type: 'danger' });
         }
 
-        function confirmRemoveEmail(e) {
-            e.preventDefault();
-            const btn = e.target;
-            KapeKanto.confirm('Are you sure you want to remove your email address? You will not be able to reset your password or receive order updates via email until you add a new one.', () => {
-                requestAccountChange('remove_email', {}, btn);
-            }, { title: 'Remove Email', confirmText: 'Yes, Send Code', type: 'warning' });
-        }
+
 
         function confirmUpdateID(btn) {
             KapeKanto.confirm('Are you sure you want to update your ID? Your current verified status and discount will remain active until your new submission is reviewed.', () => {

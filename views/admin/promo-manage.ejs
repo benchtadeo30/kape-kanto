@@ -266,7 +266,7 @@
                     <select id="task-type" class="kk-select-modern" onchange="toggleTaskSubFields()">
                         <option value="buy_specific_item" data-icon="fa-mug-hot">Buy Specific Item</option>
                         <option value="buy_from_category" data-icon="fa-layer-group">Buy from Category</option>
-                        <option value="minimum_spend" data-icon="fa-peseta-sign">Minimum Spend (₱)</option>
+                        <option value="minimum_spend" data-icon="fa-peseta-sign">Minimum Spend (&#8369;)</option>
                         <option value="order_count" data-icon="fa-list-check">Complete Total Orders</option>
                         <option value="verify_email" data-icon="fa-envelope-circle-check">Verify Email Address</option>
                         <option value="first_order" data-icon="fa-star">First Order Only</option>
@@ -307,7 +307,7 @@
                 </div>
 
                 <div id="subfield-amount" class="form-group" style="display:none;">
-                    <label>Minimum Order Amount (₱)</label>
+                    <label>Minimum Order Amount (&#8369;)</label>
                     <input type="number" id="task-amount" placeholder="0.00" step="0.01">
                 </div>
             </div>
@@ -321,7 +321,7 @@
                         <label>Discount Type</label>
                         <select id="discount-type-select" class="kk-select-modern" onchange="toggleDiscountFields()">
                             <option value="percent" data-icon="fa-percent">Percentage (%)</option>
-                            <option value="flat" data-icon="fa-money-bill-1">Flat Amount (₱)</option>
+                            <option value="flat" data-icon="fa-money-bill-1">Flat Amount (&#8369;)</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -342,7 +342,7 @@
                         </div>
                     </div>
                     <div class="form-group" id="flat-field" style="display: none;">
-                        <label>Discount Amount (₱) <span style="color: var(--danger);">*</span></label>
+                        <label>Discount Amount (&#8369;) <span style="color: var(--danger);">*</span></label>
                         <div style="position: relative;">
                             <input type="number" id="campaign-flat-discount" min="0" step="0.01" placeholder="0.00" style="padding-left: 2.5rem;">
                             <i class="fa-solid fa-peseta-sign" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-light);"></i>
@@ -1215,7 +1215,7 @@
                         
                         <div class="campaign-meta-row" style="display: flex; align-items: center; gap: 25px; flex-wrap: nowrap; font-size: 0.85rem; color: #555; font-weight: 600; background: #f8f8f8; padding: 12px 20px; border-radius: 12px; width: fit-content; max-width: 100%; overflow-x: auto; scrollbar-width: none;">
                             <div style="display: flex; align-items: center; gap: 15px;">
-                                <span style="white-space: nowrap;"><i class="fa-solid fa-tag" style="color: var(--primary);"></i> ${item.discount_percent > 0 ? (item.discount_percent + '%') : ('₱' + (item.discount_amount || 0))} OFF</span>
+                                <span style="white-space: nowrap;"><i class="fa-solid fa-tag" style="color: var(--primary);"></i> ${item.discount_percent > 0 ? (item.discount_percent + '%') : ('&#8369;' + (item.discount_amount || 0))} OFF</span>
                                 <span style="white-space: nowrap;"><i class="fa-solid fa-ticket" style="color: var(--primary);"></i> ${item.promo_code || 'No Code'}</span>
                             </div>
 

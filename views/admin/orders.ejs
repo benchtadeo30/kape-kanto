@@ -448,7 +448,7 @@
                     ${isDelivery ? 'Delivery' : 'Pickup'}
                 </span>
                 <span class="ao-badge ${badgeCls}">${getStatusLabel(o.status, o.order_type)}</span>
-                <p class="ao-total">₱${o.total.toFixed(2)}</p>
+                <p class="ao-total">&#8369;${o.total.toFixed(2)}</p>
             </div>
 
             <div class="ao-dropdown" data-label="Actions">
@@ -582,7 +582,7 @@
                     <span style="font-weight:700; color:var(--primary-dark);">${i.quantity}x ${i.name}</span>
                     ${i.customizations ? `<small style="color:#888; font-size:0.75rem; margin-top:2px;">${Object.entries(JSON.parse(i.customizations||'{}')).map(([k,v])=>k+': '+v).join(', ')}</small>` : ''}
                 </div>
-                <span style="font-weight:700; color:var(--primary);">₱${i.subtotal.toFixed(2)}</span>
+                <span style="font-weight:700; color:var(--primary);">&#8369;${i.subtotal.toFixed(2)}</span>
             </div>`
         ).join('');
 
@@ -626,21 +626,21 @@
 
             <div class="ao-detail-section">
                 <span class="ao-detail-label">Price Breakdown</span>
-                <div class="ao-breakdown-row"><span>Subtotal (Gross)</span><span>₱${order.subtotal.toFixed(2)}</span></div>
+                <div class="ao-breakdown-row"><span>Subtotal (Gross)</span><span>&#8369;${order.subtotal.toFixed(2)}</span></div>
                 
                 ${order.sc_discount_amount > 0 ? `
-                    <div class="ao-breakdown-row red"><span>VAT-Exempt Discount (12%)</span><span>-₱${vatExemptDiscount.toFixed(2)}</span></div>
-                    <div class="ao-breakdown-row red"><span>SC/PWD Discount (20%)</span><span>-₱${order.sc_discount_amount.toFixed(2)}</span></div>
+                    <div class="ao-breakdown-row red"><span>VAT-Exempt Discount (12%)</span><span>-&#8369;${vatExemptDiscount.toFixed(2)}</span></div>
+                    <div class="ao-breakdown-row red"><span>SC/PWD Discount (20%)</span><span>-&#8369;${order.sc_discount_amount.toFixed(2)}</span></div>
                 ` : `
-                    <div class="ao-breakdown-row"><span>VAT (12% Inclusive)</span><span>₱${(order.vat_amount||0).toFixed(2)}</span></div>
+                    <div class="ao-breakdown-row"><span>VAT (12% Inclusive)</span><span>&#8369;${(order.vat_amount||0).toFixed(2)}</span></div>
                 `}
 
                 ${order.promo_discount_amount > 0 ? `
-                    <div class="ao-breakdown-row red"><span>🏷️ Promo Discount</span><span>-₱${order.promo_discount_amount.toFixed(2)}</span></div>
+                    <div class="ao-breakdown-row red"><span>🏷️ Promo Discount</span><span>-&#8369;${order.promo_discount_amount.toFixed(2)}</span></div>
                 ` : ''}
 
-                <div class="ao-breakdown-row"><span>Delivery Fee</span><span>₱${(order.delivery_fee||0).toFixed(2)}</span></div>
-                <div class="ao-breakdown-row total"><span>Amount Due</span><span>₱${order.total.toFixed(2)}</span></div>
+                <div class="ao-breakdown-row"><span>Delivery Fee</span><span>&#8369;${(order.delivery_fee||0).toFixed(2)}</span></div>
+                <div class="ao-breakdown-row total"><span>Amount Due</span><span>&#8369;${order.total.toFixed(2)}</span></div>
             </div>
 
             ${order.delivery_address ? `
@@ -663,7 +663,7 @@
         document.getElementById('ao-modal-body').innerHTML = `
             <p><strong>Type:</strong> ${order.order_type}</p>
             <p><strong>Status:</strong> ${order.status}</p>
-            <p><strong>Total:</strong> ₱${order.total.toFixed(2)}</p>
+            <p><strong>Total:</strong> &#8369;${order.total.toFixed(2)}</p>
             ${order.delivery_address ? `<p><strong>Address:</strong> ${order.delivery_address}</p>` : ''}
             <p style="color:var(--text-light);font-size:0.85rem;margin-top:1rem;">Item details require the admin single-order API endpoint.</p>`;
     }
@@ -675,8 +675,7 @@
         if (e.target === document.getElementById('ao-modal')) closeModal();
     });
 
-    let activeChatOrderId = null;
-    let chatRefreshInterval = null;
+
 
     function openChatModal(orderId) {
         activeChatOrderId = orderId;

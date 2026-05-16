@@ -190,7 +190,7 @@
                                     style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.5rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
                                     <%= item.description || 'Specially crafted for the best experience.' %>
                                 </p>
-                                <p class="menu-price">₱<%= item.price.toFixed(2) %>
+                                <p class="menu-price">&#8369;<%= item.price.toFixed(2) %>
                                 </p>
                             </div>
                     </div>
@@ -225,7 +225,7 @@
                             <span
                                 style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-light); display: block;">Total
                                 Price</span>
-                            <span style="font-size: 1.5rem; font-weight: bold; color: var(--primary);">₱<span
+                            <span style="font-size: 1.5rem; font-weight: bold; color: var(--primary);">&#8369;<span
                                     id="detailTotalPrice">0.00</span></span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 1rem;">
@@ -401,7 +401,7 @@
                 let choicesHtml = '';
                 opt.choices.forEach((choice, idx) => {
                     const priceAdj = choice.price_adjustment || 0;
-                    const extraPriceDisplay = priceAdj > 0 ? `<span style="color: var(--text-dark); font-size: 0.9rem;">+ ₱${priceAdj.toFixed(2)}</span>` : '';
+                    const extraPriceDisplay = priceAdj > 0 ? `<span style="color: var(--text-dark); font-size: 0.9rem;">+ &#8369;${priceAdj.toFixed(2)}</span>` : '';
                     choicesHtml += `
                     <label style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; cursor: pointer; user-select: none;">
                         <div style="display: flex; align-items: center; gap: 15px;">

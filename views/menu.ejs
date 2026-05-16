@@ -127,7 +127,7 @@
                         </div>
                         <div class="detail-total-wrap">
                             <span class="detail-label-tag">Total</span>
-                            <span class="detail-total-price" id="detailTotalPrice">₱0.00</span>
+                            <span class="detail-total-price" id="detailTotalPrice">&#8369;0.00</span>
                         </div>
                     </div>
 
@@ -571,7 +571,7 @@
                 </div>
                 <div class="mic-body">
                     <h3 class="mic-name">${escapeHtml(item.name)}</h3>
-                    <p class="mic-price">₱${item.price.toFixed(2)}</p>
+                    <p class="mic-price">&#8369;${item.price.toFixed(2)}</p>
                     ${stockHtml}
                 </div>
             `;
@@ -614,7 +614,7 @@
             detailImg.src = imgUrl;
             document.getElementById('detailName').textContent = currentDetailItem.name;
             document.getElementById('detailDesc').textContent = currentDetailItem.description || 'Crafted with premium ingredients for an unforgettable experience.';
-            document.getElementById('detailBasePrice').textContent = `₱${currentDetailItem.price.toFixed(2)}`;
+            document.getElementById('detailBasePrice').textContent = `&#8369;${currentDetailItem.price.toFixed(2)}`;
 
             const badge = document.getElementById('detailBadge');
             const isAvailable = currentDetailItem.is_available === 1 && currentDetailItem.stock > 0;
@@ -710,9 +710,9 @@
                     ${opt.choices.map((choice, cidx) => {
                     const adj = parseFloat(choice.price_adjustment) || 0;
                     const priceTag = adj > 0
-                        ? `<span class="choice-extra">+₱${adj.toFixed(2)}</span>`
+                        ? `<span class="choice-extra">+&#8369;${adj.toFixed(2)}</span>`
                         : adj < 0
-                            ? `<span class="choice-extra neg">-₱${Math.abs(adj).toFixed(2)}</span>`
+                            ? `<span class="choice-extra neg">-&#8369;${Math.abs(adj).toFixed(2)}</span>`
                             : `<span class="choice-extra free">Free</span>`;
                     return `
                             <label class="choice-option-label" for="co_${choice.id}">
@@ -771,7 +771,7 @@
             const btnText = document.getElementById('detailAddBtnText');
             const isAvailable = currentDetailItem && currentDetailItem.is_available === 1 && currentDetailItem.stock > 0;
 
-            document.getElementById('detailTotalPrice').textContent = `₱${total.toFixed(2)}`;
+            document.getElementById('detailTotalPrice').textContent = `&#8369;${total.toFixed(2)}`;
             btnText.textContent = `Add to Cart`;
 
             if (!userIsLoggedIn) {
