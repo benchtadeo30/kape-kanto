@@ -27,6 +27,23 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Smart Fallback for missing Uploads (Legacy Data Resilience)
+const fs = require('fs');
+app.use('/uploads', (req, res, next) => {
+    const filePath = path.join(__dirname, 'public/uploads', req.path);
+    if (!fs.existsSync(filePath)) {
+        const type = req.path.split('/')[1];
+        const fallbacks = {
+            'profiles': 'https://ui-avatars.com/api/?name=User&background=6f4e37&color=fff',
+            'menu': 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=60&w=400',
+            'promos': 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=60&w=800',
+            'ids': 'https://ui-avatars.com/api/?name=ID&background=999&color=fff'
+        };
+        return res.redirect(fallbacks[type] || fallbacks['menu']);
+    }
+    next();
+});
+
 // Session configuration
 app.use(session({
     secret: process.env.SESSION_SECRET || 'secret',
