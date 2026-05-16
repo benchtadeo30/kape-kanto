@@ -256,6 +256,15 @@
             allOrders = await res.json();
             selectedOrderIds.clear();
             renderOrders();
+
+            // Handle Deep Link to Chat
+            const urlParams = new URLSearchParams(window.location.search);
+            const openChatId = urlParams.get('openChat');
+            if (openChatId) {
+                // Clear the param from URL to avoid re-opening on refresh
+                window.history.replaceState({}, document.title, window.location.pathname);
+                openChatModal(Number(openChatId));
+            }
         } catch (e) {
             document.getElementById('order-count').textContent = 'Could not load orders.';
             document.getElementById('orders-container').innerHTML = '<div class="empty-state"><i class="fa-solid fa-triangle-exclamation"></i> Failed to load orders.</div>';

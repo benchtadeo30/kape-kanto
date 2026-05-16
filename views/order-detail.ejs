@@ -526,7 +526,21 @@
         }
     }
 
-    document.addEventListener('DOMContentLoaded', loadOrderDetail);
+    document.addEventListener('DOMContentLoaded', () => {
+        loadOrderDetail();
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('openChat')) {
+            // Scroll to chat after a short delay to allow rendering
+            setTimeout(() => {
+                const chatSection = document.querySelector('.od-chat');
+                if (chatSection) {
+                    chatSection.scrollIntoView({ behavior: 'smooth' });
+                    document.getElementById('od-chat-input')?.focus();
+                }
+            }, 800);
+        }
+    });
 </script>
 
 <%- include('partials/footer') %>

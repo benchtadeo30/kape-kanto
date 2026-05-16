@@ -111,6 +111,27 @@
                     <li><a href="/login">Login</a></li>
                     <li><a href="/register">Register</a></li>
                 <% } %>
+
+                <% if (user && isVerifiedInSession && (user.role === 'admin' || user.role === 'staff' || user.role === 'customer')) { %>
+                    <li class="nav-notifications" id="kk-notifications">
+                        <button class="notification-btn" id="kk-notif-btn" title="Notifications">
+                            <i class="fa-solid fa-bell"></i>
+                            <span class="notification-badge" id="kk-notif-badge" style="display: none;">0</span>
+                        </button>
+                        <div class="notification-dropdown" id="kk-notif-dropdown">
+                            <div class="notification-header">
+                                <h4>Notifications</h4>
+                                <span style="font-size: 0.7rem; color: var(--text-light); font-weight: 700;" id="kk-notif-count">0 Unread</span>
+                            </div>
+                            <div class="notification-list" id="kk-notif-list">
+                                <div class="notification-empty">
+                                    <i class="fa-solid fa-bell-slash"></i>
+                                    <p>No new messages</p>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                <% } %>
                 
                 <% if (!user || (user.role === 'customer' && isVerifiedInSession)) { %>
                     <li>
@@ -192,3 +213,74 @@
         <% } %>
     </header>
     <main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = window.KapeKantoUser;
+            if (!user || user.role === 'guest') return;
+
+            const notifBtn = document.getElementById('kk-notif-btn');
+            const notifDropdown = document.getElementById('kk-notif-dropdown');
+            const notifBadge = document.getElementById('kk-notif-badge');
+            const notifList = document.getElementById('kk-notif-list');
+            const notifCountText = document.getElementById('kk-notif-count');
+
+            if (notifBtn) {
+                notifBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    notifDropdown.classList.toggle('show');
+                });
+                document.addEventListener('click', () => notifDropdown.classList.remove('show'));
+                notifDropdown.addEventListener('click', (e) => e.stopPropagation());
+            }
+
+            async function checkUnreadMessages() {
+                try {
+                    const endpoint = (user.role === 'admin' || user.role === 'staff') 
+                        ? '/api/orders/unread-messages' 
+                        : '/api/orders/my/unread-messages';
+                    
+                    const res = await fetch(endpoint);
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    
+                    const totalUnread = data.reduce((sum, item) => sum + item.unread_count, 0);
+                    
+                    if (totalUnread > 0) {
+                        notifBadge.textContent = totalUnread > 99 ? '99+' : totalUnread;
+                        notifBadge.style.display = 'flex';
+                        notifCountText.textContent = `${totalUnread} Unread`;
+                        
+                        notifList.innerHTML = data.map(item => `
+                            <div class="notification-item" onclick="goToOrderChat(${item.order_id})">
+                                <i class="fa-solid fa-comment-dots"></i>
+                                <div class="notification-info">
+                                    <p>${user.role === 'customer' ? 'New message from Staff' : 'Message from ' + item.customer_name}</p>
+                                    <span>Order #${item.order_id} · ${item.unread_count} new message${item.unread_count > 1 ? 's' : ''}</span>
+                                </div>
+                            </div>
+                        `).join('');
+                    } else {
+                        notifBadge.style.display = 'none';
+                        notifCountText.textContent = '0 Unread';
+                        notifList.innerHTML = `
+                            <div class="notification-empty">
+                                <i class="fa-solid fa-bell-slash"></i>
+                                <p>No new messages</p>
+                            </div>`;
+                    }
+                } catch (e) {
+                    console.error('Check unread error:', e);
+                }
+            }
+
+            window.goToOrderChat = (orderId) => {
+                const targetPage = (user.role === 'admin') ? '/admin/orders' : (user.role === 'staff' ? '/staff/orders' : `/order-tracking/${orderId}`);
+                window.location.href = `${targetPage}?openChat=${orderId}`;
+            };
+
+            // Check immediately and then every 30 seconds
+            checkUnreadMessages();
+            setInterval(checkUnreadMessages, 30000);
+        });
+    </script>

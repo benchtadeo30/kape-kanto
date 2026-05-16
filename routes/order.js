@@ -678,9 +678,65 @@ router.get('/:id/messages', requireAuth, async (req, res) => {
             ORDER BY m.created_at ASC
         `).all(orderId);
 
+        // Mark messages as read for the recipient
+        if (messages.length > 0) {
+            if (role === 'customer') {
+                // Customer marks staff/admin messages as read
+                await db.prepare(`
+                    UPDATE order_messages SET is_read = 1 
+                    WHERE order_id = ? AND user_id IN (SELECT id FROM users WHERE role IN ('admin', 'staff'))
+                `).run(orderId);
+            } else if (role === 'admin' || role === 'staff') {
+                // Staff/Admin marks customer messages as read
+                await db.prepare(`
+                    UPDATE order_messages SET is_read = 1 
+                    WHERE order_id = ? AND user_id IN (SELECT id FROM users WHERE role = 'customer')
+                `).run(orderId);
+            }
+        }
+
         res.json(messages);
     } catch (e) {
         console.error('Fetch messages error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// GET /api/orders/unread-messages (Admin/Staff)
+router.get('/unread-messages', requireRole('admin', 'staff'), async (req, res) => {
+    try {
+        const unreadOrders = await db.prepare(`
+            SELECT m.order_id, COUNT(*) as unread_count, u.username as customer_name
+            FROM order_messages m
+            JOIN users sender ON m.user_id = sender.id
+            JOIN orders o ON m.order_id = o.id
+            JOIN users u ON o.user_id = u.id
+            WHERE m.is_read = 0 AND sender.role = 'customer'
+            GROUP BY m.order_id
+            ORDER BY MAX(m.created_at) DESC
+        `).all();
+        res.json(unreadOrders);
+    } catch (e) {
+        console.error('Unread messages fetch error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// GET /api/orders/my/unread-messages (Customer)
+router.get('/my/unread-messages', requireAuth, async (req, res) => {
+    try {
+        const unreadOrders = await db.prepare(`
+            SELECT m.order_id, COUNT(*) as unread_count
+            FROM order_messages m
+            JOIN users sender ON m.user_id = sender.id
+            WHERE m.is_read = 0 
+            AND sender.role IN ('admin', 'staff')
+            AND m.order_id IN (SELECT id FROM orders WHERE user_id = ?)
+            GROUP BY m.order_id
+        `).all(req.session.userId);
+        res.json(unreadOrders);
+    } catch (e) {
+        console.error('Customer unread messages fetch error:', e);
         res.status(500).json({ error: 'Internal server error' });
     }
 });

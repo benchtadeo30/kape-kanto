@@ -389,6 +389,9 @@ async function initDb() {
     await safeAddColumn('promo_tasks', 'min_order_amount', 'REAL');
     await safeAddColumn('promo_tasks', 'start_date', 'DATETIME');
     await safeAddColumn('promo_tasks', 'end_date', 'DATETIME');
+    
+    // Order Messages migration
+    await safeAddColumn('order_messages', 'is_read', 'BOOLEAN DEFAULT 0');
 
     console.log("[DB] Database schema initialized.");
 }

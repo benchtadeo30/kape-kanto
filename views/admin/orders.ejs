@@ -302,6 +302,14 @@
 
                 allOrders = data.items; // Store original for details
                 renderOrders(filtered, currentType === 'all' ? data.total : filtered.length);
+
+                // Handle Deep Link to Chat
+                const urlParams = new URLSearchParams(window.location.search);
+                const openChatId = urlParams.get('openChat');
+                if (openChatId) {
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    openChatModal(Number(openChatId));
+                }
             }
         } catch(e) { console.error(e); }
     }
