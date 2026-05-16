@@ -1462,7 +1462,6 @@
         formData.append('title', document.getElementById('campaign-title').value);
         formData.append('description', document.getElementById('campaign-desc').value);
         
-        const dType = document.getElementById('discount-type-select').value;
         if (dType === 'percent') {
             formData.append('discount_percent', document.getElementById('campaign-discount').value);
             formData.append('discount_amount', 0);
