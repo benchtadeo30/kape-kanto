@@ -253,6 +253,17 @@
             img.classList.add('img-fallback-active');
         };
 
+        // Global Date Parsing Utility (Handles SQLite UTC strings)
+        window.KapeKanto.parseUTCDate = function(dateStr) {
+            if (!dateStr) return new Date();
+            if (typeof dateStr !== 'string') return new Date(dateStr);
+            // If it's SQLite format "YYYY-MM-DD HH:MM:SS", convert to ISO UTC
+            if (dateStr.length === 19 && !dateStr.includes('T') && !dateStr.includes('Z')) {
+                return new Date(dateStr.replace(' ', 'T') + 'Z');
+            }
+            return new Date(dateStr);
+        };
+
         // Global Image Optimization Utility
         window.KapeKanto.optimizeImage = function(file, maxWidth = 1000, quality = 0.8) {
             return new Promise((resolve, reject) => {

@@ -248,7 +248,7 @@
         const isCancelled = order.status === 'cancelled';
         const isAwaiting = order.status === 'awaiting_payment';
         const canCustomerCancel = order.status === 'pending' && ['pay_at_store', 'cod'].includes(order.payment_method);
-        const date = new Date(order.created_at).toLocaleDateString('en-PH', {
+        const date = KapeKanto.parseUTCDate(order.created_at).toLocaleDateString('en-PH', {
             month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'
         });
 
@@ -479,7 +479,7 @@
 
             container.innerHTML = messages.map(m => {
                 const isCustomer = m.role === 'customer';
-                const time = new Date(m.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
+                const time = KapeKanto.parseUTCDate(m.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
                 const senderName = isCustomer ? 'You' : 'Staff';
                 return `
                 <div class="od-chat-msg ${isCustomer ? 'customer' : 'staff'}">
