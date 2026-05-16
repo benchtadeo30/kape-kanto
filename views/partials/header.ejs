@@ -50,7 +50,7 @@
                     <div class="dropdown-content">
                         <div class="dropdown-header">
                             <% if (user.profile_image) { %>
-                                <img src="<%= user.profile_image.startsWith('/') || user.profile_image.startsWith('http') ? user.profile_image : '/uploads/profiles/' + user.profile_image %>" alt="Profile">
+                                <img src="<%= user.profile_image.startsWith('/') || user.profile_image.startsWith('http') || user.profile_image.startsWith('data:') ? user.profile_image : '/uploads/profiles/' + user.profile_image %>" alt="Profile">
                             <% } else { %>
                                 <div class="header-avatar" style="background: var(--primary); display: flex; align-items: center; justify-content: center; color: white; font-weight: 800;">
                                     <%= user.username.charAt(0).toUpperCase() %>
