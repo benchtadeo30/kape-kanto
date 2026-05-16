@@ -3011,7 +3011,7 @@ body.page-exit {
 }
 
 .coupon-card::before {
-    content: 'ðŸŽŸï¸';
+    content: '🎟️';
     position: absolute;
     right: 1rem;
     top: 50%;

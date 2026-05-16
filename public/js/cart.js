@@ -542,7 +542,7 @@ function updateTotals() {
                 discountLabelStr += ` + ${label} Promo`;
             } else {
                 const label = activePromo.discount_percent > 0 ? `${activePromo.discount_percent}%` : `\u20B1${activePromo.discount_amount}`;
-                discountLabelStr = `ðŸ·ï¸ Promo (${label} off)`;
+                discountLabelStr = `🏷️ Promo (${label} off)`;
             }
         } else if ((activePromo.discount_percent > 0 || activePromo.discount_amount > 0) && applicableGross === 0 && hasRestrictions) {
             const statusDiv = document.getElementById('promo-status');
@@ -735,7 +735,7 @@ async function placeOrder() {
                 window.location.href = data.checkoutUrl;
             } else {
                 clearCart();
-                showToast('Order placed successfully! ðŸŽ‰', 'success');
+                showToast('Order placed successfully! 🎉', 'success');
                 setTimeout(() => window.location.href = '/order-tracking', 1200);
             }
         } else if (res.status === 403 && data.requires_phone_verification) {
