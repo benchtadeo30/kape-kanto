@@ -342,23 +342,32 @@
                         notifBadge.textContent = totalUnread > 99 ? '99+' : totalUnread;
                         notifBadge.style.display = 'flex';
                         notifCountText.textContent = `${totalUnread} Unread`;
-                        
+                    } else {
+                        notifBadge.style.display = 'none';
+                        notifCountText.textContent = 'Recent Activity';
+                    }
+
+                    if (data.length > 0) {
                         notifList.innerHTML = data.map(item => `
-                            <div class="notification-item" onclick="goToOrderChat(${item.order_id})">
-                                <i class="fa-solid fa-comment-dots"></i>
+                            <div class="notification-item ${item.unread_count > 0 ? 'unread' : ''}" onclick="goToOrderChat(${item.order_id})">
+                                <div class="notif-icon-wrap">
+                                    <i class="fa-solid fa-message"></i>
+                                    ${item.unread_count > 0 ? '<span class="unread-dot"></span>' : ''}
+                                </div>
                                 <div class="notification-info">
-                                    <p>${user.role === 'customer' ? 'New message from Staff' : 'Message from ' + item.customer_name}</p>
-                                    <span>Order #${item.order_id} · ${item.unread_count} new message${item.unread_count > 1 ? 's' : ''}</span>
+                                    <div class="notif-title-row">
+                                        <p>${user.role === 'customer' ? 'Message from Staff' : 'Message from ' + (item.customer_name || 'Customer')}</p>
+                                        ${item.unread_count > 0 ? `<span class="notif-count-pill">${item.unread_count}</span>` : ''}
+                                    </div>
+                                    <div class="notif-desc">Order #${item.order_id} · ${item.unread_count > 0 ? `<b>${item.unread_count} new</b>` : 'View conversation'}</div>
                                 </div>
                             </div>
                         `).join('');
                     } else {
-                        notifBadge.style.display = 'none';
-                        notifCountText.textContent = '0 Unread';
                         notifList.innerHTML = `
                             <div class="notification-empty">
                                 <i class="fa-solid fa-bell-slash"></i>
-                                <p>No new messages</p>
+                                <p>No recent activity</p>
                             </div>`;
                     }
                 } catch (e) {

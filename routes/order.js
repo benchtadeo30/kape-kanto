@@ -706,14 +706,16 @@ router.get('/:id/messages', requireAuth, async (req, res) => {
 router.get('/unread-messages', requireRole('admin', 'staff'), async (req, res) => {
     try {
         const unreadOrders = await db.prepare(`
-            SELECT m.order_id, COUNT(*) as unread_count, u.username as customer_name
+            SELECT m.order_id, 
+                   SUM(CASE WHEN m.is_read = 0 AND sender.role = 'customer' THEN 1 ELSE 0 END) as unread_count, 
+                   u.username as customer_name
             FROM order_messages m
             JOIN users sender ON m.user_id = sender.id
             JOIN orders o ON m.order_id = o.id
             JOIN users u ON o.user_id = u.id
-            WHERE m.is_read = 0 AND sender.role = 'customer'
             GROUP BY m.order_id
             ORDER BY MAX(m.created_at) DESC
+            LIMIT 10
         `).all();
         res.json(unreadOrders);
     } catch (e) {
@@ -726,13 +728,14 @@ router.get('/unread-messages', requireRole('admin', 'staff'), async (req, res) =
 router.get('/my/unread-messages', requireAuth, async (req, res) => {
     try {
         const unreadOrders = await db.prepare(`
-            SELECT m.order_id, COUNT(*) as unread_count
+            SELECT m.order_id, 
+                   SUM(CASE WHEN m.is_read = 0 AND sender.role IN ('admin', 'staff') THEN 1 ELSE 0 END) as unread_count
             FROM order_messages m
             JOIN users sender ON m.user_id = sender.id
-            WHERE m.is_read = 0 
-            AND sender.role IN ('admin', 'staff')
-            AND m.order_id IN (SELECT id FROM orders WHERE user_id = ?)
+            WHERE m.order_id IN (SELECT id FROM orders WHERE user_id = ?)
             GROUP BY m.order_id
+            ORDER BY MAX(m.created_at) DESC
+            LIMIT 10
         `).all(req.session.userId);
         res.json(unreadOrders);
     } catch (e) {
