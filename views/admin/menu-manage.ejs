@@ -1214,6 +1214,17 @@
         const id = document.getElementById('item-id').value;
         const formData = new FormData(e.target);
         
+        const imageFile = document.getElementById('item-image').files[0];
+        if (imageFile) {
+            try {
+                const optimized = await KapeKanto.optimizeImage(imageFile, 800, 0.8);
+                formData.set('image', optimized.blob, 'product.jpg');
+            } catch (err) {
+                console.error('Image optimization failed:', err);
+                // Fallback to original if optimization fails
+            }
+        }
+        
         // Manual sync for custom fields if needed
         formData.set('is_available', document.getElementById('item-available').checked ? 1 : 0);
         formData.set('category_id', document.getElementById('item-category').value);

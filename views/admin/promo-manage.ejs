@@ -1482,7 +1482,15 @@
         }
 
         const imageFile = document.getElementById('campaign-image').files[0];
-        if (imageFile) formData.append('image', imageFile);
+        if (imageFile) {
+            try {
+                const optimized = await KapeKanto.optimizeImage(imageFile, 1000, 0.8);
+                formData.append('image', optimized.blob, 'promo.jpg');
+            } catch (err) {
+                console.error('Image optimization failed:', err);
+                formData.append('image', imageFile); // Fallback to original
+            }
+        }
 
         const id = document.getElementById('campaign-id').value;
         const originalType = document.getElementById('campaign-type').value;

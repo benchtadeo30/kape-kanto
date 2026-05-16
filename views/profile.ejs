@@ -947,15 +947,19 @@
         async function uploadAvatar(input) {
             if (!input.files || !input.files[0]) return;
             
-            if (input.files[0].size > 5 * 1024 * 1024) {
+            const file = input.files[0];
+            if (file.size > 5 * 1024 * 1024) {
                 KapeKanto.toast('Image is too large. Maximum size is 5MB.', 'error');
                 input.value = '';
                 return;
             }
 
-            const formData = new FormData();
-            formData.append('profile_image', input.files[0]);
             try {
+                // Optimize on client side
+                const optimized = await KapeKanto.optimizeImage(file, 600, 0.8);
+                const formData = new FormData();
+                formData.append('profile_image', optimized.blob, 'avatar.jpg');
+
                 const res = await fetch('/api/auth/update-avatar', { method: 'PATCH', body: formData });
                 const result = await res.json();
                 if (res.ok) {
@@ -965,6 +969,7 @@
                     KapeKanto.toast(result.error, 'error');
                 }
             } catch (err) {
+                console.error(err);
                 KapeKanto.toast('Failed to upload image.', 'error');
             }
         }
@@ -1047,7 +1052,17 @@
             `;
 
             try {
-                const res = await fetch('/api/verify/upload-id', { method: 'POST', body: formData });
+                // Optimize both ID and Selfie on client side
+                const optimizedID = await KapeKanto.optimizeImage(idFile.files[0], 1200, 0.8);
+                const optimizedSelfie = await KapeKanto.optimizeImage(selfieFile.files[0], 1200, 0.8);
+
+                const finalFormData = new FormData();
+                finalFormData.append('id_type', idType);
+                finalFormData.append('id_number', idNumber.value.trim());
+                finalFormData.append('id_document', optimizedID.blob, 'id_card.jpg');
+                finalFormData.append('selfie_image', optimizedSelfie.blob, 'selfie.jpg');
+
+                const res = await fetch('/api/verify/upload-id', { method: 'POST', body: finalFormData });
                 const data = await res.json();
 
                 if (res.ok) {
