@@ -461,17 +461,12 @@
                         <div class="responsive-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                             <div class="form-group">
                                 <label style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: #8b7355; margin-bottom: 8px; display: block;">Price (&#8369;)</label>
-                                <input type="number" id="item-price" name="price" step="0.01" placeholder="0.00" required style="width: 100%; padding: 14px; border-radius: 14px; border: 1.5px solid #eee; font-weight: 700; color: var(--admin-primary);">
+                                <input type="number" id="item-price" name="price" step="0.01" min="0" placeholder="0.00" required style="width: 100%; padding: 14px; border-radius: 14px; border: 1.5px solid #eee; font-weight: 700; color: var(--admin-primary);">
                             </div>
                             <div class="form-group">
                                 <label style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: #8b7355; margin-bottom: 8px; display: block;">Stock</label>
-                                <input type="number" id="item-stock" name="stock" placeholder="0" required style="width: 100%; padding: 14px; border-radius: 14px; border: 1.5px solid #eee; font-weight: 600;">
+                                <input type="number" id="item-stock" name="stock" min="0" placeholder="0" required style="width: 100%; padding: 14px; border-radius: 14px; border: 1.5px solid #eee; font-weight: 600;">
                             </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: #8b7355; margin-bottom: 8px; display: block;">Description</label>
-                            <textarea id="item-desc" name="description" rows="4" placeholder="Brief details about the item..." style="width: 100%; padding: 14px; border-radius: 14px; border: 1.5px solid #eee; resize: none; font-size: 0.9rem; line-height: 1.5;"></textarea>
                         </div>
                     </div>
 
@@ -507,6 +502,12 @@
                             </label>
                         </div>
                     </div>
+                </div>
+
+                <!-- Description - Full Width -->
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: #8b7355; margin-bottom: 8px; display: block;">Description</label>
+                    <textarea id="item-desc" name="description" rows="4" placeholder="Brief details about the item..." style="width: 100%; padding: 14px; border-radius: 14px; border: 1.5px solid #eee; resize: none; font-size: 0.9rem; line-height: 1.5; box-sizing: border-box;"></textarea>
                 </div>
 
                 <div class="option-builder">
@@ -1211,6 +1212,20 @@
 
     document.getElementById('menu-form').addEventListener('submit', async function handleMenuSubmit(e) {
         e.preventDefault();
+
+        // Validate price and stock are not negative
+        const price = parseFloat(document.getElementById('item-price').value);
+        const stock = parseInt(document.getElementById('item-stock').value);
+
+        if (isNaN(price) || price < 0) {
+            showToast('Price cannot be negative.', 'error');
+            return;
+        }
+        if (isNaN(stock) || stock < 0) {
+            showToast('Stock cannot be negative.', 'error');
+            return;
+        }
+
         const id = document.getElementById('item-id').value;
         const formData = new FormData(e.target);
         

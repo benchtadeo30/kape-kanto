@@ -213,6 +213,14 @@ router.post('/', requireRole('admin'), upload.single('image'), async (req, res) 
         return res.status(400).json({ error: 'Name and price are required.' });
     }
 
+    if (parseFloat(price) < 0) {
+        return res.status(400).json({ error: 'Price cannot be negative.' });
+    }
+
+    if (stock !== undefined && parseInt(stock) < 0) {
+        return res.status(400).json({ error: 'Stock cannot be negative.' });
+    }
+
     try {
         await db.beginTransaction();
 
@@ -243,6 +251,14 @@ router.put('/:id', requireRole('admin', 'staff'), upload.single('image'), async 
 
     try {
         await db.beginTransaction();
+
+        if (price !== undefined && parseFloat(price) < 0) {
+            return res.status(400).json({ error: 'Price cannot be negative.' });
+        }
+
+        if (stock !== undefined && parseInt(stock) < 0) {
+            return res.status(400).json({ error: 'Stock cannot be negative.' });
+        }
 
         const existing = await db.prepare(`SELECT id FROM menu_items WHERE LOWER(name) = LOWER(?) AND id != ?`).get(name, itemId);
         if (existing) {
@@ -296,6 +312,10 @@ router.delete('/:id', requireRole('admin'), async (req, res) => {
 router.patch('/:id/stock', requireRole('admin', 'staff'), async (req, res) => {
     const { stock } = req.body;
     if (stock === undefined) return res.status(400).json({ error: 'Stock value required.' });
+
+    if (parseInt(stock) < 0) {
+        return res.status(400).json({ error: 'Stock cannot be negative.' });
+    }
 
     try {
         const info = await db.prepare(`UPDATE menu_items SET stock=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`).run(stock, req.params.id);
