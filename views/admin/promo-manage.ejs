@@ -138,11 +138,13 @@
         font-weight: 800;
         color: var(--primary-dark);
         letter-spacing: -0.3px;
+        white-space: nowrap;
     }
     .toggle-subtitle {
         font-size: 0.75rem;
         color: var(--text-light);
         opacity: 0.8;
+        white-space: nowrap;
     }
     .switch {
         position: relative;
@@ -388,9 +390,9 @@
 
             <!-- Beautiful Schedule Picker -->
             <div style="background: #fdfdfd; padding: 1.5rem; border-radius: 16px; margin-bottom: 2rem; border: 1px solid #f0f0f0; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
                     <h5 style="margin: 0; font-size: 0.9rem; color: var(--primary-dark); font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fa-solid fa-calendar-check" style="margin-right: 6px; color: var(--primary);"></i> Campaign Timeline</h5>
-                    <div style="display: flex; gap: 12px;">
+                    <div style="display: flex; gap: 12px; flex-shrink: 0;">
                         <!-- Modern Toggle 1 -->
                         <label class="premium-toggle" id="toggle-start-container">
                             <div class="toggle-label">
