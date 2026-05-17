@@ -107,13 +107,15 @@ router.get('/contact', (req, res) => {
 });
 
 router.post('/contact', async (req, res) => {
+    if (!res.locals.user) {
+        return res.status(401).json({ error: 'Please log in to send a message.' });
+    }
+
     let { name, email, subject, message } = req.body;
     
     // Enforce logged in customer's actual registered name and email
-    if (res.locals.user) {
-        name = res.locals.user.username;
-        email = res.locals.user.email;
-    }
+    name = res.locals.user.username;
+    email = res.locals.user.email;
     
     if (!name || !email || !subject || !message) {
         return res.status(400).json({ error: 'All fields are required.' });

@@ -219,57 +219,78 @@
             </div>
         <% } %>
 
-        <div class="contact-card">
-            <div id="contact-response" style="display: none;"></div>
-            <form id="contact-form">
-                <div class="form-group">
-                    <label for="name">Name</label>
-                    <input type="text" id="name" name="name" class="form-control" required placeholder="Your full name" value="<%= typeof user !== 'undefined' && user ? user.username : '' %>" <%= typeof user !== 'undefined' && user ? 'readonly style="background-color: #f1f1f1; color: #777; cursor: not-allowed; border-color: #ddd;"' : '' %>>
+        <% if (typeof user === 'undefined' || !user) { %>
+            <div class="contact-card" style="text-align: center; padding: 4rem 2rem; border: 1px solid #f3e9e0;">
+                <div style="font-size: 4.5rem; color: var(--contact-primary); margin-bottom: 1.5rem;">
+                    <i class="fa-solid fa-lock"></i>
                 </div>
-
-                <div class="form-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" class="form-control" required placeholder="Your email address" value="<%= typeof user !== 'undefined' && user ? user.email : '' %>" <%= typeof user !== 'undefined' && user ? 'readonly style="background-color: #f1f1f1; color: #777; cursor: not-allowed; border-color: #ddd;"' : '' %>>
+                <h2 style="color: var(--contact-primary); font-weight: 800; margin-bottom: 1rem; font-size: 1.8rem;">Authentication Required</h2>
+                <p style="color: var(--contact-text-light); line-height: 1.6; max-width: 500px; margin: 0 auto 2.5rem; font-size: 1.1rem;">
+                    To protect our community and ensure all feedback is authentic, you must be logged in to get in touch with us.
+                </p>
+                <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                    <a href="/login" class="submit-btn" style="text-decoration: none; width: auto; min-width: 160px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                        <i class="fa-solid fa-right-to-bracket"></i> Log In
+                    </a>
+                    <a href="/register" class="submit-btn" style="text-decoration: none; background: transparent; border: 2px solid var(--contact-primary); color: var(--contact-primary); width: auto; min-width: 160px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                        <i class="fa-solid fa-user-plus"></i> Register
+                    </a>
                 </div>
-
-                <div class="form-group">
-                    <label for="subject">Subject</label>
-                    <div class="custom-select-container" id="subject-container">
-                        <div class="custom-select-trigger">
-                            <span id="selected-subject">Select a subject</span>
-                            <i class="fa-solid fa-chevron-down"></i>
-                        </div>
-                        <div class="custom-options">
-                            <div class="custom-option" data-value="feedback">
-                                <i class="fa-solid fa-comments"></i> General Feedback
-                            </div>
-                            <div class="custom-option" data-value="support">
-                                <i class="fa-solid fa-circle-question"></i> Technical Support
-                            </div>
-                            <div class="custom-option" data-value="order">
-                                <i class="fa-solid fa-box-open"></i> Order Inquiry
-                            </div>
-                            <div class="custom-option" data-value="other">
-                                <i class="fa-solid fa-ellipsis"></i> Other
-                            </div>
-                        </div>
-                        <input type="hidden" name="subject" id="subject-input" required>
+            </div>
+        <% } else { %>
+            <div class="contact-card">
+                <div id="contact-response" style="display: none;"></div>
+                <form id="contact-form">
+                    <div class="form-group">
+                        <label for="name">Name</label>
+                        <input type="text" id="name" name="name" class="form-control" required placeholder="Your full name" value="<%= typeof user !== 'undefined' && user ? user.username : '' %>" <%= typeof user !== 'undefined' && user ? 'readonly style="background-color: #f1f1f1; color: #777; cursor: not-allowed; border-color: #ddd;"' : '' %>>
                     </div>
-                </div>
 
-                <div class="form-group">
-                    <label for="message">Message</label>
-                    <textarea id="message" name="message" class="form-control" required placeholder="How can we help you?"></textarea>
-                </div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" class="form-control" required placeholder="Your email address" value="<%= typeof user !== 'undefined' && user ? user.email : '' %>" <%= typeof user !== 'undefined' && user ? 'readonly style="background-color: #f1f1f1; color: #777; cursor: not-allowed; border-color: #ddd;"' : '' %>>
+                    </div>
 
-                <button type="submit" class="submit-btn" id="submit-btn">Send Message</button>
-            </form>
-        </div>
+                    <div class="form-group">
+                        <label for="subject">Subject</label>
+                        <div class="custom-select-container" id="subject-container">
+                            <div class="custom-select-trigger">
+                                <span id="selected-subject">Select a subject</span>
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </div>
+                            <div class="custom-options">
+                                <div class="custom-option" data-value="feedback">
+                                    <i class="fa-solid fa-comments"></i> General Feedback
+                                </div>
+                                <div class="custom-option" data-value="support">
+                                    <i class="fa-solid fa-circle-question"></i> Technical Support
+                                </div>
+                                <div class="custom-option" data-value="order">
+                                    <i class="fa-solid fa-box-open"></i> Order Inquiry
+                                </div>
+                                <div class="custom-option" data-value="other">
+                                    <i class="fa-solid fa-ellipsis"></i> Other
+                                </div>
+                            </div>
+                            <input type="hidden" name="subject" id="subject-input" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="message">Message</label>
+                        <textarea id="message" name="message" class="form-control" required placeholder="How can we help you?"></textarea>
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="submit-btn">Send Message</button>
+                </form>
+            </div>
+        <% } %>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const container = document.getElementById('subject-container');
+            if (!container) return; // Exit if user is not logged in and form is not rendered
             const trigger = container.querySelector('.custom-select-trigger');
             const options = container.querySelectorAll('.custom-option');
             const selectedText = document.getElementById('selected-subject');
