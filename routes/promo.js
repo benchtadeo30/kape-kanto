@@ -215,6 +215,13 @@ router.post('/', requireRole('admin'), upload.single('image'), async (req, res) 
         return res.status(400).json({ error: 'Promo code is required.' });
     }
 
+    if (is_loyalty_task == '1') {
+        const allowedTaskTypes = ["minimum_spend", "buy_from_category"];
+        if (!allowedTaskTypes.includes(task_type)) {
+            return res.status(400).json({ error: 'Invalid task type. Only Minimum Spend and Buy from Category are allowed.' });
+        }
+    }
+
     // Validate discount values
     const dPercent = parseFloat(discount_percent) || 0;
     const dAmount = parseFloat(discount_amount) || 0;
@@ -294,6 +301,13 @@ router.put('/:id', requireRole('admin'), upload.single('image'), async (req, res
     }
     if (!promo_code || !promo_code.trim()) {
         return res.status(400).json({ error: 'Promo code is required.' });
+    }
+
+    if (is_loyalty_task == '1') {
+        const allowedTaskTypes = ["minimum_spend", "buy_from_category"];
+        if (!allowedTaskTypes.includes(task_type)) {
+            return res.status(400).json({ error: 'Invalid task type. Only Minimum Spend and Buy from Category are allowed.' });
+        }
     }
 
     // Validate discount values
@@ -447,8 +461,7 @@ router.post('/ai-generate', requireRole('admin'), async (req, res) => {
     if (!prompt) return res.status(400).json({ error: 'Task description is required.' });
 
     const allowedTaskTypes = [
-        "minimum_spend", "buy_specific_item", "buy_from_category",
-        "first_order", "order_count", "verify_email",
+        "minimum_spend", "buy_from_category",
     ];
 
     try {
@@ -522,8 +535,7 @@ router.post('/ai-confirm', requireRole('admin'), async (req, res) => {
     if (!rule || !rule.task_type) return res.status(400).json({ error: 'Invalid rule data.' });
 
     const allowedTaskTypes = [
-        "minimum_spend", "buy_specific_item", "buy_from_category",
-        "first_order", "order_count", "verify_email"
+        "minimum_spend", "buy_from_category"
     ];
 
     if (!allowedTaskTypes.includes(rule.task_type)) {

@@ -44,66 +44,50 @@ async function trackLoyaltyProgress(userId, orderId, orderTotal) {
                 continue;
             }
 
-            const taskType = (task.task_type || 'buy_specific_item').toLowerCase();
+            const taskType = (task.task_type || 'buy_from_category').toLowerCase();
             let rule = {};
             try { rule = task.rule_json ? JSON.parse(task.rule_json) : {}; } catch(e) {}
 
             let increment = 0;
             let immediateComplete = false;
 
-            const targetItemId = Number(rule.menu_item_id || task.required_menu_item_id || 0);
             const targetCatId = Number(rule.category_id || task.required_category_id || 0);
+            const currentQty = Number(progress.current_quantity) || 0;
+            const numericOrderTotal = Number(orderTotal) || 0;
 
-            console.log(`Checking task: "${task.title}" (type: ${taskType}, targetItem: ${targetItemId}, targetCat: ${targetCatId})`);
+            console.log(`Checking task: "${task.title}" (type: ${taskType}, targetCat: ${targetCatId})`);
 
             switch (taskType) {
-                case 'buy_specific_item':
-                case 'buy specific item':
-                    orderItems.forEach(item => {
-                        if (Number(item.menu_item_id) === targetItemId) {
-                            increment += item.quantity;
-                        }
-                    });
-                    break;
                 case 'buy_from_category':
                 case 'buy from category':
                     orderItems.forEach(item => {
                         if (Number(item.category_id) === targetCatId) {
-                            increment += item.quantity;
+                            increment += Number(item.quantity) || 0;
                         }
                     });
                     break;
                 case 'minimum_spend':
                 case 'minimum spend':
-                    increment += orderTotal;
+                    increment += numericOrderTotal;
                     // The target is stored in min_order_amount
-                    if (((progress.current_quantity || 0) + increment) >= (rule.min_order_amount || task.min_order_amount || 0)) {
+                    const requiredAmount = Number(rule.min_order_amount || task.min_order_amount || 0);
+                    if ((currentQty + increment) >= requiredAmount) {
                         immediateComplete = true;
                     }
                     break;
-                case 'first_order':
-                case 'first order':
-                    if (totalCompletedOrders <= 1) immediateComplete = true;
-                    break;
-                case 'order_count':
-                case 'order count':
-                    if (totalCompletedOrders >= (task.required_quantity || 1)) immediateComplete = true;
-                    break;
                 default:
-                    orderItems.forEach(item => {
-                        if (Number(item.menu_item_id) === targetItemId) increment += item.quantity;
-                    });
+                    console.log(`Unsupported task type: "${taskType}", skipping.`);
                     break;
             }
 
             if (immediateComplete) {
                 console.log(`✅ Task "${task.title}" completed immediately!`);
-                const targetVal = taskType === 'minimum_spend' || taskType === 'minimum spend' ? (rule.min_order_amount || task.min_order_amount || 0) : (task.required_quantity || 1);
+                const targetVal = taskType === 'minimum_spend' || taskType === 'minimum spend' ? Number(rule.min_order_amount || task.min_order_amount || 0) : (Number(task.required_quantity) || 1);
                 await db.prepare('UPDATE user_promo_progress SET current_quantity = ?, is_completed = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
                     .run(targetVal, progress.id);
                 if (task.reward_promo_id) {
                     const promo = await db.prepare('SELECT usage_limit FROM promos WHERE id = ?').get(task.reward_promo_id);
-                    const limit = promo ? promo.usage_limit : 1;
+                    const limit = promo ? (Number(promo.usage_limit) || 1) : 1;
                     const existing = await db.prepare('SELECT id FROM user_coupons WHERE user_id = ? AND promo_id = ? AND is_used = 0').get(userId, task.reward_promo_id);
                     if (!existing) {
                         await db.prepare('INSERT INTO user_coupons (user_id, promo_id, usage_limit) VALUES (?, ?, ?)').run(userId, task.reward_promo_id, limit);
@@ -111,16 +95,16 @@ async function trackLoyaltyProgress(userId, orderId, orderTotal) {
                     console.log(`🎫 Coupon awarded for promo ID ${task.reward_promo_id} with limit ${limit}`);
                 }
             } else if (increment > 0) {
-                const newQty = (progress.current_quantity || 0) + increment;
-                const targetVal = taskType === 'minimum_spend' || taskType === 'minimum spend' ? (rule.min_order_amount || task.min_order_amount || 0) : (task.required_quantity || 1);
-                console.log(`📊 Task "${task.title}" progress: ${progress.current_quantity} → ${newQty} / ${targetVal}`);
+                const newQty = currentQty + increment;
+                const targetVal = taskType === 'minimum_spend' || taskType === 'minimum spend' ? Number(rule.min_order_amount || task.min_order_amount || 0) : (Number(task.required_quantity) || 1);
+                console.log(`📊 Task "${task.title}" progress: ${currentQty} → ${newQty} / ${targetVal}`);
                 if (newQty >= targetVal) {
                     console.log(`✅ Task "${task.title}" COMPLETED!`);
                     await db.prepare('UPDATE user_promo_progress SET current_quantity = ?, is_completed = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
                         .run(newQty, progress.id);
                     if (task.reward_promo_id) {
                         const promo = await db.prepare('SELECT usage_limit FROM promos WHERE id = ?').get(task.reward_promo_id);
-                        const limit = promo ? promo.usage_limit : 1;
+                        const limit = promo ? (Number(promo.usage_limit) || 1) : 1;
                         const existing = await db.prepare('SELECT id FROM user_coupons WHERE user_id = ? AND promo_id = ? AND is_used = 0').get(userId, task.reward_promo_id);
                         if (!existing) {
                             await db.prepare('INSERT INTO user_coupons (user_id, promo_id, usage_limit) VALUES (?, ?, ?)').run(userId, task.reward_promo_id, limit);
@@ -220,43 +204,45 @@ async function revertLoyaltyProgress(userId, orderId, orderTotal) {
             let progress = await db.prepare('SELECT * FROM user_promo_progress WHERE user_id = ? AND promo_task_id = ?').get(userId, task.id);
             if (!progress || progress.current_quantity === 0) continue;
 
-            const taskType = task.task_type || 'buy_specific_item';
+            const taskType = (task.task_type || 'buy_from_category').toLowerCase();
             let rule = {};
             try { rule = task.rule_json ? JSON.parse(task.rule_json) : {}; } catch(e) {}
 
             let decrement = 0;
             let immediateRevert = false;
 
-            const targetItemId = Number(rule.menu_item_id || task.required_menu_item_id || 0);
             const targetCatId = Number(rule.category_id || task.required_category_id || 0);
+            const currentQty = Number(progress.current_quantity) || 0;
+            const numericOrderTotal = Number(orderTotal) || 0;
 
             switch (taskType) {
-                case 'buy_specific_item':
-                    orderItems.forEach(item => {
-                        if (Number(item.menu_item_id) === targetItemId) decrement += item.quantity;
-                    });
-                    break;
                 case 'buy_from_category':
+                case 'buy from category':
                     orderItems.forEach(item => {
-                        if (Number(item.category_id) === targetCatId) decrement += item.quantity;
+                        if (Number(item.category_id) === targetCatId) {
+                            decrement += Number(item.quantity) || 0;
+                        }
                     });
                     break;
                 case 'minimum_spend':
-                    if (orderTotal >= (rule.min_order_amount || task.min_order_amount || 0)) immediateRevert = true;
+                case 'minimum spend':
+                    const requiredAmount = Number(rule.min_order_amount || task.min_order_amount || 0);
+                    if (numericOrderTotal >= requiredAmount) {
+                        immediateRevert = true;
+                    }
                     break;
-                case 'order_count':
-                    decrement = 1;
-                    break;
-                case 'first_order':
-                    immediateRevert = true; 
+                default:
+                    console.log(`Unsupported task type during revert: "${taskType}", skipping.`);
                     break;
             }
 
             if (immediateRevert || decrement > 0) {
-                let newQty = Math.max(0, (progress.current_quantity || 0) - (immediateRevert ? 1 : decrement));
-                console.log(`Reverting Task "${task.title}": ${progress.current_quantity} -> ${newQty}`);
+                const decVal = immediateRevert ? Number(rule.min_order_amount || task.min_order_amount || 0) : decrement;
+                let newQty = Math.max(0, currentQty - decVal);
+                console.log(`Reverting Task "${task.title}": ${currentQty} -> ${newQty}`);
                 
-                const isStillCompleted = newQty >= (task.required_quantity || 1) && !immediateRevert ? 1 : 0;
+                const targetVal = taskType === 'minimum_spend' || taskType === 'minimum spend' ? Number(rule.min_order_amount || task.min_order_amount || 0) : (Number(task.required_quantity) || 1);
+                const isStillCompleted = newQty >= targetVal ? 1 : 0;
 
                 await db.prepare('UPDATE user_promo_progress SET current_quantity = ?, is_completed = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
                     .run(newQty, isStillCompleted, progress.id);

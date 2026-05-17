@@ -177,13 +177,13 @@ router.get('/profile', pageRequireAuth, async (req, res) => {
         FROM promo_tasks t
         LEFT JOIN user_promo_progress p ON t.id = p.promo_task_id AND p.user_id = ?
         LEFT JOIN promos r ON t.reward_promo_id = r.id
-        WHERE (t.is_active = 1 AND (t.end_date IS NULL OR datetime(t.end_date) >= datetime('now', '+8 hours')))
+        WHERE (t.is_active = 1 AND (t.end_date IS NULL OR t.end_date = '' OR datetime(t.end_date) >= datetime('now', '+8 hours')))
         LIMIT ? OFFSET ?
     `).all(userId, limit, tOffset);
 
     const tCount = await db.prepare(`
         SELECT COUNT(*) as count FROM promo_tasks 
-        WHERE is_active = 1 AND (end_date IS NULL OR datetime(end_date) >= datetime('now', '+8 hours'))
+        WHERE is_active = 1 AND (end_date IS NULL OR end_date = '' OR datetime(end_date) >= datetime('now', '+8 hours'))
     `).get();
 
     // Earned coupons: fetch all for this user that are linked to loyalty tasks
@@ -198,7 +198,7 @@ router.get('/profile', pageRequireAuth, async (req, res) => {
         WHERE c.user_id = ? 
         AND p.id IN (SELECT reward_promo_id FROM promo_tasks WHERE reward_promo_id IS NOT NULL)
         AND p.is_active = 1
-        AND (p.end_date IS NULL OR datetime(p.end_date) >= datetime('now', '+8 hours'))
+        AND (p.end_date IS NULL OR p.end_date = '' OR datetime(p.end_date) >= datetime('now', '+8 hours'))
     `).all(userId);
 
     // Filter: only show coupons that still have uses left
@@ -215,8 +215,8 @@ router.get('/profile', pageRequireAuth, async (req, res) => {
                IFNULL((SELECT SUM(times_used) FROM user_coupons WHERE user_id = ? AND promo_id = p.id), 0) as times_used
         FROM promos p
         WHERE p.is_active = 1
-        AND (p.start_date IS NULL OR datetime(p.start_date) <= datetime('now', '+8 hours'))
-        AND (p.end_date IS NULL OR datetime(p.end_date) >= datetime('now', '+8 hours'))
+        AND (p.start_date IS NULL OR p.start_date = '' OR datetime(p.start_date) <= datetime('now', '+8 hours'))
+        AND (p.end_date IS NULL OR p.end_date = '' OR datetime(p.end_date) >= datetime('now', '+8 hours'))
         AND p.id NOT IN (SELECT reward_promo_id FROM promo_tasks WHERE reward_promo_id IS NOT NULL)
     `).all(userId);
 
