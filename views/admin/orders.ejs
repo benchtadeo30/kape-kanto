@@ -487,18 +487,16 @@
             <div id="page-numbers-container" style="display: flex; gap: 6px; align-items: center;">`;
 
         const limit = 10;
-        let startPage = Math.max(1, current - Math.floor(limit / 2));
-        let endPage = Math.min(totalPages, startPage + limit - 1);
-        
-        if (endPage - startPage < limit - 1) {
-            startPage = Math.max(1, endPage - limit + 1);
+        let startPage = 1;
+        let endPage = Math.min(totalPages, limit);
+
+        if (current > limit) {
+            endPage = current;
+            startPage = endPage - limit + 1;
         }
 
         if (startPage > 1) {
-            html += `<button class="btn btn-outline" onclick="changePage(1)" style="width: 38px; height: 38px; padding: 0; border-radius: 10px;">1</button>`;
-            if (startPage > 2) {
-                html += `<span style="cursor: pointer; padding: 0 5px; color: #999; display: flex; align-items: center;" onclick="changePage(${Math.max(1, startPage - 1)})" title="Previous 10 pages">...</span>`;
-            }
+            html += `<span style="cursor: pointer; padding: 0 8px; color: #999; display: flex; align-items: center; font-weight: 800; font-size: 0.9rem;" onclick="changePage(${startPage - 1})" title="Previous 10 pages">...</span>`;
         }
 
         for (let i = startPage; i <= endPage; i++) {
@@ -508,10 +506,7 @@
         }
 
         if (endPage < totalPages) {
-            if (endPage < totalPages - 1) {
-                html += `<span style="cursor: pointer; padding: 0 5px; color: #999; display: flex; align-items: center;" onclick="changePage(${Math.min(totalPages, endPage + 1)})" title="Next 10 pages">...</span>`;
-            }
-            html += `<button class="btn btn-outline" onclick="changePage(${totalPages})" style="width: 38px; height: 38px; padding: 0; border-radius: 10px;">${totalPages}</button>`;
+            html += `<span style="cursor: pointer; padding: 0 8px; color: #999; display: flex; align-items: center; font-weight: 800; font-size: 0.9rem;" onclick="changePage(${endPage + 1})" title="Next 10 pages">...</span>`;
         }
 
         html += `

@@ -221,10 +221,7 @@
         }
 
         if (startPage > 1) {
-            html += `<button class="page-btn" onclick="goToPage(1)">1</button>`;
-            if (startPage > 2) {
-                html += `<span style="cursor: pointer; padding: 0 10px; color: #999; display: flex; align-items: center;" onclick="goToPage(${Math.max(1, startPage - 1)})" title="Previous 10 pages">...</span>`;
-            }
+            html += `<span style="cursor: pointer; padding: 0 10px; color: #999; display: flex; align-items: center; font-weight: 800;" onclick="goToPage(${startPage - 1})" title="Previous 10 pages">...</span>`;
         }
 
         for (let i = startPage; i <= endPage; i++) {
@@ -236,10 +233,7 @@
         }
 
         if (endPage < totalPages) {
-            if (endPage < totalPages - 1) {
-                html += `<span style="cursor: pointer; padding: 0 10px; color: #999; display: flex; align-items: center;" onclick="goToPage(${Math.min(totalPages, endPage + 1)})" title="Next 10 pages">...</span>`;
-            }
-            html += `<button class="page-btn" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+            html += `<span style="cursor: pointer; padding: 0 10px; color: #999; display: flex; align-items: center; font-weight: 800;" onclick="goToPage(${endPage + 1})" title="Next 10 pages">...</span>`;
         }
 
         html += `

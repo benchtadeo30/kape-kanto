@@ -390,10 +390,7 @@
         }
 
         if (startPage > 1) {
-            html += `<button class="btn btn-outline" onclick="changePage(1)" style="width: 36px; height: 36px; padding: 0; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700;">1</button>`;
-            if (startPage > 2) {
-                html += `<span style="cursor: pointer; padding: 0 8px; color: #999; display: flex; align-items: center; font-weight: 800; font-size: 0.9rem;" onclick="changePage(${Math.max(1, startPage - 1)})" title="Previous 10 pages">...</span>`;
-            }
+            html += `<span style="cursor: pointer; padding: 0 8px; color: #999; display: flex; align-items: center; font-weight: 800; font-size: 0.9rem;" onclick="changePage(${startPage - 1})" title="Previous 10 pages">...</span>`;
         }
 
         for (let i = startPage; i <= endPage; i++) {
@@ -403,10 +400,7 @@
         }
 
         if (endPage < totalPages) {
-            if (endPage < totalPages - 1) {
-                html += `<span style="cursor: pointer; padding: 0 8px; color: #999; display: flex; align-items: center; font-weight: 800; font-size: 0.9rem;" onclick="changePage(${Math.min(totalPages, endPage + 1)})" title="Next 10 pages">...</span>`;
-            }
-            html += `<button class="btn btn-outline" onclick="changePage(${totalPages})" style="width: 36px; height: 36px; padding: 0; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700;">${totalPages}</button>`;
+            html += `<span style="cursor: pointer; padding: 0 8px; color: #999; display: flex; align-items: center; font-weight: 800; font-size: 0.9rem;" onclick="changePage(${endPage + 1})" title="Next 10 pages">...</span>`;
         }
 
         html += `
