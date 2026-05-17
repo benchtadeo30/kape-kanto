@@ -22,7 +22,7 @@ async function sendOTP(phoneNumber, otp) {
     if (!client || !twilioPhoneNumber) {
         console.warn('⚠️ [Twilio] Credentials not found. SMS sending is mocked.');
         console.log(`[Twilio Mock] To: ${phoneNumber} | Message: ${messageBody}`);
-        return true;
+        return { success: true, mocked: true, otp };
     }
 
     try {
@@ -32,14 +32,13 @@ async function sendOTP(phoneNumber, otp) {
             to: phoneNumber
         });
         console.log(`✅ [Twilio] SMS sent successfully. SID: ${message.sid}`);
-        return true;
+        return { success: true, mocked: false };
     } catch (error) {
         console.error('❌ [Twilio] Failed to send SMS:', error.message);
         // Free tier restricts to verified numbers only, so we log it for testing purposes
         console.log(`[Twilio Mock Fallback] To: ${phoneNumber} | OTP: ${otp}`);
         
-        // Return true anyway so the user can proceed with testing via the mocked OTP printed in the console
-        return true; 
+        return { success: true, mocked: true, otp, error: error.message }; 
     }
 }
 

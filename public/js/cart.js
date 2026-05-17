@@ -868,6 +868,24 @@ async function requestPhoneOTP() {
 
         if (res.ok) {
             showToast('OTP sent successfully!', 'success');
+            if (data.isMocked && data.otp) {
+                if (window.KapeKanto && typeof window.KapeKanto.confirm === 'function') {
+                    window.KapeKanto.confirm(
+                        `Since Twilio SMS is not configured on this environment (or the trial account restricts SMS to verified developer numbers only), a Mock SMS was generated.\n\nYour Verification Code is: ${data.otp}`,
+                        () => {
+                            document.getElementById('verify-phone-otp').value = data.otp;
+                        },
+                        {
+                            title: '🔧 Development OTP Helper',
+                            confirmText: 'Pre-fill Code',
+                            cancelText: 'OK',
+                            type: 'info'
+                        }
+                    );
+                } else {
+                    alert(`[DEVELOPMENT OTP] Code: ${data.otp}`);
+                }
+            }
             document.getElementById('phone-step-1').style.display = 'none';
             document.getElementById('phone-step-2').style.display = 'block';
         } else {
