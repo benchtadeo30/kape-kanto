@@ -284,6 +284,33 @@
                 position: static;
             }
         }
+
+        /* Camera Modal Styles */
+        .camera-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 99999;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .camera-box {
+            background: white;
+            border-radius: 24px;
+            padding: 24px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        }
+        #selfie-video-preview {
+            width: 100%;
+            border-radius: 16px;
+            background: black;
+            transform: scaleX(-1);
+        }
     </style>
 
     <div class="profile-container">
@@ -656,11 +683,19 @@
                                                                                 Hold your ID next to your face (Optional)</p>
                                                                             <input type="file" id="selfie-file"
                                                                                 name="selfie_image" accept="image/*"
-                                                                                onchange="handleFileSelect(this, 'selfie-name-text')">
+                                                                                onchange="handleSelfieFileSelect(this)">
                                                                         </div>
-                                                                        <div id="selfie-preview" class="file-preview">
-                                                                            <i class="fa-solid fa-file-image"></i>
-                                                                            <span id="selfie-name-text"></span>
+                                                                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                                                                            <button type="button" class="btn btn-outline" onclick="openSelfieCamera()" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; border-radius: 12px; font-weight: 600; padding: 12px; font-size: 0.9rem; border: 1px solid #e0d4c8; background: white; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#fafafa'" onmouseout="this.style.background='white'">
+                                                                                <i class="fa-solid fa-camera" style="color: var(--p-primary);"></i> Open Selfie Camera
+                                                                            </button>
+                                                                        </div>
+                                                                        <div id="selfie-preview" class="file-preview" style="align-items: center; gap: 10px; padding: 12px; background: #fafafa; border-radius: 12px; border: 1px solid #eee; margin-top: 10px;">
+                                                                            <i class="fa-solid fa-image" style="font-size: 1.2rem; color: var(--p-primary);"></i>
+                                                                            <span id="selfie-name-text" style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
+                                                                            <button type="button" onclick="clearSelfieSelection()" style="background: none; border: none; color: #f44336; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px;" title="Remove selfie">
+                                                                                <i class="fa-solid fa-trash-can"></i>
+                                                                            </button>
                                                                         </div>
                                                                     </div>
 
@@ -1063,7 +1098,10 @@
                 finalFormData.append('id_number', idNumber.value.trim());
                 finalFormData.append('id_image', optimizedID.blob, 'id_card.jpg');
 
-                if (selfieFile?.files?.length) {
+                if (capturedSelfieBlob) {
+                    const optimizedSelfie = await KapeKanto.optimizeImage(capturedSelfieBlob, 1200, 0.8);
+                    finalFormData.append('selfie_image', optimizedSelfie.blob, 'selfie.jpg');
+                } else if (selfieFile?.files?.length) {
                     const optimizedSelfie = await KapeKanto.optimizeImage(selfieFile.files[0], 1200, 0.8);
                     finalFormData.append('selfie_image', optimizedSelfie.blob, 'selfie.jpg');
                 }
@@ -1127,6 +1165,77 @@
                 window.location.href = `/verify-email?email=${encodeURIComponent(email)}`;
             }
         }
+
+        let capturedSelfieBlob = null;
+        let cameraStream = null;
+
+        function handleSelfieFileSelect(input) {
+            capturedSelfieBlob = null; // Clear any captured webcam image
+            const fileNameText = document.getElementById('selfie-name-text');
+            const preview = document.getElementById('selfie-preview');
+            if (input.files && input.files[0]) {
+                fileNameText.innerText = `Uploaded File: ${input.files[0].name}`;
+                if (preview) preview.style.display = 'flex';
+            }
+        }
+
+        function clearSelfieSelection() {
+            capturedSelfieBlob = null;
+            document.getElementById('selfie-file').value = '';
+            document.getElementById('selfie-name-text').innerText = '';
+            document.getElementById('selfie-preview').style.display = 'none';
+        }
+
+        async function openSelfieCamera() {
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                document.getElementById('selfie-video-preview').srcObject = cameraStream;
+                document.getElementById('selfie-camera-modal').style.display = 'flex';
+            } catch (err) {
+                KapeKanto.toast('Could not access camera. Please check permissions.', 'error');
+            }
+        }
+
+        function closeSelfieCamera() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+            document.getElementById('selfie-camera-modal').style.display = 'none';
+        }
+
+        function captureSelfiePhoto() {
+            const video = document.getElementById('selfie-video-preview');
+            const canvas = document.getElementById('selfie-capture-canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.translate(canvas.width, 0);
+            ctx.scale(-1, 1);
+            ctx.drawImage(video, 0, 0);
+            
+            canvas.toBlob((blob) => {
+                capturedSelfieBlob = blob;
+                document.getElementById('selfie-file').value = ''; // Clear file input
+                document.getElementById('selfie-name-text').innerText = 'Captured live selfie photo';
+                document.getElementById('selfie-preview').style.display = 'flex';
+                closeSelfieCamera();
+            }, 'image/jpeg', 0.9);
+        }
     </script>
+
+    <!-- Camera Modal for Identity Verification Selfie -->
+    <div id="selfie-camera-modal" class="camera-modal">
+        <div class="camera-box">
+            <h3 style="margin-bottom: 15px; font-family: 'Poppins', sans-serif; font-weight: 700; color: var(--p-primary);">Capture Selfie</h3>
+            <video id="selfie-video-preview" autoplay playsinline></video>
+            <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: center;">
+                <button type="button" class="btn btn-outline" onclick="closeSelfieCamera()" style="border-radius: 12px; font-weight: 600; padding: 10px 20px; cursor: pointer;">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="captureSelfiePhoto()" style="border-radius: 12px; font-weight: 700; padding: 10px 20px; background: var(--p-primary); color: white; border: none; cursor: pointer;">Take Photo</button>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="selfie-capture-canvas" style="display:none;"></canvas>
 
     <%- include('partials/footer') %>
