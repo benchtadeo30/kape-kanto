@@ -248,8 +248,8 @@
         const isCancelled = order.status === 'cancelled';
         const isAwaiting = order.status === 'awaiting_payment';
         const canCustomerCancel = !isAwaiting && !isCancelled && (
-            (order.order_type === 'pickup' && ['pending', 'preparing', 'ready'].includes(order.status)) ||
-            (order.order_type === 'delivery' && ['pending', 'preparing', 'ready', 'out_for_delivery'].includes(order.status))
+            (order.order_type === 'pickup' && ['pending', 'preparing'].includes(order.status)) ||
+            (order.order_type === 'delivery' && ['pending', 'preparing', 'ready'].includes(order.status))
         );
         const date = KapeKanto.parseUTCDate(order.created_at).toLocaleDateString('en-PH', {
             month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true

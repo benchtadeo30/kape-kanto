@@ -546,9 +546,9 @@ router.post('/my/:id/cancel', requireAuth, async (req, res) => {
         // Determine if cancellation is allowed based on order type and status
         let isAllowed = false;
         if (order.order_type === 'pickup') {
-            isAllowed = ['awaiting_payment', 'pending', 'preparing', 'ready'].includes(order.status);
+            isAllowed = ['awaiting_payment', 'pending', 'preparing'].includes(order.status);
         } else if (order.order_type === 'delivery') {
-            isAllowed = ['awaiting_payment', 'pending', 'preparing', 'ready', 'out_for_delivery'].includes(order.status);
+            isAllowed = ['awaiting_payment', 'pending', 'preparing', 'ready'].includes(order.status);
         } else {
             isAllowed = ['awaiting_payment', 'pending'].includes(order.status);
         }
