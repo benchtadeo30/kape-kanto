@@ -435,12 +435,12 @@
 
             <div class="form-group">
                 <label>Banner Image</label>
-                <div style="position: relative; border: 2px dashed #e0e0e0; border-radius: 12px; padding: 25px; text-align: center; background: #fff; cursor: pointer; transition: 0.3s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='#e0e0e0'">
-                    <div id="campaign-image-preview" style="display: none; margin-bottom: 15px; position: relative;">
-                        <img src="" style="max-width: 100%; height: 120px; object-fit: cover; border-radius: 8px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                        <div style="height: 120px; background: #fff5f5; display: none; align-items: center; justify-content: center; color: #e57373; flex-direction: column; gap: 8px; border-radius: 8px; border: 2px dashed #ffcdd2;">
-                            <i class="fa-solid fa-image-slash" style="font-size: 1.5rem;"></i>
-                            <span style="font-weight: 700; font-size: 0.8rem;">IMAGE FILE MISSING ON SERVER</span>
+                <div style="position: relative; border: 2px dashed #d0c2b8; border-radius: 16px; padding: 30px; text-align: center; background: #fafafa; cursor: pointer; transition: all 0.3s; width: 100%; max-width: 580px; margin: 0 auto;" onmouseover="this.style.borderColor='var(--primary)'; this.style.background='#fff8f0';" onmouseout="this.style.borderColor='#d0c2b8'; this.style.background='#fafafa';">
+                    <div id="campaign-image-preview" style="display: none; margin-bottom: 15px; position: relative; width: 100%; display: flex; justify-content: center; align-items: center;">
+                        <img src="" style="width: 100%; max-width: 480px; height: 180px; object-fit: cover; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); margin: 0 auto;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div style="width: 100%; max-width: 480px; height: 180px; background: #fff5f5; display: none; align-items: center; justify-content: center; color: #e57373; flex-direction: column; gap: 8px; border-radius: 12px; border: 2px dashed #ffcdd2; margin: 0 auto;">
+                            <i class="fa-solid fa-image-slash" style="font-size: 1.8rem;"></i>
+                            <span style="font-weight: 700; font-size: 0.9rem;">IMAGE FILE MISSING ON SERVER</span>
                         </div>
                     </div>
                     <div id="campaign-upload-icon">
@@ -1364,7 +1364,7 @@
         
         if (item.image) {
             const preview = document.getElementById('campaign-image-preview');
-            preview.style.display = 'block';
+            preview.style.display = 'flex';
             const imgUrl = item.image.startsWith('http') || item.image.startsWith('/') || item.image.startsWith('data:') 
                 ? item.image 
                 : '/uploads/promos/' + item.image;
@@ -1718,7 +1718,7 @@
             const reader = new FileReader();
             reader.onload = (e) => {
                 const preview = document.getElementById('campaign-image-preview');
-                preview.style.display = 'block';
+                preview.style.display = 'flex';
                 preview.querySelector('img').src = e.target.result;
                 document.getElementById('campaign-upload-icon').style.display = 'none';
             };
