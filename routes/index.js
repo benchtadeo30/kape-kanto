@@ -39,12 +39,14 @@ router.get('/', async (req, res) => {
         const promos = await db.prepare(`
             SELECT *, 'promo' as event_type FROM promos 
             WHERE is_active = 1 
+            AND (start_date IS NULL OR start_date = '' OR datetime(start_date) <= datetime('now', '+8 hours'))
             AND (end_date IS NULL OR end_date = '' OR datetime(end_date) >= datetime('now', '+8 hours'))
         `).all();
 
         const tasks = await db.prepare(`
             SELECT *, 'task' as event_type FROM promo_tasks 
             WHERE is_active = 1 
+            AND (start_date IS NULL OR start_date = '' OR datetime(start_date) <= datetime('now', '+8 hours'))
             AND (end_date IS NULL OR end_date = '' OR datetime(end_date) >= datetime('now', '+8 hours'))
         `).all();
 
@@ -177,13 +179,17 @@ router.get('/profile', pageRequireAuth, async (req, res) => {
         FROM promo_tasks t
         LEFT JOIN user_promo_progress p ON t.id = p.promo_task_id AND p.user_id = ?
         LEFT JOIN promos r ON t.reward_promo_id = r.id
-        WHERE (t.is_active = 1 AND (t.end_date IS NULL OR t.end_date = '' OR datetime(t.end_date) >= datetime('now', '+8 hours')))
+        WHERE (t.is_active = 1 
+               AND (t.start_date IS NULL OR t.start_date = '' OR datetime(t.start_date) <= datetime('now', '+8 hours'))
+               AND (t.end_date IS NULL OR t.end_date = '' OR datetime(t.end_date) >= datetime('now', '+8 hours')))
         LIMIT ? OFFSET ?
     `).all(userId, limit, tOffset);
 
     const tCount = await db.prepare(`
         SELECT COUNT(*) as count FROM promo_tasks 
-        WHERE is_active = 1 AND (end_date IS NULL OR end_date = '' OR datetime(end_date) >= datetime('now', '+8 hours'))
+        WHERE is_active = 1 
+        AND (start_date IS NULL OR start_date = '' OR datetime(start_date) <= datetime('now', '+8 hours'))
+        AND (end_date IS NULL OR end_date = '' OR datetime(end_date) >= datetime('now', '+8 hours'))
     `).get();
 
     // Earned coupons: fetch all for this user that are linked to loyalty tasks

@@ -21,7 +21,7 @@ router.get('/', async (req, res) => {
 
         const taskQuery = `
             SELECT pt.id, pt.title, pt.description, 0 as discount_percent, 0 as discount_amount, p.image,
-                   p.start_date, pt.end_date, NULL as promo_code, 'task' as event_type, p.created_at
+                   COALESCE(NULLIF(pt.start_date, ''), p.start_date) as start_date, pt.end_date, NULL as promo_code, 'task' as event_type, p.created_at
             FROM promo_tasks pt
             LEFT JOIN promos p ON pt.reward_promo_id = p.id
             WHERE pt.is_active = 1
@@ -103,6 +103,7 @@ router.get('/tasks/my-progress', requireAuth, async (req, res) => {
             LEFT JOIN user_promo_progress up ON pt.id = up.promo_task_id AND up.user_id = ?
             LEFT JOIN promos p ON pt.reward_promo_id = p.id
             WHERE pt.is_active = 1
+            AND (pt.start_date IS NULL OR pt.start_date = '' OR datetime(pt.start_date) <= datetime('now', '+8 hours'))
             AND (pt.end_date IS NULL OR pt.end_date = '' OR datetime(pt.end_date) >= datetime('now', '+8 hours'))
             ORDER BY COALESCE(up.is_completed, 0) ASC, pt.id DESC
         `).all(req.session.userId);

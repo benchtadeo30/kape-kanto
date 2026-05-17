@@ -24,6 +24,7 @@ async function trackLoyaltyProgress(userId, orderId, orderTotal) {
         const activeTasks = await db.prepare(`
             SELECT * FROM promo_tasks 
             WHERE is_active = 1 
+            AND (start_date IS NULL OR start_date = '' OR datetime(start_date) <= datetime('now', '+8 hours'))
             AND (end_date IS NULL OR end_date = '' OR datetime(end_date) >= datetime('now', '+8 hours'))
         `).all();
 
