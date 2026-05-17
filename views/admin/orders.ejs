@@ -496,7 +496,7 @@
         }
 
         if (startPage > 1) {
-            html += `<span style="cursor: pointer; padding: 0 8px; color: #999; display: flex; align-items: center; font-weight: 800; font-size: 0.9rem;" onclick="changePage(${startPage - 1})" title="Previous 10 pages">...</span>`;
+            html += `<span style="cursor: pointer; padding: 0 12px; color: #999; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; white-space: nowrap; letter-spacing: 2px; min-width: 30px; font-size: 0.9rem;" onclick="changePage(${startPage - 1})" title="Previous 10 pages">...</span>`;
         }
 
         for (let i = startPage; i <= endPage; i++) {
@@ -506,7 +506,7 @@
         }
 
         if (endPage < totalPages) {
-            html += `<span style="cursor: pointer; padding: 0 8px; color: #999; display: flex; align-items: center; font-weight: 800; font-size: 0.9rem;" onclick="changePage(${endPage + 1})" title="Next 10 pages">...</span>`;
+            html += `<span style="cursor: pointer; padding: 0 12px; color: #999; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; white-space: nowrap; letter-spacing: 2px; min-width: 30px; font-size: 0.9rem;" onclick="changePage(${endPage + 1})" title="Next 10 pages">...</span>`;
         }
 
         html += `
