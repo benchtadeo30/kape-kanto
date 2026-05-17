@@ -54,7 +54,8 @@
     .page-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
     .page-dots { cursor: pointer; padding: 0 8px; color: #999; display: flex; align-items: center; font-weight: 800; }
     .so-tools { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; margin-bottom: 1rem; flex-wrap: wrap; }
-    .so-search { max-width: 360px; border-radius: 999px !important; padding: 0.75rem 1rem !important; }
+    .so-search { max-width: 360px; border-radius: 999px !important; padding: 0.75rem 1rem !important; transition: all 0.25s ease; border: 1px solid #e6d8cc !important; background: #fffdf9; outline: none; }
+    .so-search:focus { border-color: var(--primary) !important; box-shadow: 0 0 0 4px rgba(111,78,55,0.1) !important; background: white; }
     .so-bulk { display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap; }
     .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-light); }
     .empty-state i { display: block; font-size: 2rem; color: var(--accent); margin-bottom: 0.75rem; }
@@ -242,7 +243,10 @@
             </div>
 
             <div class="so-tools">
-                <input class="so-search" id="order-search" type="text" placeholder="Search orders, customer, status..." oninput="setOrderSearch(this.value)">
+                <div style="position: relative; flex: 1; max-width: 360px; min-width: 260px;">
+                    <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: var(--text-light); font-size: 0.95rem;"></i>
+                    <input class="so-search" id="order-search" type="text" placeholder="Search orders, customer, status..." oninput="setOrderSearch(this.value)" style="width: 100%; padding: 0.75rem 1rem 0.75rem 2.6rem !important;">
+                </div>
                 <div class="so-bulk">
                     <button class="so-btn so-btn-outline" id="bulk-mode-btn" onclick="toggleBulkMode()"><i class="fa-regular fa-square-check"></i> Select Orders</button>
                     <label id="select-all-wrap" style="display:none;align-items:center;gap:8px;margin:0;color:var(--text-light);font-size:0.86rem;font-weight:800;">

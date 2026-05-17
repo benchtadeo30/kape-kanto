@@ -403,25 +403,41 @@
         return status.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
     }
 
+    function getFilteredOrders() {
+        return allOrders.filter(o => {
+            const matchesStatus = currentFilter === 'all' || o.status === currentFilter;
+            if (!matchesStatus) return false;
+
+            const matchesType = currentType === 'all' || o.order_type === currentType;
+            if (!matchesType) return false;
+
+            const matchesSched = currentSched === 'all' || o.schedule_mode === currentSched;
+            if (!matchesSched) return false;
+
+            if (!searchQuery) return true;
+
+            const haystack = [
+                o.id,
+                o.username,
+                o.email,
+                o.status,
+                o.order_type,
+                o.payment_method,
+                o.payment_status,
+                o.total,
+                o.delivery_address || ''
+            ].join(' ').toLowerCase();
+
+            return haystack.includes(searchQuery);
+        });
+    }
+
     async function loadOrders() {
         try {
-            const offset = (currentPage - 1) * PAGE_LIMIT;
-            const res = await fetch(`/api/orders/all?limit=${PAGE_LIMIT}&offset=${offset}&status=${currentFilter}&search=${encodeURIComponent(searchQuery)}`);
+            const res = await fetch(`/api/orders/all`);
             if (res.ok) { 
-                const data = await res.json();
-                let filtered = data.items;
-                
-                if (currentType !== 'all') {
-                    filtered = filtered.filter(o => o.order_type === currentType);
-                }
-
-                if (currentSched !== 'all') {
-                    filtered = filtered.filter(o => o.schedule_mode === currentSched);
-                }
-
-                allOrders = data.items; // Store original for details
-                const renderTotal = (currentType === 'all' && currentSched === 'all') ? data.total : filtered.length;
-                renderOrders(filtered, renderTotal);
+                allOrders = await res.json();
+                renderOrders();
 
                 // Handle Deep Link to Chat
                 const urlParams = new URLSearchParams(window.location.search);
@@ -452,7 +468,7 @@
             }
         });
         
-        loadOrders();
+        renderOrders();
     }
 
     function filterSched(sched) {
@@ -473,7 +489,7 @@
             }
         });
         
-        loadOrders();
+        renderOrders();
     }
 
     function filterOrders(status, btn) {
@@ -481,30 +497,33 @@
         currentPage = 1; // Reset to page 1 on filter change
         document.querySelectorAll('.ao-tab').forEach(t => t.classList.remove('active'));
         btn.classList.add('active');
-        loadOrders();
+        renderOrders();
     }
 
     function handleSearch(val) {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => {
-            searchQuery = val.trim().toLowerCase();
-            currentPage = 1;
-            loadOrders();
-        }, 400);
+        searchQuery = val.trim().toLowerCase();
+        currentPage = 1;
+        renderOrders();
     }
 
-    function renderOrders(items, total) {
-        document.getElementById('ao-count').textContent = `Showing ${items.length} of ${total} order${total !== 1 ? 's' : ''}`;
+    function renderOrders() {
+        const filtered = getFilteredOrders();
+        const totalPages = Math.ceil(filtered.length / PAGE_LIMIT);
+        currentPage = totalPages > 0 ? Math.min(Math.max(currentPage, 1), totalPages) : 1;
+        const startIndex = (currentPage - 1) * PAGE_LIMIT;
+        const pagedOrders = filtered.slice(startIndex, startIndex + PAGE_LIMIT);
+
+        document.getElementById('ao-count').textContent = `Showing ${pagedOrders.length} of ${filtered.length} order${filtered.length !== 1 ? 's' : ''}`;
 
         const c = document.getElementById('orders-container');
-        if (!items.length) {
+        if (!filtered.length) {
             c.innerHTML = `<div style="text-align:center;padding:3rem;color:var(--text-light);">
                 <i class="fa-solid fa-inbox" style="font-size:2.5rem;margin-bottom:1rem;"></i><p>No orders here.</p></div>`;
             document.getElementById('ao-pagination').innerHTML = '';
             return;
         }
-        c.innerHTML = items.map(o => buildCard(o)).join('');
-        renderPagination(currentPage, total);
+        c.innerHTML = pagedOrders.map(o => buildCard(o)).join('');
+        renderPagination(currentPage, filtered.length);
     }
 
     function renderPagination(current, total) {
@@ -526,12 +545,10 @@
             <div id="page-numbers-container" style="display: flex; gap: 6px; align-items: center;">`;
 
         const limit = 10;
-        let startPage = 1;
-        let endPage = Math.min(totalPages, limit);
-
-        if (current > limit) {
-            endPage = current;
-            startPage = endPage - limit + 1;
+        let startPage = Math.max(1, current - Math.floor(limit / 2));
+        let endPage = Math.min(totalPages, startPage + limit - 1);
+        if (endPage - startPage < limit - 1) {
+            startPage = Math.max(1, endPage - limit + 1);
         }
 
         if (startPage > 1) {
@@ -560,7 +577,7 @@
 
     function changePage(p) {
         currentPage = p;
-        loadOrders();
+        renderOrders();
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
