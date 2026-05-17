@@ -200,15 +200,15 @@ router.post('/request-phone-otp', requireAuth, async (req, res) => {
             WHERE id = ?
         `).run(otp, expiresAt, userId);
 
-        const { sendOTP } = require('../services/twilio');
-        const twilioResult = await sendOTP(phone_number.trim(), otp);
+        const { sendOTP } = require('../services/sms');
+        const smsResult = await sendOTP(phone_number.trim(), otp);
 
-        if (twilioResult && twilioResult.mocked) {
+        if (smsResult && smsResult.mocked) {
             res.json({ 
                 message: 'OTP sent successfully (SMS Mocked).', 
                 isMocked: true, 
-                otp: twilioResult.otp,
-                error: twilioResult.error
+                otp: smsResult.otp,
+                error: smsResult.error
             });
         } else {
             res.json({ message: 'OTP sent successfully.' });
