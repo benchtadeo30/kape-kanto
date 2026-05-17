@@ -212,11 +212,12 @@
         `;
 
         const limit = 10;
-        let startPage = Math.max(1, currentPage - Math.floor(limit / 2));
-        let endPage = Math.min(totalPages, startPage + limit - 1);
-        
-        if (endPage - startPage < limit - 1) {
-            startPage = Math.max(1, endPage - limit + 1);
+        let startPage = 1;
+        let endPage = Math.min(totalPages, limit);
+
+        if (currentPage > limit) {
+            endPage = currentPage;
+            startPage = endPage - limit + 1;
         }
 
         if (startPage > 1) {
