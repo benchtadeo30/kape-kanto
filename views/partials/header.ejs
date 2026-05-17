@@ -502,7 +502,7 @@
                             statusChanged = true;
                             if (user.role === 'admin' || user.role === 'staff') {
                                 playNotificationSound();
-                                KapeKanto.toast(`🔔 New Order #${order.id} placed by ${order.customer_name || 'Customer'}!`, 'success');
+                                KapeKanto.toast(`🔔 New Order #${order.id} has been placed!`, 'success');
                                 window.dispatchEvent(new CustomEvent('kk-new-order', { 
                                     detail: { orderId: order.id } 
                                 }));

@@ -805,7 +805,7 @@ async function placeOrder() {
                 window.location.href = data.checkoutUrl;
             } else {
                 clearCart();
-                showToast('Order placed successfully! 🎉', 'success');
+                showToast('Your order has been placed! 🎉', 'success');
                 setTimeout(() => window.location.href = '/order-tracking', 1200);
             }
         } else if (res.status === 403 && data.requires_phone_verification) {
