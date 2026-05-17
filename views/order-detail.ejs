@@ -479,7 +479,7 @@
 
             container.innerHTML = messages.map(m => {
                 const isCustomer = m.role === 'customer';
-                const time = KapeKanto.parseUTCDate(m.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
+                const time = KapeKanto.formatChatMessageDate(m.created_at);
                 const senderName = isCustomer ? 'You' : 'Staff';
                 return `
                 <div class="od-chat-msg ${isCustomer ? 'customer' : 'staff'}">

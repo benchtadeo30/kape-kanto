@@ -264,6 +264,31 @@
             return new Date(dateStr);
         };
 
+        // Global Chat Date/Time Formatting Utility (Messenger-like behaviour)
+        window.KapeKanto.formatChatMessageDate = function(dateStr) {
+            const date = window.KapeKanto.parseUTCDate(dateStr);
+            const now = new Date();
+            
+            // Get dates without times for strict comparison
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+            const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+            
+            const timeStr = date.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
+            
+            if (checkDate.getTime() === today.getTime()) {
+                // Today
+                return timeStr;
+            } else if (checkDate.getTime() === yesterday.getTime()) {
+                // Yesterday
+                return `Yesterday · ${timeStr}`;
+            } else {
+                // 2 days or more (e.g. "May 15, 2026 · 12:45 AM")
+                const dateStrFormatted = date.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
+                return `${dateStrFormatted} · ${timeStr}`;
+            }
+        };
+
         // Global Image Optimization Utility
         window.KapeKanto.optimizeImage = function(file, maxWidth = 1000, quality = 0.8) {
             return new Promise((resolve, reject) => {
