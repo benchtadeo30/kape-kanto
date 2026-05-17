@@ -234,8 +234,8 @@
                                 <button onclick="changeDetailQty(-1)"
                                     style="border: none; background: none; padding: 10px; cursor: pointer;"><i
                                         class="fa-solid fa-minus"></i></button>
-                                <input type="number" id="detailQty" value="1" readonly
-                                    style="width: 40px; text-align: center; border: none; background: none; font-weight: bold;">
+                                <input type="number" id="detailQty" value="1" min="1"
+                                    style="width: 50px; text-align: center; border: none; padding: 5px; font-weight: bold; background: #fff; border-radius: 4px;">
                                 <button onclick="changeDetailQty(1)"
                                     style="border: none; background: none; padding: 10px; cursor: pointer;"><i
                                         class="fa-solid fa-plus"></i></button>
@@ -478,16 +478,62 @@
 
         function changeDetailQty(amt) {
             const input = document.getElementById('detailQty');
-            let val = parseInt(input.value) + amt;
+            let val = parseInt(input.value) || 1;
+            val += amt;
             if (val < 1) val = 1;
+            if (currentDetailItem && val > currentDetailItem.stock) {
+                val = currentDetailItem.stock;
+                KapeKanto.toast(`Only ${currentDetailItem.stock} items left in stock.`, 'warning');
+            }
             input.value = val;
             updateDetailTotalPrice();
         }
 
+        document.addEventListener('DOMContentLoaded', () => {
+            const detailQtyInput = document.getElementById('detailQty');
+            if (detailQtyInput) {
+                detailQtyInput.addEventListener('input', function() {
+                    let val = parseInt(this.value);
+                    if (isNaN(val) || val < 1) {
+                        this.value = 1;
+                        updateDetailTotalPrice();
+                        return;
+                    }
+                    if (currentDetailItem && val > currentDetailItem.stock) {
+                        this.value = currentDetailItem.stock;
+                        KapeKanto.toast(`Only ${currentDetailItem.stock} items left in stock.`, 'warning');
+                    }
+                    updateDetailTotalPrice();
+                });
+                detailQtyInput.addEventListener('keydown', function(e) {
+                    if (e.key === '-' || e.key === 'e' || e.key === '+') {
+                        e.preventDefault();
+                    }
+                });
+            }
+        });
+
         document.getElementById('detailAddBtn')?.addEventListener('click', () => {
             if (!currentDetailItem) return;
 
-            const qty = parseInt(document.getElementById('detailQty').value);
+            const qty = parseInt(document.getElementById('detailQty').value) || 1;
+            
+            // Calculate total quantity of this menu item already in the cart
+            const cart = KapeKanto.getCart();
+            const totalInCart = cart
+                .filter(item => item.id === currentDetailItem.id)
+                .reduce((sum, item) => sum + item.quantity, 0);
+
+            if (totalInCart + qty > currentDetailItem.stock) {
+                const allowedQuantity = currentDetailItem.stock - totalInCart;
+                if (allowedQuantity <= 0) {
+                    KapeKanto.toast(`You already have all available stock (${currentDetailItem.stock}) of ${currentDetailItem.name} in your cart.`, 'warning');
+                } else {
+                    KapeKanto.toast(`Cannot add ${qty}. You can only add up to ${allowedQuantity} more of this item to match the available stock.`, 'warning');
+                }
+                return; // Stop addition
+            }
+
             const customizations = {};
             let extraPriceTotal = 0;
 
@@ -526,7 +572,6 @@
                 ? (currentDetailItem.image.startsWith('http') ? currentDetailItem.image : `/uploads/menu/${currentDetailItem.image}`)
                 : fallbackImg;
 
-            const cart = KapeKanto.getCart();
             const existing = cart.find(item =>
                 item.id === currentDetailItem.id &&
                 JSON.stringify(item.customizations) === JSON.stringify(customizations)
@@ -534,6 +579,7 @@
 
             if (existing) {
                 existing.quantity += qty;
+                existing.stock = currentDetailItem.stock;
             } else {
                 cart.push({
                     id: currentDetailItem.id,
@@ -542,7 +588,8 @@
                     price: currentDetailItem.price + extraPriceTotal,
                     image: imgUrl,
                     quantity: qty,
-                    customizations: customizations
+                    customizations: customizations,
+                    stock: currentDetailItem.stock
                 });
             }
 
