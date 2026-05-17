@@ -3,7 +3,7 @@
     <div class="modal-content">
         <div class="modal-close" onclick="closeModal()">&times;</div>
         <div class="modal-left">
-            <img id="modalImage" src="" alt="Item Image">
+            <img id="modalImage" src="" alt="Item Image" onerror="KapeKanto.handleImageError(this, 'menu')">
         </div>
         <div class="modal-right">
             <h2 id="modalTitle" class="modal-title"></h2>
@@ -53,7 +53,7 @@
         const addBtn = document.getElementById('modalAddBtn');
         const qtyInput = document.getElementById('modalQty');
 
-        img.src = currentItem.image ? (currentItem.image.startsWith('http') ? currentItem.image : `/uploads/menu/${currentItem.image}`) : 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=600';
+        img.src = KapeKanto.normalizeImageUrl(currentItem.image, 'menu');
         title.innerText = currentItem.name;
         price.innerHTML = `&#8369;${currentItem.price.toFixed(2)}`;
         desc.innerText = currentItem.description || 'No description available.';
@@ -192,7 +192,7 @@
             }
         });
 
-        let imgUrl = currentItem.image ? (currentItem.image.startsWith('http') ? currentItem.image : `/uploads/menu/${currentItem.image}`) : 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=600';
+        let imgUrl = KapeKanto.normalizeImageUrl(currentItem.image, 'menu');
 
         // Calculate final unit price including adjustments
         let finalUnitPrice = currentItem.price;

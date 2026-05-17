@@ -508,23 +508,22 @@
             month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
         });
         const isDelivery = o.order_type === 'delivery';
-        const nextAction = o.status === 'ready' && !isDelivery ? STATUS_NEXT.ready_pickup : STATUS_NEXT[o.status];
 
-        let actionBtns = '';
-        if (nextAction && !['completed', 'cancelled'].includes(o.status)) {
-            const action = nextAction.status === 'out_for_delivery'
-                ? `openRiderModal(${o.id})`
-                : `updateStatus(${o.id}, '${nextAction.status}')`;
-            actionBtns += `<button class="so-btn ${nextAction.cls}" onclick="${action}"><i class="fa-solid ${nextAction.icon}"></i> ${nextAction.label}</button>`;
-        }
+        const statusDropdownOptions = STATUS_OPTIONS
+            .filter(opt => !opt.deliveryOnly || isDelivery)
+            .map(opt => `<option value="${opt.value}" ${opt.value === o.status ? 'selected' : ''}>${statusLabel(opt.value, o.order_type)}</option>`)
+            .join('');
+
+        const statusSelect = `<select class="so-status-select" onchange="changeStatusFromDropdown(${o.id}, '${o.status}', this)">
+            ${statusDropdownOptions}
+        </select>`;
 
         const riderInfo = o.status === 'out_for_delivery' && o.rider_name
             ? `<div class="so-customer"><i class="fa-solid fa-motorcycle"></i> ${o.rider_name}${o.rider_contact ? ' / ' + o.rider_contact : ''}</div>`
             : '';
 
-        if (!['completed', 'cancelled'].includes(o.status)) {
-            actionBtns += `<button class="so-btn so-btn-danger" onclick="updateStatus(${o.id}, 'cancelled')"><i class="fa-solid fa-ban"></i> Cancel</button>`;
-        }
+        let actionBtns = '';
+        actionBtns += statusSelect;
         actionBtns += `<button class="so-btn so-btn-blue" onclick="viewDetails(${o.id})"><i class="fa-solid fa-eye"></i> View</button>`;
         actionBtns += `<button class="so-btn so-btn-outline" onclick="openChatModal(${o.id})"><i class="fa-solid fa-comments"></i> Chat</button>`;
         actionBtns += `<button class="so-btn so-btn-dark" onclick="deleteOrder(${o.id})" title="Permanently delete this order record"><i class="fa-solid fa-trash-can"></i> Delete</button>`;
@@ -626,6 +625,13 @@
         if (nextStatus === currentStatus) return;
 
         const order = allOrders.find(o => Number(o.id) === Number(id));
+
+        if (nextStatus === 'out_for_delivery') {
+            openRiderModal(id);
+            select.value = currentStatus;
+            return;
+        }
+
         KapeKanto.confirm(
             `Change Order #${id} from ${statusLabel(currentStatus, order?.order_type)} to ${statusLabel(nextStatus, order?.order_type)}?`,
             async () => {

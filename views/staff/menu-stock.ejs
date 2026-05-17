@@ -124,13 +124,11 @@
         document.getElementById('stock-count').textContent = `Showing ${pagedItems.length} of ${items.length} item${items.length === 1 ? '' : 's'}`;
 
         container.innerHTML = pagedItems.map(item => {
-            const imgUrl = item.image
-                ? (item.image.startsWith('http') || item.image.startsWith('/') ? item.image : `/uploads/menu/${item.image}`)
-                : 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=200';
+            const imgUrl = KapeKanto.normalizeImageUrl(item.image, 'menu');
             const state = stockState(Number(item.stock || 0));
             return `
                 <div class="stock-row">
-                    <img class="stock-img" src="${imgUrl}" alt="${item.name}">
+                    <img class="stock-img" src="${imgUrl}" alt="${item.name}" onerror="KapeKanto.handleImageError(this, 'menu')">
                     <div>
                         <div class="stock-name">${item.name}</div>
                         <div class="stock-category">${item.category_name || 'Uncategorized'}</div>

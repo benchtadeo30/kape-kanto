@@ -407,6 +407,13 @@ async function seedData() {
         console.log("[DB] Created default admin user (admin / admin123)");
     }
 
+    // Guard clause: If the database already contains menu items, skip the rest of seeding to preserve modifications!
+    const menuCount = await db.prepare('SELECT COUNT(*) as count FROM menu_items').get();
+    if (menuCount && menuCount.count > 0) {
+        console.log('[DB] Database already contains menu items. Skipping categories, menu, options, and tasks seeding to preserve custom modifications.');
+        return;
+    }
+
     // Seed Categories
     const categories = ['Hot Coffee', 'Iced Coffee', 'Pastries', 'Meals', 'Frappe'];
     for (const cat of categories) {
