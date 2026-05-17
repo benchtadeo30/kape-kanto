@@ -622,11 +622,10 @@
 
             window.readAndGoToOrder = (orderId, notifId) => {
                 const notifs = getLocalNotifications();
-                const matched = notifs.find(n => n.id === notifId);
-                if (matched) {
-                    matched.is_read = true;
-                    saveLocalNotifications(notifs);
-                }
+                // Filter out/delete this notification completely so it is removed from the dropdown!
+                const updatedNotifs = notifs.filter(n => n.id !== notifId);
+                saveLocalNotifications(updatedNotifs);
+                
                 const targetPage = (user.role === 'admin') ? `/admin/orders` : (user.role === 'staff' ? `/staff/orders` : `/order-tracking/${orderId}`);
                 window.location.href = targetPage;
             };
