@@ -43,9 +43,9 @@ async function sendOTP(phoneNumber, otp) {
 
         const data = await response.json();
 
-        if (response.ok) {
-            console.log(`✅ [TextBee] SMS sent successfully. Msg ID: ${data.messageId || 'N/A'}`);
-            return { success: true, mocked: false };
+        if (response.ok && data.data) {
+            console.log(`✅ [TextBee] SMS sent successfully. Msg ID: ${data.data._id}`);
+            return { success: true, mocked: false, messageId: data.data._id };
         } else {
             console.error('❌ [TextBee] Gateway returned error:', data);
             throw new Error(data.message || 'Gateway error');
@@ -57,4 +57,40 @@ async function sendOTP(phoneNumber, otp) {
     }
 }
 
-module.exports = { sendOTP };
+/**
+ * Checks the real-time delivery status of a specific SMS from TextBee.
+ * 
+ * @param {string} smsId - The TextBee SMS ID
+ * @returns {Promise<Object>} Status object { status, error }
+ */
+async function getSMSStatus(smsId) {
+    if (!apiKey || !deviceId) {
+        return { status: 'MOCKED' };
+    }
+
+    try {
+        const response = await fetch(`https://api.textbee.dev/api/v1/gateway/devices/${deviceId}/sms/${smsId}`, {
+            method: 'GET',
+            headers: {
+                'x-api-key': apiKey
+            }
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.data) {
+            const errorDetail = data.data.error || data.data.errorMessage || data.data.errorCode || null;
+            return { 
+                status: data.data.status, // e.g. PENDING, DELIVERED, FAILED
+                error: errorDetail
+            };
+        } else {
+            throw new Error(data.message || 'Failed to fetch status');
+        }
+    } catch (error) {
+        console.error('❌ [TextBee] Failed to check SMS status:', error.message);
+        return { status: 'UNKNOWN', error: error.message };
+    }
+}
+
+module.exports = { sendOTP, getSMSStatus };
