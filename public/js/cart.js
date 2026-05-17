@@ -11,6 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const fp = flatpickr('#scheduled-datetime', {
         enableTime: true,
         dateFormat: 'Y-m-d H:i',
+        altInput: true,
+        altFormat: 'M j, Y at h:i K',
+        altInputClass: 'flatpickr-alt-input',
         minDate: 'today',
         minuteIncrement: 15,
         minTime: "08:00",

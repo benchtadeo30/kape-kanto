@@ -252,6 +252,16 @@
             month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
         });
 
+        let scheduledText = '';
+        if (order.scheduled_date) {
+            const [yr, mo, dy] = order.scheduled_date.split('-');
+            const [hr, mn] = (order.scheduled_time || '00:00').split(':');
+            const sDate = new Date(Number(yr), Number(mo) - 1, Number(dy), Number(hr), Number(mn));
+            scheduledText = sDate.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) + 
+                            ' at ' + 
+                            sDate.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', hour12: true });
+        }
+
         // Tracker HTML
         let trackerHtml = '';
         if (!isCancelled && !isAwaiting) {
@@ -373,7 +383,7 @@
 
             <!-- Address / Notes -->
             ${order.delivery_address ? `<div class="od-info-row"><i class="fa-solid fa-location-dot"></i><span><strong>Deliver to:</strong> ${order.delivery_address}</span></div>` : ''}
-            ${order.scheduled_date ? `<div class="od-info-row"><i class="fa-solid fa-calendar-check"></i><span><strong>Scheduled:</strong> ${order.scheduled_date}${order.scheduled_time ? ' at ' + order.scheduled_time : ''}</span></div>` : ''}
+            ${order.scheduled_date ? `<div class="od-info-row"><i class="fa-solid fa-calendar-check"></i><span><strong>Scheduled:</strong> ${scheduledText}</span></div>` : ''}
             ${order.notes ? `<div class="od-info-row" style="padding-bottom:0.5rem;"><i class="fa-solid fa-note-sticky"></i><span><strong>Notes:</strong> ${order.notes}</span></div>` : ''}
 
             <!-- Items -->

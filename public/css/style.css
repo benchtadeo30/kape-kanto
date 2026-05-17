@@ -3144,25 +3144,27 @@ body.page-exit {
     box-shadow: 0 4px 12px rgba(111, 78, 55, 0.15);
 }
 
-/* â”€â”€ Modern Flatpickr Overrides â”€â”€ */
-#scheduled-datetime {
-    background-color: #fff;
-    cursor: pointer;
-    font-weight: 600;
-    color: var(--primary-dark);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    border: 1px solid #eee;
-    transition: all 0.3s ease;
-    padding-left: 1rem;
+#scheduled-datetime, .flatpickr-alt-input {
+    width: 100%;
+    padding: 1rem 1rem 1rem 3rem !important;
+    border: 2px solid #eee !important;
+    border-radius: 12px !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    color: var(--primary-dark) !important;
+    cursor: pointer !important;
+    background: #fafafa !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+    transition: all 0.3s ease !important;
 }
 
-/* â”€â”€ Modern Flatpickr Overrides â”€â”€ */
-#scheduled-datetime:hover {
-    border-color: var(--primary);
+/* ── Modern Flatpickr Overrides ── */
+#scheduled-datetime:hover, .flatpickr-alt-input:hover {
+    border-color: var(--primary) !important;
     background: #fff !important;
 }
 
-#scheduled-datetime:focus {
+#scheduled-datetime:focus, .flatpickr-alt-input:focus {
     box-shadow: 0 0 0 4px rgba(111, 78, 55, 0.15) !important;
     border-color: var(--primary) !important;
     background: #fff !important;
