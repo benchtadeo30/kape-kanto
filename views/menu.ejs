@@ -438,7 +438,7 @@
                 const offset = (menuPage - 1) * PAGE_LIMIT;
                 const selectedCategoryIds = [...appliedCategorySelection.keys()];
                 const categoryParam = selectedCategoryIds.length ? selectedCategoryIds.join(',') : 'all';
-                const url = `/api/menu?limit=${PAGE_LIMIT}&offset=${offset}&search=${encodeURIComponent(searchQuery)}&category_id=${encodeURIComponent(categoryParam)}&available_only=true`;
+                const url = `/api/menu?limit=${PAGE_LIMIT}&offset=${offset}&search=${encodeURIComponent(searchQuery)}&category_id=${encodeURIComponent(categoryParam)}&available_only=false`;
                 const res = await fetch(url);
                 if (res.ok) {
                     const data = await res.json();
@@ -546,7 +546,9 @@
                 const fallbackImg = getCategoryFallbackImage(item);
                 const isAvailable = item.is_available === 1 && item.stock > 0;
                 let stockHtml = '';
-                if (item.stock <= 0) {
+                if (item.is_available === 0) {
+                    stockHtml = `<span class="stock-badge stock-status-out" style="background: #ffebee; color: #c62828; border-color: #ffcdd2;"><i class="fa-solid fa-circle-xmark"></i> Unavailable</span>`;
+                } else if (item.stock <= 0) {
                     stockHtml = `<span class="stock-badge stock-status-out"><i class="fa-solid fa-circle-xmark"></i> Out of Stock</span>`;
                 } else if (item.stock <= 5) {
                     stockHtml = `<span class="stock-badge stock-status-low"><i class="fa-solid fa-triangle-exclamation"></i> Only ${item.stock} left</span>`;
@@ -561,7 +563,7 @@
                 card.innerHTML = `
                 <div class="mic-image-wrap">
                     <img src="${escapeHtml(imgUrl)}" alt="${escapeHtml(item.name)}" class="mic-image" loading="lazy" onerror="this.onerror=null;this.src='${escapeHtml(fallbackImg)}'">
-                    ${!isAvailable ? '<div class="mic-oos-overlay"><span>Out of Stock</span></div>' : ''}
+                    ${!isAvailable ? `<div class="mic-oos-overlay"><span>${item.is_available === 0 ? 'Unavailable' : 'Out of Stock'}</span></div>` : ''}
                 </div>
                 <div class="mic-body">
                     <h3 class="mic-name">${escapeHtml(item.name)}</h3>
