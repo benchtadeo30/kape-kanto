@@ -399,7 +399,7 @@
             function getLocalNotifications() {
                 try {
                     const list = JSON.parse(localStorage.getItem('kk_notifications') || '[]');
-                    const limitTime = Date.now() - (24 * 60 * 60 * 1000); // 24 hours expiration shield
+                    const limitTime = Date.now() - (5 * 24 * 60 * 60 * 1000); // 5 days expiration shield
                     const filtered = list.filter(n => {
                         const created = new Date(n.created_at || Date.now()).getTime();
                         return created > limitTime;
