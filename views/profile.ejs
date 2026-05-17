@@ -773,7 +773,7 @@
                                                 <%= coupon.promo_code %>
                                             </div>
                                             <p style="margin: 15px 0 0 0; font-size: 0.75rem; opacity: 0.8; display: flex; justify-content: space-between; align-items: center;">
-                                                <span>Expires: <%= coupon.end_date ? new Date(coupon.end_date).toLocaleDateString() : 'Never' %></span>
+                                                <span>Expires: <%= coupon.end_date ? (new Date(coupon.end_date).toLocaleDateString() + ' ' + new Date(coupon.end_date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})) : 'Never' %></span>
                                                 <% const currentLimit = coupon.usage_limit || coupon.global_limit || 1; %>
                                                 <% if (currentLimit > 0) { %>
                                                     <span style="background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px; font-weight: 700;">
@@ -804,7 +804,7 @@
                                                     <%= promo.promo_code %>
                                                 </div>
                                                 <p style="margin: 15px 0 0 0; font-size: 0.75rem; color: #666; display: flex; justify-content: space-between; align-items: center;">
-                                                    <span>Ends: <%= promo.end_date ? new Date(promo.end_date).toLocaleDateString() : 'Never' %></span>
+                                                    <span>Ends: <%= promo.end_date ? (new Date(promo.end_date).toLocaleDateString() + ' ' + new Date(promo.end_date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})) : 'Never' %></span>
                                                     <% if (promo.usage_limit > 0) { %>
                                                         <span style="background: #6F4E37; color: white; padding: 2px 8px; border-radius: 4px; font-weight: 700;">
                                                             <%= (promo.usage_limit - (promo.times_used || 0)) %> uses left
