@@ -387,9 +387,6 @@ router.post('/', requireAuth, async (req, res) => {
                 res.status(500).json({ error: payrexError.message || 'Failed to create payment session.' });
             }
         } else {
-            // Physical payment — track loyalty progress immediately
-            await trackLoyaltyProgress(userId, orderId, total);
-
             // Decrement stock for non-online orders
             for (let item of validItems) {
                 await db.prepare('UPDATE menu_items SET stock = stock - ? WHERE id = ?').run(item.quantity, item.id);
@@ -546,20 +543,33 @@ router.post('/my/:id/cancel', requireAuth, async (req, res) => {
             return res.status(404).json({ error: 'Order not found.' });
         }
 
-        if (order.status !== 'awaiting_payment' && order.status !== 'pending') {
+        // Determine if cancellation is allowed based on order type and status
+        let isAllowed = false;
+        if (order.order_type === 'pickup') {
+            isAllowed = ['awaiting_payment', 'pending', 'preparing', 'ready'].includes(order.status);
+        } else if (order.order_type === 'delivery') {
+            isAllowed = ['awaiting_payment', 'pending', 'preparing', 'ready', 'out_for_delivery'].includes(order.status);
+        } else {
+            isAllowed = ['awaiting_payment', 'pending'].includes(order.status);
+        }
+
+        if (!isAllowed) {
             await db.rollback();
             return res.status(400).json({ error: 'Order cannot be cancelled at this stage.' });
         }
 
-        if (order.status === 'pending' && ['pay_at_store', 'cod'].includes(order.payment_method)) {
-            const items = await db.prepare('SELECT menu_item_id, quantity FROM order_items WHERE order_id = ?').all(order.id);
-            for (let item of items) {
-                await db.prepare('UPDATE menu_items SET stock = stock + ? WHERE id = ?').run(item.quantity, item.menu_item_id);
-            }
-            await revertLoyaltyProgress(order.user_id, order.id, order.total);
-            if (order.promo_id) {
-                await revertPromoUsage(order.user_id, order.promo_id);
-            }
+        // Return stock for all cancelled orders to prevent inventory leak
+        const items = await db.prepare('SELECT menu_item_id, quantity FROM order_items WHERE order_id = ?').all(order.id);
+        for (let item of items) {
+            await db.prepare('UPDATE menu_items SET stock = stock + ? WHERE id = ?').run(item.quantity, item.menu_item_id);
+        }
+
+        // Revert loyalty progress
+        await revertLoyaltyProgress(order.user_id, order.id, order.total);
+
+        // Revert promo usage
+        if (order.promo_id) {
+            await revertPromoUsage(order.user_id, order.promo_id);
         }
 
         await db.prepare(`UPDATE orders SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE id = ?`).run(order.id);
@@ -647,6 +657,12 @@ router.patch('/:id/status', requireRole('admin', 'staff'), async (req, res) => {
 
         if (status === 'out_for_delivery' && order.order_type === 'pickup') {
             return res.status(400).json({ error: 'Pickup orders cannot be out for delivery.' });
+        }
+
+        if (status === 'out_for_delivery' && order.order_type === 'delivery') {
+            if (!rider_name || !rider_name.trim()) {
+                return res.status(400).json({ error: 'Rider Name is required to dispatch delivery orders.' });
+            }
         }
 
         let query = `UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP`;

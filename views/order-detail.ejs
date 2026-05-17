@@ -247,7 +247,10 @@
         const [pillClass, pillIcon, pillLabel] = STATUS_PILL[order.status] || ['pill-pending','fa-clock','Unknown'];
         const isCancelled = order.status === 'cancelled';
         const isAwaiting = order.status === 'awaiting_payment';
-        const canCustomerCancel = order.status === 'pending' && ['pay_at_store', 'cod'].includes(order.payment_method);
+        const canCustomerCancel = !isAwaiting && !isCancelled && (
+            (order.order_type === 'pickup' && ['pending', 'preparing', 'ready'].includes(order.status)) ||
+            (order.order_type === 'delivery' && ['pending', 'preparing', 'ready', 'out_for_delivery'].includes(order.status))
+        );
         const date = KapeKanto.parseUTCDate(order.created_at).toLocaleDateString('en-PH', {
             month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
         });
@@ -373,7 +376,7 @@
             ${canCustomerCancel ? `
                 <div style="padding:1rem 1.8rem;border-bottom:1px solid #f5f0eb;background:#fffaf4;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
                     <div style="color:var(--text-light);font-size:0.88rem;">
-                        <strong style="color:var(--primary-dark);">Made a mistake?</strong> You can cancel while the order is still pending.
+                        <strong style="color:var(--primary-dark);">Need to cancel?</strong> You can cancel this order at this stage.
                     </div>
                     <button onclick="cancelUnpaidOrder(${order.id})" class="btn btn-danger" style="padding:0.55rem 1.2rem;border-radius:50px;font-size:0.85rem;">
                         <i class="fa-solid fa-ban"></i> Cancel Order

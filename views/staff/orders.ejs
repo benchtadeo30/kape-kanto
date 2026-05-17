@@ -264,8 +264,8 @@
         <h3 style="margin-bottom:0.4rem;"><i class="fa-solid fa-motorcycle" style="color:#1565c0"></i> Assign Rider</h3>
         <p style="color:var(--text-light);font-size:0.88rem;margin-bottom:1.25rem;">Enter rider details for Order <strong id="rider-order-id"></strong>.</p>
         <div class="form-group" style="margin-bottom:1rem;">
-            <label style="font-weight:700;font-size:0.9rem;">Rider Name <span style="color:var(--text-light);font-weight:500;">(optional)</span></label>
-            <input type="text" id="rider-name" placeholder="e.g. Juan dela Cruz">
+            <label style="font-weight:700;font-size:0.9rem;">Rider Name <span style="color:var(--danger);font-weight:bold;">*</span></label>
+            <input type="text" id="rider-name" placeholder="e.g. Juan dela Cruz" required>
         </div>
         <div class="form-group" style="margin-bottom:1.5rem;">
             <label style="font-weight:700;font-size:0.9rem;">Rider Contact <span style="color:var(--text-light);font-weight:500;">(optional)</span></label>
@@ -701,6 +701,11 @@
         const orderId = pendingDispatchId;
         const riderName = document.getElementById('rider-name').value.trim();
         const riderContact = document.getElementById('rider-contact').value.trim();
+        if (!riderName) {
+            KapeKanto.toast('Rider Name is required to dispatch the order!', 'warning');
+            document.getElementById('rider-name').focus();
+            return;
+        }
         closeRiderModal();
         await updateStatus(orderId, 'out_for_delivery', riderName, riderContact);
     }
