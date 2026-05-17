@@ -653,10 +653,9 @@
                                                                                 Click to upload your selfie</p>
                                                                             <p
                                                                                 style="margin: 5px 0 0 0; font-size: 0.8rem; color: #888;">
-                                                                                Hold your ID next to your face</p>
+                                                                                Hold your ID next to your face (Optional)</p>
                                                                             <input type="file" id="selfie-file"
                                                                                 name="selfie_image" accept="image/*"
-                                                                                required
                                                                                 onchange="handleFileSelect(this, 'selfie-name-text')">
                                                                         </div>
                                                                         <div id="selfie-preview" class="file-preview">
@@ -1029,17 +1028,13 @@
             const idType = formData.get('id_type');
             const idLabel = idType === 'senior' ? 'Senior Citizen' : 'PWD';
 
-            // Validate both files exist
+            // Validate ID file exists
             const idFile = document.getElementById('id-file');
             const selfieFile = document.getElementById('selfie-file');
             const idNumber = document.getElementById('id-number-input');
 
             if (!idFile?.files?.length) {
                 KapeKanto.toast('Please upload your ID photo.', 'warning');
-                return;
-            }
-            if (!selfieFile?.files?.length) {
-                KapeKanto.toast('Please upload a selfie holding your ID.', 'warning');
                 return;
             }
             if (!idNumber?.value?.trim() || idNumber.value.trim().length < 3) {
@@ -1060,15 +1055,18 @@
             `;
 
             try {
-                // Optimize both ID and Selfie on client side
+                // Optimize ID on client side
                 const optimizedID = await KapeKanto.optimizeImage(idFile.files[0], 1200, 0.8);
-                const optimizedSelfie = await KapeKanto.optimizeImage(selfieFile.files[0], 1200, 0.8);
 
                 const finalFormData = new FormData();
                 finalFormData.append('id_type', idType);
                 finalFormData.append('id_number', idNumber.value.trim());
-                finalFormData.append('id_document', optimizedID.blob, 'id_card.jpg');
-                finalFormData.append('selfie_image', optimizedSelfie.blob, 'selfie.jpg');
+                finalFormData.append('id_image', optimizedID.blob, 'id_card.jpg');
+
+                if (selfieFile?.files?.length) {
+                    const optimizedSelfie = await KapeKanto.optimizeImage(selfieFile.files[0], 1200, 0.8);
+                    finalFormData.append('selfie_image', optimizedSelfie.blob, 'selfie.jpg');
+                }
 
                 const res = await fetch('/api/verify/upload-id', { method: 'POST', body: finalFormData });
                 const data = await res.json();

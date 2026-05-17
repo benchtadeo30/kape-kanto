@@ -17,9 +17,6 @@ router.post('/upload-id', requireAuth, upload.fields([
     if (!idFile) {
         return res.status(400).json({ error: 'ID image is required.' });
     }
-    if (!selfieFile) {
-        return res.status(400).json({ error: 'Selfie holding your ID is required.' });
-    }
 
     const { id_type, id_number } = req.body;
     const userId = parseInt(req.session.userId);
@@ -46,7 +43,7 @@ router.post('/upload-id', requireAuth, upload.fields([
         }
 
         const idImagePath = `data:${idFile.mimetype};base64,${idFile.buffer.toString('base64')}`;
-        const selfieImagePath = `data:${selfieFile.mimetype};base64,${selfieFile.buffer.toString('base64')}`;
+        const selfieImagePath = selfieFile ? `data:${selfieFile.mimetype};base64,${selfieFile.buffer.toString('base64')}` : null;
 
         const isUpdate = req.session.canUpdateID || false;
         
