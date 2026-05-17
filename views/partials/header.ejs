@@ -351,6 +351,92 @@
                 notifDropdown.addEventListener('click', (e) => e.stopPropagation());
             }
 
+            const STATUS_LABELS = {
+                pending: 'Pending',
+                preparing: 'Preparing',
+                ready: 'Ready',
+                out_for_delivery: 'On the Way',
+                completed: 'Completed/Delivered',
+                cancelled: 'Cancelled',
+                awaiting_payment: 'Awaiting Payment'
+            };
+
+            // Web Audio API Premium Cafe Chime
+            function playNotificationSound() {
+                try {
+                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    
+                    const playChime = (pitch, delay) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(pitch, audioCtx.currentTime + delay);
+                        
+                        gain.gain.setValueAtTime(0, audioCtx.currentTime + delay);
+                        gain.gain.linearRampToValueAtTime(0.15, audioCtx.currentTime + delay + 0.05);
+                        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + delay + 0.4);
+                        
+                        osc.start(audioCtx.currentTime + delay);
+                        osc.stop(audioCtx.currentTime + delay + 0.4);
+                    };
+                    
+                    playChime(587.33, 0); // D5
+                    playChime(880.00, 0.12); // A5
+                } catch (e) {
+                    console.warn('Audio play blocked:', e);
+                }
+            }
+
+            function getLocalNotifications() {
+                try {
+                    return JSON.parse(localStorage.getItem('kk_notifications') || '[]');
+                } catch (e) {
+                    return [];
+                }
+            }
+
+            function saveLocalNotifications(notifs) {
+                try {
+                    localStorage.setItem('kk_notifications', JSON.stringify(notifs.slice(0, 30))); // Keep last 30
+                } catch (e) {}
+            }
+
+            function addLocalNotification(orderId, type, title, desc, icon) {
+                const notifs = getLocalNotifications();
+                // Prevent duplicate notifications for the exact same event
+                const id = `${type}_${orderId}_${desc.replace(/\s+/g, '_')}`;
+                if (notifs.some(n => n.id === id)) return;
+                
+                notifs.unshift({
+                    id,
+                    type,
+                    title,
+                    desc,
+                    order_id: orderId,
+                    icon,
+                    created_at: new Date().toISOString(),
+                    is_read: false
+                });
+                saveLocalNotifications(notifs);
+            }
+
+            let isFirstLoad = true;
+            let knownStatuses = {};
+            let prevUnreadCount = 0;
+
+            // Load initial known statuses from sessionStorage to prevent alert spamming on refreshes
+            try {
+                const saved = sessionStorage.getItem('kk_known_statuses');
+                if (saved) {
+                    knownStatuses = JSON.parse(saved);
+                    isFirstLoad = false;
+                }
+            } catch (e) {}
+
             async function checkUnreadMessages() {
                 try {
                     const endpoint = (user.role === 'admin' || user.role === 'staff') 
@@ -359,35 +445,137 @@
                     
                     const res = await fetch(endpoint);
                     if (!res.ok) return;
-                    const data = await res.json();
+                    const result = await res.json();
                     
-                    const totalUnread = data.reduce((sum, item) => sum + item.unread_count, 0);
+                    const unreadList = result.unread || [];
+                    const orderList = result.orders || [];
                     
-                    if (totalUnread > 0) {
-                        notifBadge.textContent = totalUnread > 99 ? '99+' : totalUnread;
+                    // 1. Calculate unread chat messages
+                    const totalUnread = unreadList.reduce((sum, item) => sum + item.unread_count, 0);
+                    
+                    // Detect new unread messages
+                    if (!isFirstLoad && totalUnread > prevUnreadCount) {
+                        playNotificationSound();
+                        const newMsg = unreadList.find(item => item.unread_count > 0);
+                        if (newMsg) {
+                            const sender = user.role === 'customer' ? 'Staff' : (newMsg.customer_name || 'Customer');
+                            KapeKanto.toast(`💬 New message from ${sender} (Order #${newMsg.order_id})`, 'info');
+                            
+                            // Trigger live chat updates
+                            window.dispatchEvent(new CustomEvent('kk-new-chat-message', { 
+                                detail: { orderId: newMsg.order_id } 
+                            }));
+                        }
+                    }
+                    prevUnreadCount = totalUnread;
+
+                    // 2. Track order status changes
+                    let statusChanged = false;
+                    orderList.forEach(order => {
+                        const prevStatus = knownStatuses[order.id];
+                        if (prevStatus !== undefined && prevStatus !== order.status) {
+                            statusChanged = true;
+                            playNotificationSound();
+                            
+                            const label = STATUS_LABELS[order.status] || order.status;
+                            if (user.role === 'customer') {
+                                // Customer sees status update
+                                KapeKanto.toast(`☕ Order #${order.id} status updated to: ${label}!`, 'success');
+                                addLocalNotification(
+                                    order.id, 
+                                    'status', 
+                                    'Order Status Updated', 
+                                    `Order #${order.id} is now ${label}`, 
+                                    order.status === 'ready' ? 'fa-bell' : 'fa-clipboard-list'
+                                );
+                            } else {
+                                // Staff/Admin sees customer order status changed (e.g. cancelled)
+                                KapeKanto.toast(`🔔 Order #${order.id} (${order.customer_name}) was updated to: ${label}!`, 'info');
+                            }
+                            
+                            // Dispatch custom status change event
+                            window.dispatchEvent(new CustomEvent('kk-order-updated', { 
+                                detail: { orderId: order.id, status: order.status } 
+                            }));
+                        } else if (prevStatus === undefined && !isFirstLoad) {
+                            // Brand new order detected
+                            statusChanged = true;
+                            if (user.role === 'admin' || user.role === 'staff') {
+                                playNotificationSound();
+                                KapeKanto.toast(`🔔 New Order #${order.id} placed by ${order.customer_name || 'Customer'}!`, 'success');
+                                window.dispatchEvent(new CustomEvent('kk-new-order', { 
+                                    detail: { orderId: order.id } 
+                                }));
+                            }
+                        }
+                        knownStatuses[order.id] = order.status;
+                    });
+                    
+                    if (statusChanged || isFirstLoad) {
+                        try {
+                            sessionStorage.setItem('kk_known_statuses', JSON.stringify(knownStatuses));
+                        } catch (e) {}
+                    }
+                    isFirstLoad = false;
+
+                    // 3. Render notification list combining chat & local status notifications
+                    const localNotifs = getLocalNotifications();
+                    const unreadLocalCount = localNotifs.filter(n => !n.is_read).length;
+                    const combinedBadgeCount = totalUnread + unreadLocalCount;
+
+                    if (combinedBadgeCount > 0) {
+                        notifBadge.textContent = combinedBadgeCount > 99 ? '99+' : combinedBadgeCount;
                         notifBadge.style.display = 'flex';
-                        notifCountText.textContent = `${totalUnread} Unread`;
+                        notifCountText.textContent = `${combinedBadgeCount} Unread`;
                     } else {
                         notifBadge.style.display = 'none';
                         notifCountText.textContent = 'Recent Activity';
                     }
 
-                    if (data.length > 0) {
-                        notifList.innerHTML = data.map(item => `
-                            <div class="notification-item ${item.unread_count > 0 ? 'unread' : ''}" onclick="goToOrderChat(${item.order_id})">
+                    // Build Notification dropdown HTML
+                    let htmlList = '';
+                    
+                    // Render unread chat messages first
+                    unreadList.forEach(item => {
+                        htmlList += `
+                            <div class="notification-item unread" onclick="goToOrderChat(${item.order_id})">
                                 <div class="notif-icon-wrap">
-                                    <i class="fa-solid fa-message"></i>
-                                    ${item.unread_count > 0 ? '<span class="unread-dot"></span>' : ''}
+                                    <i class="fa-solid fa-message" style="color:var(--primary);"></i>
+                                    <span class="unread-dot"></span>
                                 </div>
                                 <div class="notification-info">
                                     <div class="notif-title-row">
                                         <p>${user.role === 'customer' ? 'Message from Staff' : 'Message from ' + (item.customer_name || 'Customer')}</p>
-                                        ${item.unread_count > 0 ? `<span class="notif-count-pill">${item.unread_count}</span>` : ''}
+                                        <span class="notif-count-pill">${item.unread_count}</span>
                                     </div>
-                                    <div class="notif-desc">Order #${item.order_id} · ${item.unread_count > 0 ? `<b>${item.unread_count} new</b>` : 'View conversation'}</div>
+                                    <div class="notif-desc">Order #${item.order_id} · <b>${item.unread_count} new</b></div>
                                 </div>
                             </div>
-                        `).join('');
+                        `;
+                    });
+
+                    // Render client-side status notifications (for customers)
+                    if (user.role === 'customer') {
+                        localNotifs.forEach(notif => {
+                            htmlList += `
+                                <div class="notification-item ${!notif.is_read ? 'unread' : ''}" onclick="readAndGoToOrder(${notif.order_id}, '${notif.id}')">
+                                    <div class="notif-icon-wrap">
+                                        <i class="fa-solid ${notif.icon || 'fa-bell'}" style="color:var(--accent);"></i>
+                                        ${!notif.is_read ? '<span class="unread-dot"></span>' : ''}
+                                    </div>
+                                    <div class="notification-info">
+                                        <div class="notif-title-row">
+                                            <p>${notif.title}</p>
+                                        </div>
+                                        <div class="notif-desc">${notif.desc}</div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    }
+
+                    if (htmlList) {
+                        notifList.innerHTML = htmlList;
                     } else {
                         notifList.innerHTML = `
                             <div class="notification-empty">
@@ -400,14 +588,24 @@
                 }
             }
 
+            window.readAndGoToOrder = (orderId, notifId) => {
+                const notifs = getLocalNotifications();
+                const matched = notifs.find(n => n.id === notifId);
+                if (matched) {
+                    matched.is_read = true;
+                    saveLocalNotifications(notifs);
+                }
+                window.location.href = `/order-tracking/${orderId}`;
+            };
+
             window.goToOrderChat = (orderId) => {
                 const targetPage = (user.role === 'admin') ? '/admin/orders' : (user.role === 'staff' ? '/staff/orders' : `/order-tracking/${orderId}`);
                 window.location.href = `${targetPage}?openChat=${orderId}`;
             };
 
-            // Check immediately and then every 30 seconds
+            // Check immediately and then every 3 seconds for lightning-fast real-time response!
             checkUnreadMessages();
-            setInterval(checkUnreadMessages, 30000);
+            setInterval(checkUnreadMessages, 3000);
         });
     </script>
 

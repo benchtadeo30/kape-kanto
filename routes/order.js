@@ -425,7 +425,19 @@ router.get('/unread-messages', requireRole('admin', 'staff'), async (req, res) =
             ORDER BY MAX(m.created_at) DESC
             LIMIT 10
         `).all();
-        res.json(unreadOrders);
+
+        const recentOrders = await db.prepare(`
+            SELECT o.id, o.status, o.updated_at, u.username as customer_name
+            FROM orders o
+            JOIN users u ON o.user_id = u.id
+            ORDER BY o.updated_at DESC
+            LIMIT 15
+        `).all();
+
+        res.json({
+            unread: unreadOrders,
+            orders: recentOrders
+        });
     } catch (e) {
         console.error('Unread messages fetch error:', e);
         res.status(500).json({ error: 'Internal server error' });
@@ -446,7 +458,19 @@ router.get('/my/unread-messages', requireAuth, async (req, res) => {
             ORDER BY MAX(m.created_at) DESC
             LIMIT 10
         `).all(req.session.userId);
-        res.json(unreadOrders);
+
+        const activeOrders = await db.prepare(`
+            SELECT id, status, updated_at 
+            FROM orders 
+            WHERE user_id = ?
+            ORDER BY updated_at DESC
+            LIMIT 15
+        `).all(req.session.userId);
+
+        res.json({
+            unread: unreadOrders,
+            orders: activeOrders
+        });
     } catch (e) {
         console.error('Customer unread messages fetch error:', e);
         res.status(500).json({ error: 'Internal server error' });

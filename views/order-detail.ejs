@@ -550,6 +550,18 @@
                 }
             }, 800);
         }
+
+        window.addEventListener('kk-new-chat-message', (e) => {
+            if (e.detail && String(e.detail.orderId) === String(orderId)) {
+                loadChatMessages();
+            }
+        });
+
+        window.addEventListener('kk-order-updated', (e) => {
+            if (e.detail && String(e.detail.orderId) === String(orderId)) {
+                loadOrderDetail();
+            }
+        });
     });
 </script>
 

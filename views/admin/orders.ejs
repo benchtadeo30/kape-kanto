@@ -862,6 +862,20 @@
     document.addEventListener('DOMContentLoaded', () => {
         loadOrders();
         setInterval(loadOrders, 30000); // refresh list every 30s
+
+        window.addEventListener('kk-new-chat-message', (e) => {
+            if (e.detail && String(e.detail.orderId) === String(activeChatOrderId)) {
+                loadStaffChatMessages();
+            }
+        });
+
+        window.addEventListener('kk-new-order', () => {
+            loadOrders();
+        });
+
+        window.addEventListener('kk-order-updated', () => {
+            loadOrders();
+        });
     });
 </script>
 
