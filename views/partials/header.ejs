@@ -558,6 +558,7 @@
                     
                     // Render unread chat messages first
                     unreadList.forEach(item => {
+                        const formattedTime = window.KapeKanto.formatChatMessageDate(item.last_message_at || new Date().toISOString());
                         htmlList += `
                             <div class="notification-item unread" onclick="goToOrderChat(${item.order_id})">
                                 <div class="notif-icon-wrap">
@@ -570,6 +571,7 @@
                                         <span class="notif-count-pill">${item.unread_count}</span>
                                     </div>
                                     <div class="notif-desc">Order #${item.order_id} · <b>${item.unread_count} new</b></div>
+                                    <div class="notif-time" style="font-size: 0.72rem; color: var(--text-light); margin-top: 4px; font-weight: 600;"><i class="fa-regular fa-clock" style="margin-right: 4px;"></i>${formattedTime}</div>
                                 </div>
                             </div>
                         `;
@@ -585,6 +587,8 @@
                             iconBg = '#e8f5e9';
                         }
                         
+                        const formattedTime = window.KapeKanto.formatChatMessageDate(notif.created_at || new Date().toISOString());
+                        
                         htmlList += `
                             <div class="notification-item ${!notif.is_read ? 'unread' : ''}" onclick="readAndGoToOrder(${notif.order_id}, '${notif.id}')">
                                 <div class="notif-icon-wrap" style="background: ${iconBg}; color: ${iconColor};">
@@ -596,6 +600,7 @@
                                         <p>${notif.title}</p>
                                     </div>
                                     <div class="notif-desc">${notif.desc}</div>
+                                    <div class="notif-time" style="font-size: 0.72rem; color: var(--text-light); margin-top: 4px; font-weight: 600;"><i class="fa-regular fa-clock" style="margin-right: 4px;"></i>${formattedTime}</div>
                                 </div>
                             </div>
                         `;

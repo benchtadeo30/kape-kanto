@@ -415,7 +415,8 @@ router.get('/unread-messages', requireRole('admin', 'staff'), async (req, res) =
         const unreadOrders = await db.prepare(`
             SELECT m.order_id, 
                    SUM(CASE WHEN m.is_read = 0 AND sender.role = 'customer' THEN 1 ELSE 0 END) as unread_count, 
-                   u.username as customer_name
+                   u.username as customer_name,
+                   MAX(m.created_at) as last_message_at
             FROM order_messages m
             JOIN users sender ON m.user_id = sender.id
             JOIN orders o ON m.order_id = o.id
@@ -449,7 +450,8 @@ router.get('/my/unread-messages', requireAuth, async (req, res) => {
     try {
         const unreadOrders = await db.prepare(`
             SELECT m.order_id, 
-                   SUM(CASE WHEN m.is_read = 0 AND sender.role IN ('admin', 'staff') THEN 1 ELSE 0 END) as unread_count
+                   SUM(CASE WHEN m.is_read = 0 AND sender.role IN ('admin', 'staff') THEN 1 ELSE 0 END) as unread_count,
+                   MAX(m.created_at) as last_message_at
             FROM order_messages m
             JOIN users sender ON m.user_id = sender.id
             WHERE m.order_id IN (SELECT id FROM orders WHERE user_id = ?)
