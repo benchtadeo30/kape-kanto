@@ -505,6 +505,15 @@
                             } else {
                                 // Staff/Admin sees customer order status changed (e.g. cancelled)
                                 KapeKanto.toast(`🔔 Order #${order.id} (${order.customer_name}) was updated to: ${label}!`, 'info');
+                                if (order.status === 'cancelled') {
+                                    addLocalNotification(
+                                        order.id, 
+                                        'cancelled', 
+                                        'Order Cancelled', 
+                                        `Order #${order.id} has been cancelled!`, 
+                                        'fa-circle-xmark'
+                                    );
+                                }
                             }
                             
                             // Dispatch custom status change event
@@ -585,6 +594,9 @@
                         if (notif.type === 'new_order') {
                             iconColor = '#2e7d32'; // Premium green
                             iconBg = '#e8f5e9';
+                        } else if (notif.type === 'cancelled') {
+                            iconColor = '#c62828'; // Premium red
+                            iconBg = '#ffebee';
                         }
                         
                         const formattedTime = window.KapeKanto.formatChatMessageDate(notif.created_at || new Date().toISOString());
