@@ -135,7 +135,7 @@
                     </li>
                 <% } %>
                 
-                <% if (!user || (user.role === 'customer' && isVerifiedInSession)) { %>
+                <% if (user && user.role === 'customer' && isVerifiedInSession) { %>
                     <li>
                                 <a href="/cart" class="cart-link" style="position: relative; color: var(--primary);">
                         <span class="cart-link-icon"><i class="fa-solid fa-cart-shopping"></i></span>
@@ -211,7 +211,7 @@
         </nav>
         
         <!-- Mobile Cart Icon -->
-        <% if (!user || (user.role === 'customer' && isVerifiedInSession)) { %>
+        <% if (user && user.role === 'customer' && isVerifiedInSession) { %>
             <a href="/cart" class="mobile-cart-link" style="position: fixed; top: 1rem; right: 5rem; z-index: 103; display: none;">
                 <i class="fa-solid fa-cart-shopping" style="font-size: 1.5rem; color: var(--primary); background: white; border-radius: 50%; padding: 0.75rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></i>
                 <span id="mobile-cart-badge" class="cart-badge" style="position: absolute; top: -4px; right: -4px; background: var(--danger); color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.65rem; font-weight: 700; display: none; border: 2px solid white; min-width: 18px; text-align: center;">0</span>

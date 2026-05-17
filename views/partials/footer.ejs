@@ -15,8 +15,10 @@
                 <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.75rem;">
                     <li><a href="/" style="color: rgba(255,255,255,0.7);">Home</a></li>
                     <li><a href="/menu" style="color: rgba(255,255,255,0.7);">Our Menu</a></li>
-                    <li><a href="/cart" style="color: rgba(255,255,255,0.7);">My Cart</a></li>
-                    <li><a href="/order-tracking" style="color: rgba(255,255,255,0.7);">Track Order</a></li>
+                    <% if (user && user.role === 'customer' && isVerifiedInSession) { %>
+                        <li><a href="/cart" style="color: rgba(255,255,255,0.7);">My Cart</a></li>
+                        <li><a href="/order-tracking" style="color: rgba(255,255,255,0.7);">Track Order</a></li>
+                    <% } %>
                     <li><a href="/contact" style="color: rgba(255,255,255,0.7);">Contact Us</a></li>
                 </ul>
             </div>
