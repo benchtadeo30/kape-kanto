@@ -766,7 +766,7 @@
                                                 <%= coupon.title %>
                                             </h4>
                                             <p style="margin: 0; font-size: 2rem; font-weight: 800;">
-                                                <%= coupon.discount_percent || coupon.reward_discount %>% OFF
+                                                <%= (coupon.discount_percent || coupon.reward_discount) > 0 ? (coupon.discount_percent || coupon.reward_discount) + '% OFF' : '&#8369;' + (coupon.discount_amount || coupon.reward_amount || 0) + ' OFF' %>
                                             </p>
                                             <div
                                                 style="margin-top: 15px; background: rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 8px; font-family: monospace; font-size: 1.1rem; letter-spacing: 2px; text-align: center;">

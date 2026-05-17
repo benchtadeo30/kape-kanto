@@ -195,7 +195,7 @@ router.get('/profile', pageRequireAuth, async (req, res) => {
     // Earned coupons: fetch all for this user that are linked to loyalty tasks
     const allCoupons = await db.prepare(`
         SELECT 
-            p.id, p.title, p.discount_percent, p.promo_code, p.end_date, 
+            p.id, p.title, p.discount_percent, p.discount_amount, p.promo_code, p.end_date, 
             p.usage_limit as global_limit,
             IFNULL(c.times_used, 0) as times_used,
             IFNULL(c.usage_limit, 0) as usage_limit

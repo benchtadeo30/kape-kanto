@@ -718,6 +718,13 @@
 </style>
 
 <script>
+    // Prevent mouse wheel from changing values in focused numeric input fields (browsers' default behavior on wheel scroll)
+    document.addEventListener('wheel', function(e) {
+        if (document.activeElement && document.activeElement.type === 'number') {
+            document.activeElement.blur();
+        }
+    });
+
     let contextData = { menuItems: [], categories: [] };
     let currentItemPage = 1;
     const itemsPerPage = 10;
@@ -1226,7 +1233,7 @@
                         
                         <div class="campaign-meta-row" style="display: flex; align-items: center; gap: 25px; flex-wrap: nowrap; font-size: 0.85rem; color: #555; font-weight: 600; background: #f8f8f8; padding: 12px 20px; border-radius: 12px; width: fit-content; max-width: 100%; overflow-x: auto; scrollbar-width: none;">
                             <div style="display: flex; align-items: center; gap: 15px;">
-                                <span style="white-space: nowrap;"><i class="fa-solid fa-tag" style="color: var(--primary);"></i> ${item.discount_percent > 0 ? (item.discount_percent + '%') : ('&#8369;' + (item.discount_amount || 0))} OFF</span>
+                                <span style="white-space: nowrap;"><i class="fa-solid fa-tag" style="color: var(--primary);"></i> ${(item.discount_percent || item.reward_discount || 0) > 0 ? ((item.discount_percent || item.reward_discount) + '%') : ('&#8369;' + (item.discount_amount || item.reward_amount || 0))} OFF</span>
                                 <span style="white-space: nowrap;"><i class="fa-solid fa-ticket" style="color: var(--primary);"></i> ${item.promo_code || 'No Code'}</span>
                             </div>
 
@@ -1366,7 +1373,7 @@
             document.getElementById('campaign-flat-discount').value = '';
         } else {
             document.getElementById('discount-type-select').value = 'flat';
-            document.getElementById('campaign-flat-discount').value = item.discount_amount || 0;
+            document.getElementById('campaign-flat-discount').value = item.discount_amount || item.reward_amount || 0;
             document.getElementById('campaign-discount').value = '';
         }
         toggleDiscountFields();

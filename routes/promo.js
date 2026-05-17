@@ -80,7 +80,10 @@ router.get('/context', requireRole('admin'), async (req, res) => {
 router.get('/tasks', requireRole('admin'), async (req, res) => {
     try {
         const tasks = await db.prepare(`
-            SELECT pt.*, p.promo_code, p.image, p.discount_percent as reward_discount
+            SELECT pt.*, p.promo_code, p.image, 
+                   p.discount_percent, p.discount_amount,
+                   p.discount_percent as reward_discount,
+                   p.discount_amount as reward_amount
             FROM promo_tasks pt
             LEFT JOIN promos p ON pt.reward_promo_id = p.id
             ORDER BY pt.id DESC
@@ -98,7 +101,9 @@ router.get('/tasks/my-progress', requireAuth, async (req, res) => {
             SELECT pt.id, pt.title, pt.customer_description, pt.task_type, pt.required_quantity,
                    COALESCE(up.current_quantity, 0) as current_quantity,
                    COALESCE(up.is_completed, 0) as is_completed,
-                   p.promo_code as reward_code, p.discount_percent as reward_discount
+                   p.promo_code as reward_code, 
+                   p.discount_percent as reward_discount,
+                   p.discount_amount as reward_amount
             FROM promo_tasks pt
             LEFT JOIN user_promo_progress up ON pt.id = up.promo_task_id AND up.user_id = ?
             LEFT JOIN promos p ON pt.reward_promo_id = p.id
@@ -350,7 +355,7 @@ router.put('/:id', requireRole('admin'), upload.single('image'), async (req, res
                             applicable_category_ids=?, applicable_menu_item_ids=?,
                             usage_limit=?
                         WHERE id=?
-                    `).run(title, description, discount_percent || 0, discount_amount || 0, imagePath, start_date || null, end_date || null, is_active == '1' ? 1 : 0, promo_code || null, applicable_category_ids || '[]', applicable_menu_item_ids || '[]', parseInt(usage_limit) || 1, promoId);
+                    `).run(title, description, dPercent, dAmount, imagePath, start_date || null, end_date || null, is_active == '1' ? 1 : 0, promo_code || null, applicable_category_ids || '[]', applicable_menu_item_ids || '[]', parseInt(usage_limit) || 1, promoId);
                 } else {
                     await db.prepare(`
                         UPDATE promos SET 
@@ -359,7 +364,7 @@ router.put('/:id', requireRole('admin'), upload.single('image'), async (req, res
                             applicable_category_ids=?, applicable_menu_item_ids=?,
                             usage_limit=?
                         WHERE id=?
-                    `).run(title, description, discount_percent || 0, discount_amount || 0, start_date || null, end_date || null, is_active == '1' ? 1 : 0, promo_code || null, applicable_category_ids || '[]', applicable_menu_item_ids || '[]', parseInt(usage_limit) || 1, promoId);
+                    `).run(title, description, dPercent, dAmount, start_date || null, end_date || null, is_active == '1' ? 1 : 0, promo_code || null, applicable_category_ids || '[]', applicable_menu_item_ids || '[]', parseInt(usage_limit) || 1, promoId);
                 }
 
                 // [RESET LOGIC] Clear progress and reset earned coupons for this task
@@ -376,7 +381,7 @@ router.put('/:id', requireRole('admin'), upload.single('image'), async (req, res
                         applicable_category_ids=?, applicable_menu_item_ids=?,
                         usage_limit=?
                     WHERE id=?
-                `).run(title, description, discount_percent || 0, discount_amount || 0, imagePath, start_date || null, end_date || null, is_active == '1' ? 1 : 0, promo_code || null, applicable_category_ids || '[]', applicable_menu_item_ids || '[]', parseInt(usage_limit) || 1, campaignId);
+                `).run(title, description, dPercent, dAmount, imagePath, start_date || null, end_date || null, is_active == '1' ? 1 : 0, promo_code || null, applicable_category_ids || '[]', applicable_menu_item_ids || '[]', parseInt(usage_limit) || 1, campaignId);
             } else {
                 await db.prepare(`
                     UPDATE promos SET 
@@ -385,7 +390,7 @@ router.put('/:id', requireRole('admin'), upload.single('image'), async (req, res
                         applicable_category_ids=?, applicable_menu_item_ids=?,
                         usage_limit=?
                     WHERE id=?
-                `).run(title, description, discount_percent || 0, discount_amount || 0, start_date || null, end_date || null, is_active == '1' ? 1 : 0, promo_code || null, applicable_category_ids || '[]', applicable_menu_item_ids || '[]', parseInt(usage_limit) || 1, campaignId);
+                `).run(title, description, dPercent, dAmount, start_date || null, end_date || null, is_active == '1' ? 1 : 0, promo_code || null, applicable_category_ids || '[]', applicable_menu_item_ids || '[]', parseInt(usage_limit) || 1, campaignId);
             }
 
             // [RESET LOGIC] Reset user usage records for this public promo
