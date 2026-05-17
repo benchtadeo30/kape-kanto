@@ -219,12 +219,25 @@
                 <button class="so-tab" onclick="filterOrders('completed', this)"><i class="fa-solid fa-flag-checkered"></i> Delivered / Picked Up</button>
             </div>
 
-            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; background: #fdfaf7; padding: 0.75rem 1.25rem; border-radius: 50px; border: 1px solid #f0e6e0;">
-                <span style="font-weight: 800; color: var(--primary-dark); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">Type:</span>
-                <div style="display: flex; gap: 6px;">
-                    <button class="so-tab active" id="type-all" onclick="filterType('all')" style="padding: 6px 14px; font-size: 0.75rem;">All Types</button>
-                    <button class="so-tab" id="type-delivery" onclick="filterType('delivery')" style="padding: 6px 14px; font-size: 0.75rem;">Delivery</button>
-                    <button class="so-tab" id="type-pickup" onclick="filterType('pickup')" style="padding: 6px 14px; font-size: 0.75rem;">Pickup</button>
+            <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                <!-- Type Filter -->
+                <div style="display: flex; align-items: center; gap: 1rem; background: #fdfaf7; padding: 0.75rem 1.25rem; border-radius: 50px; border: 1px solid #f0e6e0;">
+                    <span style="font-weight: 800; color: var(--primary-dark); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">Type:</span>
+                    <div style="display: flex; gap: 6px;">
+                        <button class="so-tab active" id="type-all" onclick="filterType('all')" style="padding: 6px 14px; font-size: 0.75rem;">All</button>
+                        <button class="so-tab" id="type-delivery" onclick="filterType('delivery')" style="padding: 6px 14px; font-size: 0.75rem;">Delivery</button>
+                        <button class="so-tab" id="type-pickup" onclick="filterType('pickup')" style="padding: 6px 14px; font-size: 0.75rem;">Pickup</button>
+                    </div>
+                </div>
+
+                <!-- Schedule Filter -->
+                <div style="display: flex; align-items: center; gap: 1rem; background: #fdfaf7; padding: 0.75rem 1.25rem; border-radius: 50px; border: 1px solid #f0e6e0;">
+                    <span style="font-weight: 800; color: var(--primary-dark); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">Schedule:</span>
+                    <div style="display: flex; gap: 6px;">
+                        <button class="so-tab active" id="sched-all" onclick="filterSched('all')" style="padding: 6px 14px; font-size: 0.75rem;">All</button>
+                        <button class="so-tab" id="sched-asap" onclick="filterSched('asap')" style="padding: 6px 14px; font-size: 0.75rem;"><i class="fa-solid fa-bolt" style="margin-right: 4px;"></i> ASAP</button>
+                        <button class="so-tab" id="sched-scheduled" onclick="filterSched('scheduled')" style="padding: 6px 14px; font-size: 0.75rem;"><i class="fa-regular fa-clock" style="margin-right: 4px;"></i> Scheduled</button>
+                    </div>
                 </div>
             </div>
 
@@ -299,6 +312,7 @@
     let currentPage = 1;
     let orderSearchTerm = '';
     let currentType = 'all';
+    let currentSched = 'all';
     let bulkMode = false;
     let activeChatOrderId = null;
     let chatRefreshInterval = null;
@@ -384,6 +398,9 @@
             const matchesType = currentType === 'all' || o.order_type === currentType;
             if (!matchesType) return false;
 
+            const matchesSched = currentSched === 'all' || o.schedule_mode === currentSched;
+            if (!matchesSched) return false;
+
             if (!orderSearchTerm) return true;
 
             const haystack = [
@@ -408,6 +425,20 @@
         ['all', 'delivery', 'pickup'].forEach(t => {
             const btn = document.getElementById(`type-${t}`);
             if (t === type) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+        
+        renderOrders();
+    }
+
+    function filterSched(sched) {
+        currentSched = sched;
+        currentPage = 1;
+        
+        // Update UI
+        ['all', 'asap', 'scheduled'].forEach(s => {
+            const btn = document.getElementById(`sched-${s}`);
+            if (s === sched) btn.classList.add('active');
             else btn.classList.remove('active');
         });
         
@@ -502,7 +533,10 @@
                     <div class="so-customer">${o.username || 'Customer'} / ${date}</div>
                     ${riderInfo}
                 </div>
-                <span class="so-type-chip"><i class="fa-solid ${isDelivery ? 'fa-truck-fast' : 'fa-bag-shopping'}"></i> ${isDelivery ? 'Delivery' : 'Pickup'}</span>
+                <div style="display: flex; flex-direction: column; gap: 4px; align-items: start;">
+                    <span class="so-type-chip"><i class="fa-solid ${isDelivery ? 'fa-truck-fast' : 'fa-bag-shopping'}"></i> ${isDelivery ? 'Delivery' : 'Pickup'}</span>
+                    <span class="so-type-chip" style="${o.schedule_mode === 'asap' ? 'background:#e8f5e9; color:#2e7d32; border-color:#c8e6c9;' : 'background:#f8f9fa; color:#495057; border-color:#e9ecef;'}"><i class="fa-solid ${o.schedule_mode === 'asap' ? 'fa-bolt' : 'fa-calendar-days'}"></i> ${o.schedule_mode === 'asap' ? 'ASAP' : 'Scheduled'}</span>
+                </div>
                 <span class="so-badge ${BADGE_MAP[o.status] || ''}">${o.status === 'awaiting_payment' ? '<i class="fa-solid fa-triangle-exclamation"></i>' : ''}${statusLabel(o.status, o.order_type)}</span>
                 <span class="so-total">&#8369;${Number(o.total || 0).toFixed(2)}</span>
                 <div class="so-actions">${actionBtns || '<span class="so-customer">No actions</span>'}</div>

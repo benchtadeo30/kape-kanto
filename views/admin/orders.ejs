@@ -313,7 +313,7 @@
         </div>
 
         <!-- Search and Filter Bar Row -->
-        <div style="display: grid; grid-template-columns: 1fr auto; gap: 1.5rem; margin-bottom: 2rem; align-items: center; flex-wrap: wrap;">
+        <div style="display: flex; gap: 1.5rem; margin-bottom: 2rem; align-items: center; justify-content: space-between; flex-wrap: wrap;">
             <!-- Search bar -->
             <div style="position: relative; flex: 1; min-width: 280px;">
                 <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 20px; top: 50%; transform: translateY(-50%); color: var(--text-light); font-size: 1.05rem;"></i>
@@ -321,13 +321,25 @@
                        style="width: 100%; padding: 14px 20px 14px 50px; border-radius: 50px; border: 1.5px solid #ede1d7; font-family: var(--font-body); font-size: 1rem; outline: none; transition: all 0.25s; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.02);">
             </div>
             
-            <!-- Filter Type Panel -->
-            <div style="display: flex; align-items: center; gap: 1rem; background: white; padding: 0.5rem 1rem; border-radius: 50px; border: 1.5px solid #ede1d7; height: 52px; box-shadow: 0 4px 10px rgba(0,0,0,0.02);">
-                <span style="font-weight: 800; color: var(--primary-dark); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; margin-left: 5px;">Type:</span>
-                <div style="display: flex; gap: 4px;">
-                    <button class="btn btn-outline" id="type-all" onclick="filterType('all')" style="padding: 6px 14px; border-radius: 50px; font-size: 0.8rem; font-weight: 700; border-color: var(--primary); background: var(--primary); color: white; transition: 0.2s;">All</button>
-                    <button class="btn btn-outline" id="type-delivery" onclick="filterType('delivery')" style="padding: 6px 14px; border-radius: 50px; font-size: 0.8rem; font-weight: 700; transition: 0.2s;">Delivery</button>
-                    <button class="btn btn-outline" id="type-pickup" onclick="filterType('pickup')" style="padding: 6px 14px; border-radius: 50px; font-size: 0.8rem; font-weight: 700; transition: 0.2s;">Pickup</button>
+            <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                <!-- Filter Type Panel -->
+                <div style="display: flex; align-items: center; gap: 1rem; background: white; padding: 0.5rem 1rem; border-radius: 50px; border: 1.5px solid #ede1d7; height: 52px; box-shadow: 0 4px 10px rgba(0,0,0,0.02);">
+                    <span style="font-weight: 800; color: var(--primary-dark); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; margin-left: 5px;">Type:</span>
+                    <div style="display: flex; gap: 4px;">
+                        <button class="btn btn-outline" id="type-all" onclick="filterType('all')" style="padding: 6px 14px; border-radius: 50px; font-size: 0.8rem; font-weight: 700; border-color: var(--primary); background: var(--primary); color: white; transition: 0.2s;">All</button>
+                        <button class="btn btn-outline" id="type-delivery" onclick="filterType('delivery')" style="padding: 6px 14px; border-radius: 50px; font-size: 0.8rem; font-weight: 700; transition: 0.2s;">Delivery</button>
+                        <button class="btn btn-outline" id="type-pickup" onclick="filterType('pickup')" style="padding: 6px 14px; border-radius: 50px; font-size: 0.8rem; font-weight: 700; transition: 0.2s;">Pickup</button>
+                    </div>
+                </div>
+
+                <!-- Filter Schedule Panel -->
+                <div style="display: flex; align-items: center; gap: 1rem; background: white; padding: 0.5rem 1rem; border-radius: 50px; border: 1.5px solid #ede1d7; height: 52px; box-shadow: 0 4px 10px rgba(0,0,0,0.02);">
+                    <span style="font-weight: 800; color: var(--primary-dark); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; margin-left: 5px;">Schedule:</span>
+                    <div style="display: flex; gap: 4px;">
+                        <button class="btn btn-outline" id="sched-all" onclick="filterSched('all')" style="padding: 6px 14px; border-radius: 50px; font-size: 0.8rem; font-weight: 700; border-color: var(--primary); background: var(--primary); color: white; transition: 0.2s;">All</button>
+                        <button class="btn btn-outline" id="sched-asap" onclick="filterSched('asap')" style="padding: 6px 14px; border-radius: 50px; font-size: 0.8rem; font-weight: 700; transition: 0.2s;"><i class="fa-solid fa-bolt" style="margin-right: 4px;"></i> ASAP</button>
+                        <button class="btn btn-outline" id="sched-scheduled" onclick="filterSched('scheduled')" style="padding: 6px 14px; border-radius: 50px; font-size: 0.8rem; font-weight: 700; transition: 0.2s;"><i class="fa-regular fa-clock" style="margin-right: 4px;"></i> Scheduled</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -369,6 +381,7 @@
     let allOrders = [];
     let currentFilter = 'all';
     let currentType = 'all';
+    let currentSched = 'all';
     let currentPage = 1;
     let activeChatOrderId = null;
     let chatRefreshInterval = null;
@@ -402,8 +415,13 @@
                     filtered = filtered.filter(o => o.order_type === currentType);
                 }
 
+                if (currentSched !== 'all') {
+                    filtered = filtered.filter(o => o.schedule_mode === currentSched);
+                }
+
                 allOrders = data.items; // Store original for details
-                renderOrders(filtered, currentType === 'all' ? data.total : filtered.length);
+                const renderTotal = (currentType === 'all' && currentSched === 'all') ? data.total : filtered.length;
+                renderOrders(filtered, renderTotal);
 
                 // Handle Deep Link to Chat
                 const urlParams = new URLSearchParams(window.location.search);
@@ -424,6 +442,27 @@
         ['all', 'delivery', 'pickup'].forEach(t => {
             const btn = document.getElementById(`type-${t}`);
             if (t === type) {
+                btn.style.background = 'var(--primary)';
+                btn.style.color = 'white';
+                btn.style.borderColor = 'var(--primary)';
+            } else {
+                btn.style.background = 'white';
+                btn.style.color = 'var(--primary-dark)';
+                btn.style.borderColor = '#eee';
+            }
+        });
+        
+        loadOrders();
+    }
+
+    function filterSched(sched) {
+        currentSched = sched;
+        currentPage = 1;
+        
+        // Update UI
+        ['all', 'asap', 'scheduled'].forEach(s => {
+            const btn = document.getElementById(`sched-${s}`);
+            if (s === sched) {
                 btn.style.background = 'var(--primary)';
                 btn.style.color = 'white';
                 btn.style.borderColor = 'var(--primary)';
@@ -560,6 +599,10 @@
                 <span class="ao-type" style="margin-bottom:0.3rem; display:inline-flex; align-items:center; gap:8px;">
                     <i class="fa-solid fa-${isDelivery ? 'truck-fast' : 'shop'}"></i>
                     ${isDelivery ? 'Delivery' : 'Pickup'}
+                </span>
+                <span class="ao-type" style="margin-bottom:0.3rem; display:inline-flex; align-items:center; gap:8px; ${o.schedule_mode === 'asap' ? 'background: #e8f5e9; color: #2e7d32; border-color: #c8e6c9;' : 'background: #f8f9fa; color: #495057; border-color: #e9ecef;'}">
+                    <i class="fa-solid fa-${o.schedule_mode === 'asap' ? 'bolt' : 'calendar-days'}"></i>
+                    ${o.schedule_mode === 'asap' ? 'ASAP' : 'Scheduled'}
                 </span>
                 <span class="ao-badge ${badgeCls}">${getStatusLabel(o.status, o.order_type)}</span>
                 <p class="ao-total">&#8369;${o.total.toFixed(2)}</p>
