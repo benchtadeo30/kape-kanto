@@ -158,10 +158,14 @@ function renderCartItems() {
                     </div>
                     ${customizationHtml}
                 </div>
-                <div style="display:flex;align-items:center;background:#f5f5f5;border-radius:50px;padding:4px 10px;gap:0.75rem;">
-                    <button class="btn" style="padding:3px 10px;background:transparent;" onclick="updateQuantityByIndex(${index},-1)">-</button>
-                    <span style="font-weight:700;min-width:18px;text-align:center;">${item.quantity}</span>
-                    <button class="btn" style="padding:3px 10px;background:transparent;" onclick="updateQuantityByIndex(${index},1)">+</button>
+                <div style="display:flex;align-items:center;background:#f5f5f5;border-radius:50px;padding:4px 8px;gap:0.25rem;">
+                    <button class="btn" style="padding:3px 8px;background:transparent;border:none;cursor:pointer;font-weight:bold;" onclick="updateQuantityByIndex(${index},-1)">-</button>
+                    <input type="number" value="${item.quantity}" min="1" 
+                        oninput="onCartQuantityInput(${index}, this)"
+                        onblur="onCartQuantityBlur(${index}, this)"
+                        onkeydown="onCartQuantityKeydown(event)"
+                        style="width: 45px; text-align: center; border: none; background: #fff; font-weight: bold; padding: 4px; border-radius: 4px;">
+                    <button class="btn" style="padding:3px 8px;background:transparent;border:none;cursor:pointer;font-weight:bold;" onclick="updateQuantityByIndex(${index},1)">+</button>
                 </div>
                 <button onclick="removeItemByIndex(${index})" style="background:transparent;border:none;color:var(--danger);cursor:pointer;padding:6px;font-size:1.1rem;">
                     <i class="fa-solid fa-trash-can"></i>
@@ -193,6 +197,57 @@ function updateQuantityByIndex(index, change) {
         if (item.quantity <= 0) cart.splice(index, 1);
         saveCart(cart);
         renderCartItems();
+    }
+}
+
+function onCartQuantityInput(index, inputEl) {
+    const cart = getCart();
+    if (!cart[index]) return;
+    const item = cart[index];
+    const raw = inputEl.value;
+
+    if (raw === '') {
+        return; // Allow empty string while typing!
+    }
+
+    let val = parseInt(raw);
+    if (isNaN(val) || val < 1) {
+        inputEl.value = 1;
+        val = 1;
+    }
+
+    // Sum total quantity in cart of the same menu item ID except the current index
+    const totalOfSameIdExcludingCurrent = cart
+        .filter((c, idx) => c.id === item.id && idx !== index)
+        .reduce((sum, c) => sum + c.quantity, 0);
+
+    if (item.stock !== undefined && totalOfSameIdExcludingCurrent + val > item.stock) {
+        val = item.stock - totalOfSameIdExcludingCurrent;
+        if (val < 1) val = 1;
+        inputEl.value = val;
+        KapeKanto.toast(`Only ${item.stock} items are available in stock.`, 'warning');
+    }
+
+    item.quantity = val;
+    saveCart(cart);
+    updateTotals();
+}
+
+function onCartQuantityBlur(index, inputEl) {
+    const cart = getCart();
+    if (!cart[index]) return;
+    let val = parseInt(inputEl.value);
+    if (isNaN(val) || val < 1) {
+        inputEl.value = 1;
+        cart[index].quantity = 1;
+        saveCart(cart);
+    }
+    renderCartItems();
+}
+
+function onCartQuantityKeydown(e) {
+    if (e.key === '-' || e.key === 'e' || e.key === '+') {
+        e.preventDefault();
     }
 }
 
