@@ -766,7 +766,7 @@
                                                 <%= coupon.title %>
                                             </h4>
                                             <p style="margin: 0; font-size: 2rem; font-weight: 800;">
-                                                <%= (coupon.discount_percent || coupon.reward_discount) > 0 ? (coupon.discount_percent || coupon.reward_discount) + '% OFF' : '&#8369;' + (coupon.discount_amount || coupon.reward_amount || 0) + ' OFF' %>
+                                                <%= (coupon.discount_percent || coupon.reward_discount) > 0 ? (coupon.discount_percent || coupon.reward_discount) + '% OFF' : '₱' + (coupon.discount_amount || coupon.reward_amount || 0) + ' OFF' %>
                                             </p>
                                             <div
                                                 style="margin-top: 15px; background: rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 8px; font-family: monospace; font-size: 1.1rem; letter-spacing: 2px; text-align: center;">
@@ -797,7 +797,7 @@
                                                     <%= promo.title %>
                                                 </h4>
                                                 <p style="margin: 0; font-size: 1.8rem; font-weight: 800; color: #6F4E37;">
-                                                    <%= promo.discount_percent > 0 ? promo.discount_percent + '%' : '&#8369;' + promo.discount_amount %> OFF
+                                                    <%= promo.discount_percent > 0 ? promo.discount_percent + '%' : '₱' + promo.discount_amount %> OFF
                                                 </p>
                                                 <div
                                                     style="margin-top: 15px; background: #fdf5e6; color: #6F4E37; padding: 8px 12px; border-radius: 8px; font-family: monospace; font-size: 1.1rem; letter-spacing: 2px; text-align: center; font-weight: 700; border: 1px solid #e8b86d;">
@@ -852,7 +852,8 @@
                                                 <% 
                                                     const isSpend = task.task_type && task.task_type.toLowerCase().includes('spend');
                                                     const targetVal = isSpend ? (task.min_order_amount || 1) : (task.required_quantity || 1);
-                                                    const progressPercent = Math.min((task.current_quantity / targetVal) * 100, 100); 
+                                                    const displayedQty = Math.min(task.current_quantity || 0, targetVal);
+                                                    const progressPercent = Math.min((displayedQty / targetVal) * 100, 100); 
                                                 %>
                                                 <div
                                                     style="background: linear-gradient(90deg, #6F4E37, #E8B86D); height: 100%; width: <%= progressPercent %>%;">
@@ -861,9 +862,9 @@
                                             <div
                                                 style="text-align: right; font-size: 0.8rem; font-weight: bold; color: #6F4E37;">
                                                 <% if (isSpend) { %>
-                                                    ₱<%= Number(task.current_quantity).toLocaleString() %> / ₱<%= Number(task.min_order_amount).toLocaleString() %> Progress
+                                                    ₱<%= Number(displayedQty).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %> / ₱<%= Number(task.min_order_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %> Progress
                                                 <% } else { %>
-                                                    <%= task.current_quantity %> / <%= task.required_quantity %> Progress
+                                                    <%= displayedQty %> / <%= task.required_quantity %> Progress
                                                 <% } %>
                                             </div>
                                             <% if (task.reward_limit > 0) { %>
