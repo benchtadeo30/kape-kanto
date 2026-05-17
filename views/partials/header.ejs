@@ -121,9 +121,14 @@
                             <span class="notification-badge" id="kk-notif-badge" style="display: none;">0</span>
                         </button>
                         <div class="notification-dropdown" id="kk-notif-dropdown">
-                            <div class="notification-header">
-                                <h4>Notifications</h4>
-                                <span style="font-size: 0.7rem; color: var(--text-light); font-weight: 700;" id="kk-notif-count">0 Unread</span>
+                            <div class="notification-header" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #f0e6e0; gap: 10px;">
+                                <div>
+                                    <h4 style="margin: 0; font-size: 0.95rem; font-weight: 800; color: var(--primary-dark);">Notifications</h4>
+                                    <span style="font-size: 0.7rem; color: var(--text-light); font-weight: 700; display: block; margin-top: 2px;" id="kk-notif-count">0 Unread</span>
+                                </div>
+                                <button onclick="clearAllNotifications(event)" style="background: transparent; border: none; color: var(--primary); font-size: 0.72rem; font-weight: 700; cursor: pointer; padding: 6px 10px; border-radius: 8px; transition: all 0.2s; display: flex; align-items: center; gap: 4px; white-space: nowrap;" onmouseover="this.style.background='#fdfaf7'" onmouseout="this.style.background='transparent'">
+                                    <i class="fa-solid fa-trash-can" style="font-size: 0.75rem;"></i> Clear All
+                                </button>
                             </div>
                             <div class="notification-list" id="kk-notif-list">
                                 <div class="notification-empty">
@@ -393,7 +398,16 @@
 
             function getLocalNotifications() {
                 try {
-                    return JSON.parse(localStorage.getItem('kk_notifications') || '[]');
+                    const list = JSON.parse(localStorage.getItem('kk_notifications') || '[]');
+                    const limitTime = Date.now() - (24 * 60 * 60 * 1000); // 24 hours expiration shield
+                    const filtered = list.filter(n => {
+                        const created = new Date(n.created_at || Date.now()).getTime();
+                        return created > limitTime;
+                    });
+                    if (filtered.length !== list.length) {
+                        localStorage.setItem('kk_notifications', JSON.stringify(filtered));
+                    }
+                    return filtered;
                 } catch (e) {
                     return [];
                 }
@@ -503,6 +517,13 @@
                             if (user.role === 'admin' || user.role === 'staff') {
                                 playNotificationSound();
                                 KapeKanto.toast(`🔔 New Order #${order.id} has been placed!`, 'success');
+                                addLocalNotification(
+                                    order.id, 
+                                    'new_order', 
+                                    'New Order Placed', 
+                                    `Order #${order.id} has been placed!`, 
+                                    'fa-cart-shopping'
+                                );
                                 window.dispatchEvent(new CustomEvent('kk-new-order', { 
                                     detail: { orderId: order.id } 
                                 }));
@@ -554,25 +575,31 @@
                         `;
                     });
 
-                    // Render client-side status notifications (for customers)
-                    if (user.role === 'customer') {
-                        localNotifs.forEach(notif => {
-                            htmlList += `
-                                <div class="notification-item ${!notif.is_read ? 'unread' : ''}" onclick="readAndGoToOrder(${notif.order_id}, '${notif.id}')">
-                                    <div class="notif-icon-wrap">
-                                        <i class="fa-solid ${notif.icon || 'fa-bell'}" style="color:var(--accent);"></i>
-                                        ${!notif.is_read ? '<span class="unread-dot"></span>' : ''}
-                                    </div>
-                                    <div class="notification-info">
-                                        <div class="notif-title-row">
-                                            <p>${notif.title}</p>
-                                        </div>
-                                        <div class="notif-desc">${notif.desc}</div>
-                                    </div>
+                    // Render client-side status & order notifications
+                    localNotifs.forEach(notif => {
+                        let iconColor = 'var(--accent)';
+                        let iconBg = '#fff0e6';
+                        
+                        if (notif.type === 'new_order') {
+                            iconColor = '#2e7d32'; // Premium green
+                            iconBg = '#e8f5e9';
+                        }
+                        
+                        htmlList += `
+                            <div class="notification-item ${!notif.is_read ? 'unread' : ''}" onclick="readAndGoToOrder(${notif.order_id}, '${notif.id}')">
+                                <div class="notif-icon-wrap" style="background: ${iconBg}; color: ${iconColor};">
+                                    <i class="fa-solid ${notif.icon || 'fa-bell'}"></i>
+                                    ${!notif.is_read ? '<span class="unread-dot"></span>' : ''}
                                 </div>
-                            `;
-                        });
-                    }
+                                <div class="notification-info">
+                                    <div class="notif-title-row">
+                                        <p>${notif.title}</p>
+                                    </div>
+                                    <div class="notif-desc">${notif.desc}</div>
+                                </div>
+                            </div>
+                        `;
+                    });
 
                     if (htmlList) {
                         notifList.innerHTML = htmlList;
@@ -595,7 +622,14 @@
                     matched.is_read = true;
                     saveLocalNotifications(notifs);
                 }
-                window.location.href = `/order-tracking/${orderId}`;
+                const targetPage = (user.role === 'admin') ? `/admin/orders` : (user.role === 'staff' ? `/staff/orders` : `/order-tracking/${orderId}`);
+                window.location.href = targetPage;
+            };
+
+            window.clearAllNotifications = (e) => {
+                if (e) e.stopPropagation();
+                saveLocalNotifications([]);
+                checkUnreadMessages();
             };
 
             window.goToOrderChat = (orderId) => {

@@ -5212,6 +5212,20 @@ button,
     overflow-y: auto;
 }
 
+.notification-list::-webkit-scrollbar {
+    width: 6px;
+}
+.notification-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+.notification-list::-webkit-scrollbar-thumb {
+    background: #e0d5ce;
+    border-radius: 10px;
+}
+.notification-list::-webkit-scrollbar-thumb:hover {
+    background: #c6b3a9;
+}
+
 .notification-item {
     padding: 12px 16px;
     display: flex;
