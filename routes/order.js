@@ -636,7 +636,7 @@ router.patch('/:id/status', requireRole('admin', 'staff'), async (req, res) => {
 
         if (status === 'completed') {
             const completedOrder = await db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
-            if (completedOrder && !['online', 'payrex'].includes(completedOrder.payment_method)) {
+            if (completedOrder && !completedOrder.payrex_checkout_id) {
                 await trackLoyaltyProgress(completedOrder.user_id, completedOrder.id, completedOrder.total);
             }
         }

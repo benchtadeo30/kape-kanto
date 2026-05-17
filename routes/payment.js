@@ -4,6 +4,47 @@ const { db } = require('../database/init');
 const { payrex } = require('../services/payrex');
 const { trackLoyaltyProgress, incrementPromoUsage } = require('../services/loyalty');
 
+// Helper function to query PayRex to get the exact payment method type (GCash, Card, PayMaya, QR Ph)
+async function getPaymentMethodFromPayRex(payrexCheckoutId) {
+    try {
+        if (!payrexCheckoutId || payrexCheckoutId === 'redirect_success' || payrexCheckoutId === 'webhook_paid') {
+            return 'Online Payment';
+        }
+        
+        console.log(`[PAYREX] Retrieving session details for ID: ${payrexCheckoutId}`);
+        const session = await payrex.checkoutSessions.retrieve(payrexCheckoutId);
+        if (!session) return 'Online Payment';
+        
+        let paymentIntentId = null;
+        if (typeof session.payment_intent === 'string') {
+            paymentIntentId = session.payment_intent;
+        } else if (session.payment_intent && session.payment_intent.id) {
+            paymentIntentId = session.payment_intent.id;
+        }
+        
+        if (paymentIntentId) {
+            const pi = await payrex.paymentIntents.retrieve(paymentIntentId);
+            if (pi && pi.payments && pi.payments.length > 0) {
+                const payment = pi.payments.find(p => p.status === 'paid' || p.status === 'succeeded') || pi.payments[0];
+                if (payment && payment.payment_method_type) {
+                    const method = payment.payment_method_type.toLowerCase();
+                    const mappings = {
+                        gcash: 'GCash',
+                        card: 'Credit/Debit Card',
+                        maya: 'PayMaya',
+                        qrph: 'QR Ph'
+                    };
+                    return mappings[method] || `Online (${method.toUpperCase()})`;
+                }
+            }
+        }
+        return 'Online Payment';
+    } catch (err) {
+        console.error('[PAYREX] Error retrieving payment method:', err.message || err);
+        return 'Online Payment';
+    }
+}
+
 // Helper function to handle successful payment
 async function handleSuccessfulPayment(orderId, payrexPaymentId) {
     await db.beginTransaction();
@@ -20,14 +61,17 @@ async function handleSuccessfulPayment(orderId, payrexPaymentId) {
             return true;
         }
 
+        // Fetch actual payment method from PayRex if checkout ID exists
+        const actualMethod = await getPaymentMethodFromPayRex(order.payrex_checkout_id);
+
         // Update order status
         await db.prepare(`
             UPDATE orders 
-            SET payment_status = 'paid', status = 'pending', payrex_payment_id = ?, updated_at = CURRENT_TIMESTAMP
+            SET payment_status = 'paid', status = 'pending', payrex_payment_id = ?, payment_method = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
-        `).run(payrexPaymentId, orderId);
+        `).run(payrexPaymentId, actualMethod, orderId);
 
-        console.log(`Payment Success: Order #${orderId} marked as PAID and PENDING.`);
+        console.log(`Payment Success: Order #${orderId} marked as PAID via ${actualMethod}.`);
 
         // Decrement stock
         const items = await db.prepare(`SELECT menu_item_id, quantity FROM order_items WHERE order_id = ?`).all(orderId);
