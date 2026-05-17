@@ -564,6 +564,7 @@ router.get('/all', requireRole('admin', 'staff'), async (req, res) => {
     const limit = parseInt(req.query.limit);
     const offset = parseInt(req.query.offset) || 0;
     const status = req.query.status || 'all';
+    const search = req.query.search || '';
 
     try {
         let query = `
@@ -575,14 +576,28 @@ router.get('/all', requireRole('admin', 'staff'), async (req, res) => {
         let countQuery = `
             SELECT COUNT(*) as total 
             FROM orders o
+            JOIN users u ON o.user_id = u.id
             WHERE 1=1
         `;
         const params = [];
+        const countParams = [];
 
         if (status !== 'all') {
             query += ` AND o.status = ?`;
             countQuery += ` AND o.status = ?`;
             params.push(status);
+            countParams.push(status);
+        }
+
+        if (search) {
+            const searchPattern = `%${search}%`;
+            const searchClause = ` AND (CAST(o.id AS TEXT) LIKE ? OR u.username LIKE ? OR u.email LIKE ? OR o.delivery_address LIKE ? OR o.payment_method LIKE ? OR o.payment_status LIKE ?)`;
+            query += searchClause;
+            countQuery += searchClause;
+            for (let i = 0; i < 6; i++) {
+                params.push(searchPattern);
+                countParams.push(searchPattern);
+            }
         }
 
         query += ` ORDER BY o.updated_at DESC, o.created_at DESC`;
@@ -593,8 +608,6 @@ router.get('/all', requireRole('admin', 'staff'), async (req, res) => {
         }
 
         const orders = await db.prepare(query).all(...params);
-        
-        const countParams = status !== 'all' ? [status] : [];
         const total = (await db.prepare(countQuery).get(...countParams)).total;
 
         if (!isNaN(limit)) {
