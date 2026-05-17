@@ -6,6 +6,7 @@
 
 <style>
 .ot-page { padding: 2.5rem 5%; max-width: 800px; margin: 0 auto; }
+#order-search:focus { border-color: var(--primary) !important; box-shadow: 0 0 0 4px rgba(111,78,55,0.1) !important; background: white !important; }
 .ot-page-title {
     font-size: 2rem; font-weight: 800;
     color: var(--primary-dark);
@@ -111,6 +112,14 @@
         <span id="refresh-text">Auto-refreshes every 30s</span>
     </div>
 
+    <!-- Search Bar -->
+    <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.5rem; width: 100%; position: relative;">
+        <div style="position: relative; flex: 1;">
+            <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 1.1rem; top: 50%; transform: translateY(-50%); color: var(--text-light); opacity: 0.7; pointer-events: none;"></i>
+            <input type="text" id="order-search" placeholder="Search by Order ID, status, type or total..." oninput="setOrderSearch(this.value)" style="width: 100%; border-radius: 999px !important; padding: 0.75rem 1rem 0.75rem 2.8rem !important; border: 1px solid #e6d8cc !important; background: #fffdf9; outline: none; transition: all 0.25s ease;">
+        </div>
+    </div>
+
     <div id="orders-container">
         <div class="ot-empty">
             <div class="ot-empty-icon"><i class="fa-solid fa-bag-shopping"></i></div>
@@ -139,6 +148,28 @@
     let allOrders = [];
     let currentPage = 1;
     const ordersPerPage = 5;
+    let orderSearchTerm = '';
+
+    function setOrderSearch(value) {
+        orderSearchTerm = value.trim().toLowerCase();
+        currentPage = 1;
+        renderPaginatedOrders();
+    }
+
+    function getFilteredOrders() {
+        if (!orderSearchTerm) return allOrders;
+        return allOrders.filter(order => {
+            const idMatch = String(order.id).toLowerCase().includes(orderSearchTerm);
+            const statusMatch = String(order.status).toLowerCase().includes(orderSearchTerm);
+            const typeMatch = String(order.order_type).toLowerCase().includes(orderSearchTerm);
+            const totalMatch = String(order.total).toLowerCase().includes(orderSearchTerm);
+            
+            const pillInfo = STATUS_PILL[order.status] || ['', '', ''];
+            const labelMatch = String(pillInfo[2] || '').toLowerCase().includes(orderSearchTerm);
+            
+            return idMatch || statusMatch || typeMatch || totalMatch || labelMatch;
+        });
+    }
 
     async function loadOrders(silent = false) {
         const bar = document.getElementById('refresh-bar');
@@ -150,7 +181,6 @@
             allOrders = await res.json();
             
             if (silent) {
-                // If silent refresh, just update current page without resetting view
                 renderPaginatedOrders();
             } else {
                 currentPage = 1;
@@ -181,11 +211,24 @@
             return;
         }
 
-        const totalPages = Math.ceil(allOrders.length / ordersPerPage);
+        const filtered = getFilteredOrders();
+
+        if (!filtered.length) {
+            container.innerHTML = `
+                <div class="ot-empty">
+                    <div class="ot-empty-icon" style="color:#e6d8cc;"><i class="fa-solid fa-magnifying-glass"></i></div>
+                    <h3>No matching orders found</h3>
+                    <p style="color:var(--text-light);margin-bottom:1.5rem;">Try adjusting your search terms.</p>
+                </div>`;
+            pagination.style.display = 'none';
+            return;
+        }
+
+        const totalPages = Math.ceil(filtered.length / ordersPerPage);
         if (currentPage > totalPages) currentPage = totalPages;
 
         const startIndex = (currentPage - 1) * ordersPerPage;
-        const pagedOrders = allOrders.slice(startIndex, startIndex + ordersPerPage);
+        const pagedOrders = filtered.slice(startIndex, startIndex + ordersPerPage);
 
         container.innerHTML = pagedOrders.map(order => buildOrderRow(order)).join('');
         renderPaginationControls(totalPages);
