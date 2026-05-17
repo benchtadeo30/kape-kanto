@@ -732,6 +732,7 @@
     let selectedAppMenuItemIds = [];
     let selectedTaskMenuItemId = null;
     let selectedTaskCategoryId = null;
+    let selectedTaskCategoryIds = [];
     let tempSelections = []; 
     let currentSelectorType = ''; // 'item' or 'category'
     let currentSelectorContext = 'campaign'; // 'campaign' or 'task'
@@ -835,7 +836,7 @@
         if (context === 'campaign') {
             tempSelections = [...selectedAppCategoryIds];
         } else {
-            tempSelections = selectedTaskCategoryId ? [selectedTaskCategoryId] : [];
+            tempSelections = [...selectedTaskCategoryIds];
         }
         document.getElementById('category-selector-modal').style.display = 'flex';
         renderCategorySelector();
@@ -981,15 +982,15 @@
     function toggleSelectorItem(id) {
         const idx = tempSelections.indexOf(id.toString());
         
-        if (currentSelectorContext === 'task') {
-            // Single selection for tasks
+        if (currentSelectorContext === 'task' && currentSelectorType === 'item') {
+            // Single selection for task menu items
             if (idx > -1) {
                 tempSelections = [];
             } else {
                 tempSelections = [id.toString()];
             }
         } else {
-            // Multiple selection for campaigns
+            // Multiple selection for campaigns, and for task categories
             if (idx > -1) {
                 tempSelections.splice(idx, 1);
             } else {
@@ -1023,7 +1024,8 @@
                 selectedAppCategoryIds = [...tempSelections];
                 updateSelectionSummary('category', 'campaign');
             } else {
-                selectedTaskCategoryId = tempSelections[0] || null;
+                selectedTaskCategoryIds = [...tempSelections];
+                selectedTaskCategoryId = selectedTaskCategoryIds[0] || null;
                 updateSelectionSummary('category', 'task');
             }
         }
@@ -1031,7 +1033,16 @@
     }
 
     function selectEverything(type) {
-        tempSelections = [];
+        if (type === 'category' && currentSelectorContext === 'task') {
+            // Task category "Select All" should set selectedTaskCategoryIds to empty (representing All Categories)
+            tempSelections = [];
+        } else if (type === 'item') {
+            // Campaigns/tasks items "Select All"
+            tempSelections = contextData.menuItems.map(i => i.id.toString());
+        } else {
+            // Campaign categories "Select All"
+            tempSelections = contextData.categories.map(c => c.id.toString());
+        }
         confirmSelection(type);
     }
 
@@ -1049,8 +1060,8 @@
                 const count = selectedAppCategoryIds.length;
                 document.getElementById('selected-cats-summary').innerText = count === 0 ? 'All Categories' : `${count} Categories Selected`;
             } else {
-                const cat = contextData.categories.find(c => c.id == selectedTaskCategoryId);
-                document.getElementById('selected-task-cat-summary').innerText = cat ? cat.name : 'Select Category';
+                const count = selectedTaskCategoryIds.length;
+                document.getElementById('selected-task-cat-summary').innerText = count === 0 ? 'All Categories' : `${count} Categories Selected`;
             }
         }
     }
@@ -1319,6 +1330,7 @@
         selectedAppMenuItemIds = [];
         selectedTaskMenuItemId = null;
         selectedTaskCategoryId = null;
+        selectedTaskCategoryIds = [];
         tempSelections = [];
         
         updateSelectionSummary('item', 'campaign');
@@ -1419,6 +1431,21 @@
             document.getElementById('task-quantity').value = item.required_quantity || 1;
             selectedTaskMenuItemId = item.required_menu_item_id || null;
             selectedTaskCategoryId = item.required_category_id || null;
+            
+            // Parse rule_json to restore multiple category IDs
+            let parsedRule = {};
+            try {
+                parsedRule = item.rule_json ? JSON.parse(item.rule_json) : {};
+            } catch(e) {}
+            
+            if (parsedRule.category_ids && Array.isArray(parsedRule.category_ids)) {
+                selectedTaskCategoryIds = parsedRule.category_ids.map(id => id.toString());
+            } else if (item.required_category_id) {
+                selectedTaskCategoryIds = [item.required_category_id.toString()];
+            } else {
+                selectedTaskCategoryIds = [];
+            }
+            
             document.getElementById('task-amount').value = item.min_order_amount || '';
         } else {
             try {
@@ -1511,6 +1538,7 @@
             formData.append('required_quantity', document.getElementById('task-quantity').value);
             formData.append('required_menu_item_id', selectedTaskMenuItemId || '');
             formData.append('required_category_id', selectedTaskCategoryId || '');
+            formData.append('required_category_ids', JSON.stringify(selectedTaskCategoryIds));
             formData.append('min_order_amount', document.getElementById('task-amount').value);
             formData.append('task_end_date', endVal); // Sync task end with promo end
         }

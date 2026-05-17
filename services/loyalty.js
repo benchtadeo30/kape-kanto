@@ -52,17 +52,23 @@ async function trackLoyaltyProgress(userId, orderId, orderTotal) {
             let increment = 0;
             let immediateComplete = false;
 
-            const targetCatId = Number(rule.category_id || task.required_category_id || 0);
+            let targetCatIds = [];
+            if (rule.category_ids && Array.isArray(rule.category_ids)) {
+                targetCatIds = rule.category_ids.map(Number);
+            } else if (task.required_category_id) {
+                targetCatIds = [Number(task.required_category_id)];
+            }
             const currentQty = Number(progress.current_quantity) || 0;
             const numericOrderTotal = Number(orderTotal) || 0;
 
-            console.log(`Checking task: "${task.title}" (type: ${taskType}, targetCat: ${targetCatId})`);
+            console.log(`Checking task: "${task.title}" (type: ${taskType}, targetCats: ${JSON.stringify(targetCatIds)})`);
 
             switch (taskType) {
                 case 'buy_from_category':
                 case 'buy from category':
                     orderItems.forEach(item => {
-                        if (Number(item.category_id) === targetCatId) {
+                        const itemCatId = Number(item.category_id);
+                        if (targetCatIds.length === 0 || targetCatIds.includes(itemCatId)) {
                             increment += Number(item.quantity) || 0;
                         }
                     });
@@ -212,7 +218,12 @@ async function revertLoyaltyProgress(userId, orderId, orderTotal) {
             let decrement = 0;
             let immediateRevert = false;
 
-            const targetCatId = Number(rule.category_id || task.required_category_id || 0);
+            let targetCatIds = [];
+            if (rule.category_ids && Array.isArray(rule.category_ids)) {
+                targetCatIds = rule.category_ids.map(Number);
+            } else if (task.required_category_id) {
+                targetCatIds = [Number(task.required_category_id)];
+            }
             const currentQty = Number(progress.current_quantity) || 0;
             const numericOrderTotal = Number(orderTotal) || 0;
 
@@ -220,7 +231,8 @@ async function revertLoyaltyProgress(userId, orderId, orderTotal) {
                 case 'buy_from_category':
                 case 'buy from category':
                     orderItems.forEach(item => {
-                        if (Number(item.category_id) === targetCatId) {
+                        const itemCatId = Number(item.category_id);
+                        if (targetCatIds.length === 0 || targetCatIds.includes(itemCatId)) {
                             decrement += Number(item.quantity) || 0;
                         }
                     });

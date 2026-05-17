@@ -263,19 +263,27 @@ router.post('/', requireRole('admin'), upload.single('image'), async (req, res) 
         const promoId = info.lastInsertRowid;
 
         if (is_loyalty_task == '1') {
+            let reqCategoryIds = [];
+            try {
+                reqCategoryIds = req.body.required_category_ids ? JSON.parse(req.body.required_category_ids) : [];
+            } catch(e) {}
+            const ruleJson = JSON.stringify({ category_ids: reqCategoryIds.map(Number) });
+
             await db.prepare(`
                 INSERT INTO promo_tasks (
                     title, description, task_type, customer_description, 
                     required_menu_item_id, required_category_id, required_quantity, 
-                    min_order_amount, reward_promo_id, is_active, start_date, end_date
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    min_order_amount, reward_promo_id, is_active, start_date, end_date,
+                    rule_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `).run(
                 title, description, task_type, description, 
                 parseInt(required_menu_item_id) || null, 
                 parseInt(required_category_id) || null, 
                 parseInt(required_quantity) || 1, 
                 parseFloat(min_order_amount) || null, 
-                promoId, 1, start_date || null, end_date || null
+                promoId, 1, start_date || null, end_date || null,
+                ruleJson
             );
         }
 
@@ -332,17 +340,25 @@ router.put('/:id', requireRole('admin'), upload.single('image'), async (req, res
             const task = await db.prepare('SELECT reward_promo_id FROM promo_tasks WHERE id = ?').get(campaignId);
             if (!task) throw new Error('Task not found');
 
+            let reqCategoryIds = [];
+            try {
+                reqCategoryIds = req.body.required_category_ids ? JSON.parse(req.body.required_category_ids) : [];
+            } catch(e) {}
+            const ruleJson = JSON.stringify({ category_ids: reqCategoryIds.map(Number) });
+
             await db.prepare(`
                 UPDATE promo_tasks SET 
                     title=?, description=?, task_type=?, customer_description=?,
                     required_menu_item_id=?, required_category_id=?, required_quantity=?,
-                    min_order_amount=?, is_active=?, start_date=?, end_date=?
+                    min_order_amount=?, is_active=?, start_date=?, end_date=?,
+                    rule_json=?
                 WHERE id=?
             `).run(
                 title, description, task_type, description,
                 required_menu_item_id || null, required_category_id || null,
                 parseInt(required_quantity) || 1, parseFloat(min_order_amount) || null,
-                is_active == '1' ? 1 : 0, start_date || null, end_date || null, campaignId
+                is_active == '1' ? 1 : 0, start_date || null, end_date || null,
+                ruleJson, campaignId
             );
 
             const promoId = task.reward_promo_id;
