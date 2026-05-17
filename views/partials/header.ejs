@@ -603,6 +603,32 @@
                 window.location.href = `${targetPage}?openChat=${orderId}`;
             };
 
+            // Global lightweight activity sync helper for zero-delay admin/staff dashboards
+            window.KapeKantoSync = {
+                lastSeenActivity: Date.now(),
+                onUpdateCallback: null,
+                
+                init(callback) {
+                    this.onUpdateCallback = callback;
+                    this.lastSeenActivity = Date.now();
+                    
+                    setInterval(async () => {
+                        try {
+                            const res = await fetch('/api/activity');
+                            if (res.ok) {
+                                const data = await res.json();
+                                if (data.lastActivity > this.lastSeenActivity) {
+                                    this.lastSeenActivity = data.lastActivity;
+                                    if (typeof this.onUpdateCallback === 'function') {
+                                        this.onUpdateCallback();
+                                    }
+                                }
+                            }
+                        } catch(e) {}
+                    }, 1500); // 1.5 seconds response interval
+                }
+            };
+
             // Check immediately and then every 3 seconds for lightning-fast real-time response!
             checkUnreadMessages();
             setInterval(checkUnreadMessages, 3000);

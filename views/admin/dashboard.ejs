@@ -135,7 +135,9 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         loadStats();
-        setInterval(loadStats, 10000);
+        if (window.KapeKantoSync) {
+            window.KapeKantoSync.init(loadStats);
+        }
     });
 </script>
 

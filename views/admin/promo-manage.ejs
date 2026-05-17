@@ -1643,7 +1643,9 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         loadData();
-        setInterval(loadData, 10000);
+        if (window.KapeKantoSync) {
+            window.KapeKantoSync.init(loadData);
+        }
         
         // Initialize Server Clock
         updateServerClock();

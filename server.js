@@ -44,6 +44,24 @@ app.use('/uploads', (req, res, next) => {
     next();
 });
 
+// Automatic activity tracking for database-modifying requests
+const { trackActivity, getActivityTime } = require('./services/activity');
+app.use((req, res, next) => {
+    if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
+        res.on('finish', () => {
+            if (res.statusCode >= 200 && res.statusCode < 300) {
+                trackActivity();
+            }
+        });
+    }
+    next();
+});
+
+// Endpoint to fetch the last activity timestamp
+app.get('/api/activity', (req, res) => {
+    res.json({ lastActivity: getActivityTime() });
+});
+
 // Session configuration
 app.use(session({
     secret: process.env.SESSION_SECRET || 'secret',

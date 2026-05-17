@@ -856,10 +856,12 @@
     document.addEventListener('DOMContentLoaded', () => {
         loadData();
         loadPendingVerifications();
-        setInterval(() => {
-            loadData();
-            loadPendingVerifications();
-        }, 10000);
+        if (window.KapeKantoSync) {
+            window.KapeKantoSync.init(() => {
+                loadData();
+                loadPendingVerifications();
+            });
+        }
     });
 </script>
 
