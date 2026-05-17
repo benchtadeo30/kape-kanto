@@ -1643,6 +1643,7 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         loadData();
+        setInterval(loadData, 10000);
         
         // Initialize Server Clock
         updateServerClock();

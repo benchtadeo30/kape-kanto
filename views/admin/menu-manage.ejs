@@ -1326,7 +1326,10 @@
         }, { title: 'Delete Category', confirmText: 'Delete', type: 'danger' });
     }
 
-    document.addEventListener('DOMContentLoaded', loadData);
+    document.addEventListener('DOMContentLoaded', () => {
+        loadData();
+        setInterval(loadData, 10000);
+    });
 </script>
 
 <%- include('../partials/footer') %>

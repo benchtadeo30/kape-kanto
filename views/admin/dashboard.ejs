@@ -133,7 +133,10 @@
         container.innerHTML = html;
     }
 
-    document.addEventListener('DOMContentLoaded', loadStats);
+    document.addEventListener('DOMContentLoaded', () => {
+        loadStats();
+        setInterval(loadStats, 10000);
+    });
 </script>
 
 <%- include('../partials/footer') %>
