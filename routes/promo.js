@@ -227,10 +227,8 @@ router.post('/', requireRole('admin'), upload.single('image'), async (req, res) 
     const dPercent = parseFloat(discount_percent) || 0;
     const dAmount = parseFloat(discount_amount) || 0;
 
-    if (dPercent > 0) {
-        if (dPercent > 100) return res.status(400).json({ error: 'Discount percentage cannot exceed 100%.' });
-        if (dPercent < 0) return res.status(400).json({ error: 'Discount percentage cannot be negative.' });
-    }
+    if (dPercent > 100) return res.status(400).json({ error: 'Discount percentage cannot exceed 100%.' });
+    if (dPercent < 0) return res.status(400).json({ error: 'Discount percentage cannot be negative.' });
     if (dAmount < 0) {
         return res.status(400).json({ error: 'Fixed discount amount cannot be negative.' });
     }
@@ -315,10 +313,8 @@ router.put('/:id', requireRole('admin'), upload.single('image'), async (req, res
     const dPercent = parseFloat(discount_percent) || 0;
     const dAmount = parseFloat(discount_amount) || 0;
 
-    if (dPercent > 0) {
-        if (dPercent > 100) return res.status(400).json({ error: 'Discount percentage cannot exceed 100%.' });
-        if (dPercent < 0) return res.status(400).json({ error: 'Discount percentage cannot be negative.' });
-    }
+    if (dPercent > 100) return res.status(400).json({ error: 'Discount percentage cannot exceed 100%.' });
+    if (dPercent < 0) return res.status(400).json({ error: 'Discount percentage cannot be negative.' });
     if (dAmount < 0) {
         return res.status(400).json({ error: 'Fixed discount amount cannot be negative.' });
     }

@@ -1346,7 +1346,15 @@
         if (item.image) {
             const preview = document.getElementById('campaign-image-preview');
             preview.style.display = 'block';
-            preview.querySelector('img').src = item.image;
+            const imgUrl = item.image.startsWith('http') || item.image.startsWith('/') || item.image.startsWith('data:') 
+                ? item.image 
+                : '/uploads/promos/' + item.image;
+            const img = preview.querySelector('img');
+            img.src = imgUrl;
+            img.style.display = 'block';
+            if (img.nextElementSibling) {
+                img.nextElementSibling.style.display = 'none';
+            }
             document.getElementById('campaign-upload-icon').style.display = 'none';
             document.getElementById('campaign-file-display').innerText = 'Change banner image';
         }
@@ -1439,17 +1447,23 @@
         const dVal = parseFloat(document.getElementById('campaign-discount').value) || 0;
         const fVal = parseFloat(document.getElementById('campaign-flat-discount').value) || 0;
 
-        if (!isLoyalty) {
-            if (dType === 'percent') {
-                if (dVal <= 0 || dVal > 100) {
-                    KapeKanto.toast('Discount percentage must be between 1 and 100.', 'error');
-                    return;
-                }
-            } else {
-                if (fVal <= 0) {
-                    KapeKanto.toast('Fixed discount amount must be greater than 0.', 'error');
-                    return;
-                }
+        if (dType === 'percent') {
+            if (dVal < 0 || dVal > 100) {
+                KapeKanto.toast('Discount percentage must be between 0 and 100.', 'error');
+                return;
+            }
+            if (!isLoyalty && dVal === 0) {
+                KapeKanto.toast('Discount percentage must be greater than 0 for public promos.', 'error');
+                return;
+            }
+        } else {
+            if (fVal < 0) {
+                KapeKanto.toast('Fixed discount amount cannot be negative.', 'error');
+                return;
+            }
+            if (!isLoyalty && fVal === 0) {
+                KapeKanto.toast('Fixed discount amount must be greater than 0 for public promos.', 'error');
+                return;
             }
         }
 
