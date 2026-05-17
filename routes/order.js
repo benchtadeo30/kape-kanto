@@ -421,6 +421,7 @@ router.get('/unread-messages', requireRole('admin', 'staff'), async (req, res) =
             JOIN orders o ON m.order_id = o.id
             JOIN users u ON o.user_id = u.id
             GROUP BY m.order_id
+            HAVING unread_count > 0
             ORDER BY MAX(m.created_at) DESC
             LIMIT 10
         `).all();
@@ -441,6 +442,7 @@ router.get('/my/unread-messages', requireAuth, async (req, res) => {
             JOIN users sender ON m.user_id = sender.id
             WHERE m.order_id IN (SELECT id FROM orders WHERE user_id = ?)
             GROUP BY m.order_id
+            HAVING unread_count > 0
             ORDER BY MAX(m.created_at) DESC
             LIMIT 10
         `).all(req.session.userId);
