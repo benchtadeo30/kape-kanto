@@ -133,7 +133,11 @@
         const qtyInput = document.getElementById('modalQty');
         if (qtyInput) {
             qtyInput.addEventListener('input', function() {
-                let val = parseInt(this.value);
+                let raw = this.value;
+                if (raw === '') {
+                    return; // Allow empty string while typing!
+                }
+                let val = parseInt(raw);
                 if (isNaN(val) || val < 1) {
                     this.value = 1;
                     return;
@@ -141,6 +145,12 @@
                 if (currentItem && val > currentItem.stock) {
                     this.value = currentItem.stock;
                     KapeKanto.toast(`Only ${currentItem.stock} items left in stock.`, 'warning');
+                }
+            });
+            qtyInput.addEventListener('blur', function() {
+                let val = parseInt(this.value);
+                if (isNaN(val) || val < 1) {
+                    this.value = 1;
                 }
             });
             qtyInput.addEventListener('keydown', function(e) {

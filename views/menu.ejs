@@ -813,7 +813,12 @@
             const qtyInput = document.getElementById('detailQty');
             if (qtyInput) {
                 qtyInput.addEventListener('input', function() {
-                    let val = parseInt(this.value);
+                    let raw = this.value;
+                    if (raw === '') {
+                        updateAddBtn();
+                        return; // Allow empty string while typing!
+                    }
+                    let val = parseInt(raw);
                     if (isNaN(val) || val < 1) {
                         this.value = 1;
                         updateAddBtn();
@@ -824,6 +829,13 @@
                         KapeKanto.toast(`Only ${currentDetailItem.stock} items left in stock.`, 'warning');
                     }
                     updateAddBtn();
+                });
+                qtyInput.addEventListener('blur', function() {
+                    let val = parseInt(this.value);
+                    if (isNaN(val) || val < 1) {
+                        this.value = 1;
+                        updateAddBtn();
+                    }
                 });
                 qtyInput.addEventListener('keydown', function(e) {
                     if (e.key === '-' || e.key === 'e' || e.key === '+') {
