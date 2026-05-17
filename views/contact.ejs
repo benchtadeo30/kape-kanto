@@ -241,14 +241,20 @@
             <div class="contact-card">
                 <div id="contact-response" style="display: none;"></div>
                 <form id="contact-form">
-                    <div class="form-group">
-                        <label for="name">Name</label>
-                        <input type="text" id="name" name="name" class="form-control" required placeholder="Your full name" value="<%= typeof user !== 'undefined' && user ? user.username : '' %>" <%= typeof user !== 'undefined' && user ? 'readonly style="background-color: #f1f1f1; color: #777; cursor: not-allowed; border-color: #ddd;"' : '' %>>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="email">Email</label>
-                        <input type="email" id="email" name="email" class="form-control" required placeholder="Your email address" value="<%= typeof user !== 'undefined' && user ? user.email : '' %>" <%= typeof user !== 'undefined' && user ? 'readonly style="background-color: #f1f1f1; color: #777; cursor: not-allowed; border-color: #ddd;"' : '' %>>
+                    <!-- Premium Logged-in Identity Banner -->
+                    <div style="background-color: #fdfaf7; border: 1px solid #f3e9e0; padding: 1.2rem 1.5rem; border-radius: 12px; margin-bottom: 2rem; display: flex; align-items: center; gap: 16px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                        <% if (user.profile_image) { %>
+                            <img src="<%= user.profile_image.startsWith('/') || user.profile_image.startsWith('http') || user.profile_image.startsWith('data:') ? user.profile_image : '/uploads/profiles/' + user.profile_image %>" onerror="KapeKanto.handleImageError(this, 'profiles')" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--contact-primary);">
+                        <% } else { %>
+                            <div style="width: 50px; height: 50px; border-radius: 50%; background: var(--contact-primary); display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 1.2rem;">
+                                <%= user.username.charAt(0).toUpperCase() %>
+                            </div>
+                        <% } %>
+                        <div>
+                            <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--contact-text-light); margin-bottom: 2px;">Sending feedback as</div>
+                            <div style="font-size: 1.05rem; font-weight: 700; color: var(--contact-primary);"><%= user.username %></div>
+                            <div style="font-size: 0.85rem; color: var(--contact-text-light);"><%= user.email %></div>
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -352,9 +358,11 @@
                 submitBtn.disabled = true;
                 submitBtn.innerText = 'Sending...';
                 
+                const nameEl = document.getElementById('name');
+                const emailEl = document.getElementById('email');
                 const formData = {
-                    name: document.getElementById('name').value,
-                    email: document.getElementById('email').value,
+                    name: nameEl ? nameEl.value : '',
+                    email: emailEl ? emailEl.value : '',
                     subject: hiddenInput.value,
                     message: document.getElementById('message').value
                 };
