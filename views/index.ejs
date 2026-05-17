@@ -92,9 +92,9 @@
                                     Get <%= promo.discount_percent %>% OFF! Code:
                                         <% if (isUpcomingCarousel) { %>
                                             <span
-                                                style="filter: blur(10px); user-select: none; opacity: 0.6; letter-spacing: 2px;"
+                                                style="filter: blur(8px); user-select: none; opacity: 0.5; letter-spacing: 2px; display: inline-block;"
                                                 title="Reveals when event starts">
-                                                ••••••
+                                                <%= promo.promo_code %>
                                             </span>
                                             <% } else { %>
                                                 <%= promo.promo_code || 'N/A' %>
@@ -705,7 +705,7 @@
                                 <div class="promo-code-box" style="background: var(--primary); padding: 12px; border-radius: 12px; text-align: center; box-shadow: 0 4px 15px rgba(111, 78, 55, 0.4);">
                                     ${isUpcoming ? `
                                     <span class="promo-code-label" style="font-size: 0.7rem; display: block; opacity: 0.8; font-weight: 600;">Reveals at start</span>
-                                    <div class="promo-code-value" style="font-weight: 800; letter-spacing: 3px; font-size: 1.1rem;">••••••</div>` : `
+                                    <div class="promo-code-value" style="font-weight: 800; letter-spacing: 3px; font-size: 1.1rem; filter: blur(6px); user-select: none; pointer-events: none; opacity: 0.5;">${promo.promo_code}</div>` : `
                                     <span class="promo-code-label" style="font-size: 0.7rem; display: block; opacity: 0.8; font-weight: 600;">Promo Code</span>
                                     <div class="promo-code-value" style="font-weight: 800; letter-spacing: 1.5px; font-size: 1.1rem;">${promo.promo_code}</div>`}
                                 </div>` : (isTask ? `
