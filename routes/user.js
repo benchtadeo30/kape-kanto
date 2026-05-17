@@ -287,44 +287,20 @@ router.post('/:id/reject-id', async (req, res) => {
             UPDATE users 
             SET id_verification_status = 'rejected',
                 id_verification_message = ?,
+                senior_id_image = NULL,
+                pwd_id_image = NULL,
+                selfie_image = NULL,
                 is_senior = 0,
                 is_pwd = 0,
                 verified_by = NULL,
                 verified_at = NULL
             WHERE id = ?
-        `).run(reason || 'Your ID verification was rejected. Please contact support for more details.', userId);
+        `).run(reason || 'Your ID verification was rejected. Please upload your ID again.', userId);
 
-        console.log(`[ID Verification] Admin ${req.session.userId} REJECTED user ${userId}`);
-        res.json({ message: 'User ID verification rejected.' });
+        console.log(`[ID Verification] Admin ${req.session.userId} REJECTED user ${userId} (Reset for resubmission)`);
+        res.json({ message: 'User ID verification rejected and reset for resubmission.' });
     } catch (error) {
         console.error('Reject ID error:', error);
-        res.status(500).json({ error: 'Internal server error.' });
-    }
-});
-
-// POST /api/users/:id/resubmit-id
-router.post('/:id/resubmit-id', async (req, res) => {
-    try {
-        const userId = parseInt(req.params.id);
-        const { reason } = req.body;
-
-        const user = await db.prepare('SELECT id FROM users WHERE id = ?').get(userId);
-        if (!user) return res.status(404).json({ error: 'User not found.' });
-
-        await db.prepare(`
-            UPDATE users 
-            SET id_verification_status = 'rejected',
-                id_verification_message = ?,
-                senior_id_image = NULL,
-                pwd_id_image = NULL,
-                selfie_image = NULL
-            WHERE id = ?
-        `).run(reason || 'Please resubmit clearer photos of your ID and selfie.', userId);
-
-        console.log(`[ID Verification] Admin ${req.session.userId} requested RESUBMISSION from user ${userId}`);
-        res.json({ message: 'Resubmission request sent to user.' });
-    } catch (error) {
-        console.error('Resubmit ID error:', error);
         res.status(500).json({ error: 'Internal server error.' });
     }
 });

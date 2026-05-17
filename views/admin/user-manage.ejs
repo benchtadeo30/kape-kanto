@@ -747,11 +747,8 @@
                             <button onclick="approveId(${u.id})" style="padding: 10px 16px; border-radius: 10px; border: none; background: #2e7d32; color: white; font-weight: 700; cursor: pointer; font-size: 0.85rem; transition: background 0.2s;" onmouseover="this.style.background='#1b5e20'" onmouseout="this.style.background='#2e7d32'">
                                 <i class="fa-solid fa-check"></i> Approve
                             </button>
-                            <button onclick="openReasonModal(${u.id}, 'reject')" style="padding: 10px 16px; border-radius: 10px; border: 1px solid #ef5350; background: white; color: #c62828; font-weight: 700; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" onmouseover="this.style.background='#ffebee'" onmouseout="this.style.background='white'">
-                                <i class="fa-solid fa-xmark"></i> Reject
-                            </button>
-                            <button onclick="openReasonModal(${u.id}, 'resubmit')" style="padding: 10px 16px; border-radius: 10px; border: 1px solid #ff9800; background: white; color: #e65100; font-weight: 700; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" onmouseover="this.style.background='#fff3e0'" onmouseout="this.style.background='white'">
-                                <i class="fa-solid fa-rotate-right"></i> Resubmit
+                            <button onclick="openReasonModal(${u.id})" style="padding: 10px 16px; border-radius: 10px; border: 1px solid #ef5350; background: white; color: #c62828; font-weight: 700; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" onmouseover="this.style.background='#ffebee'" onmouseout="this.style.background='white'">
+                                <i class="fa-solid fa-xmark"></i> Reject & Reset
                             </button>
                         </div>
                     </div>
@@ -814,30 +811,22 @@
         }, { title: 'Approve ID', confirmText: 'Yes, Approve', type: 'success' });
     }
 
-    function openReasonModal(userId, action) {
+    function openReasonModal(userId) {
         reasonUserId = userId;
-        reasonAction = action;
         const modal = document.getElementById('reason-modal');
         const title = document.getElementById('reason-modal-title');
         const btn = document.getElementById('reason-submit-btn');
         document.getElementById('reason-text').value = '';
 
-        if (action === 'reject') {
-            title.innerHTML = '<i class="fa-solid fa-ban" style="margin-right: 10px; color: #c62828;"></i> Reject Verification';
-            btn.style.background = '#c62828';
-            btn.textContent = 'Reject';
-        } else {
-            title.innerHTML = '<i class="fa-solid fa-rotate-right" style="margin-right: 10px; color: #e65100;"></i> Request Resubmission';
-            btn.style.background = '#e65100';
-            btn.textContent = 'Request Resubmission';
-        }
+        title.innerHTML = '<i class="fa-solid fa-ban" style="margin-right: 10px; color: #c62828;"></i> Reject Verification';
+        btn.style.background = '#c62828';
+        btn.textContent = 'Reject ID';
         modal.style.display = 'flex';
     }
 
     function closeReasonModal() {
         document.getElementById('reason-modal').style.display = 'none';
         reasonUserId = null;
-        reasonAction = null;
     }
 
     async function submitReason() {
@@ -848,8 +837,7 @@
         }
 
         try {
-            const endpoint = reasonAction === 'reject' ? 'reject-id' : 'resubmit-id';
-            const res = await fetch(`/api/users/${reasonUserId}/${endpoint}`, {
+            const res = await fetch(`/api/users/${reasonUserId}/reject-id`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ reason })
