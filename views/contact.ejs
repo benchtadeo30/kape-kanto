@@ -224,12 +224,12 @@
             <form id="contact-form">
                 <div class="form-group">
                     <label for="name">Name</label>
-                    <input type="text" id="name" name="name" class="form-control" required placeholder="Your full name" value="<%= typeof user !== 'undefined' && user ? user.username : '' %>">
+                    <input type="text" id="name" name="name" class="form-control" required placeholder="Your full name" value="<%= typeof user !== 'undefined' && user ? user.username : '' %>" <%= typeof user !== 'undefined' && user ? 'readonly style="background-color: #f1f1f1; color: #777; cursor: not-allowed; border-color: #ddd;"' : '' %>>
                 </div>
 
                 <div class="form-group">
                     <label for="email">Email</label>
-                    <input type="email" id="email" name="email" class="form-control" required placeholder="Your email address" value="<%= typeof user !== 'undefined' && user ? user.email : '' %>">
+                    <input type="email" id="email" name="email" class="form-control" required placeholder="Your email address" value="<%= typeof user !== 'undefined' && user ? user.email : '' %>" <%= typeof user !== 'undefined' && user ? 'readonly style="background-color: #f1f1f1; color: #777; cursor: not-allowed; border-color: #ddd;"' : '' %>>
                 </div>
 
                 <div class="form-group">

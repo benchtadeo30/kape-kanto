@@ -107,7 +107,13 @@ router.get('/contact', (req, res) => {
 });
 
 router.post('/contact', async (req, res) => {
-    const { name, email, subject, message } = req.body;
+    let { name, email, subject, message } = req.body;
+    
+    // Enforce logged in customer's actual registered name and email
+    if (res.locals.user) {
+        name = res.locals.user.username;
+        email = res.locals.user.email;
+    }
     
     if (!name || !email || !subject || !message) {
         return res.status(400).json({ error: 'All fields are required.' });
