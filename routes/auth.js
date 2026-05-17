@@ -173,7 +173,7 @@ router.post('/login', async (req, res) => {
 
     try {
         const identifier = email.trim();
-        const user = await db.prepare(`SELECT * FROM users WHERE LOWER(email) = LOWER(?) OR LOWER(username) = LOWER(?)`).get(identifier, identifier);
+        const user = await db.prepare(`SELECT * FROM users WHERE LOWER(email) = LOWER(?)`).get(identifier);
 
         if (!user || !(await bcrypt.compare(password, user.password))) {
             return res.status(401).json({ error: 'Invalid email or password.' });
