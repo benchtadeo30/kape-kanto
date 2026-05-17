@@ -1192,8 +1192,8 @@
             const isTask = item.type === 'task';
             const imgUrl = item.image ? (item.image.startsWith('http') || item.image.startsWith('/') || item.image.startsWith('data:') ? item.image : '/uploads/promos/' + item.image) : (isTask ? 'https://images.unsplash.com/photo-1559496417-e7f25cb247f3?auto=format&fit=crop&q=80&w=600' : 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=80&w=600');
             const typeLabel = isTask ? 'Loyalty Task' : 'Public Promo';
-            const deadline = item.end_date ? new Date(item.end_date.replace(' ', 'T')) : null;
-            const startTime = item.start_date ? new Date(item.start_date.replace(' ', 'T')) : null;
+            const deadline = item.end_date ? KapeKanto.parseUTCDate(item.end_date) : null;
+            const startTime = item.start_date ? KapeKanto.parseUTCDate(item.start_date) : null;
             const now = new Date();
             const isExpired = deadline && deadline < now;
             const isUpcoming = startTime && startTime > now;
@@ -1205,7 +1205,7 @@
                 statusText = 'Expired';
                 badgeClass = 'badge-danger';
             } else if (isUpcoming && item.is_active) {
-                const timeStr = startTime.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                const timeStr = startTime.toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
                 statusText = 'Upcoming';
                 badgeClass = 'badge-secondary';
                 badgeClass += ' upcoming-badge';
@@ -1236,8 +1236,8 @@
 
                             ${(startTime || deadline) ? `
                             <div style="display: flex; flex-direction: column; gap: 4px; border-left: 2px solid #e0e0e0; padding-left: 15px; min-width: 250px;">
-                                ${startTime ? `<span style="white-space: nowrap; font-size: 0.75rem;"><i class="fa-solid fa-calendar-days" style="color: var(--success); width: 16px;"></i> Starts: ${startTime.toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>` : ''}
-                                ${deadline ? `<span style="white-space: nowrap; font-size: 0.75rem;"><i class="fa-solid fa-clock" style="color: var(--danger); width: 16px;"></i> Ends: ${deadline.toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>` : ''}
+                                ${startTime ? `<span style="white-space: nowrap; font-size: 0.75rem;"><i class="fa-solid fa-calendar-days" style="color: var(--success); width: 16px;"></i> Starts: ${startTime.toLocaleString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</span>` : ''}
+                                ${deadline ? `<span style="white-space: nowrap; font-size: 0.75rem;"><i class="fa-solid fa-clock" style="color: var(--danger); width: 16px;"></i> Ends: ${deadline.toLocaleString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</span>` : ''}
                             </div>` : ''}
                         </div>
                     </div>

@@ -704,8 +704,8 @@
                 }
 
                 const dateText = isUpcoming ? 'Starts:' : 'Started:';
-                const formattedStart = promo.start_date ? new Date(promo.start_date).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Immediate';
-                const formattedEnd = promo.end_date ? new Date(promo.end_date).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'No Expiry';
+                const formattedStart = promo.start_date ? KapeKanto.parseUTCDate(promo.start_date).toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : 'Immediate';
+                const formattedEnd = promo.end_date ? KapeKanto.parseUTCDate(promo.end_date).toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : 'No Expiry';
 
                 return `
                     <div class="card event-card" style="display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); opacity: 1; transform: none;">

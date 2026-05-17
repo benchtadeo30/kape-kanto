@@ -249,7 +249,7 @@
         const isAwaiting = order.status === 'awaiting_payment';
         const canCustomerCancel = order.status === 'pending' && ['pay_at_store', 'cod'].includes(order.payment_method);
         const date = KapeKanto.parseUTCDate(order.created_at).toLocaleDateString('en-PH', {
-            month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'
+            month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
         });
 
         // Tracker HTML
