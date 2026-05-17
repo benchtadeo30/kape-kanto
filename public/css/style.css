@@ -2170,9 +2170,10 @@ footer a {
     animation: introDropIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
-.intro-cup svg {
-    width: clamp(60px, 20vw, 90px);
-    height: clamp(60px, 20vw, 90px);
+.intro-cup svg, .intro-cup img {
+    width: clamp(80px, 22vw, 120px);
+    height: clamp(80px, 22vw, 120px);
+    object-fit: contain;
     filter: drop-shadow(0 0 24px rgba(232, 184, 109, 0.45));
 }
 
@@ -2349,9 +2350,9 @@ footer a {
         padding: 1rem;
     }
 
-    .intro-cup svg {
-        width: 50px;
-        height: 50px;
+    .intro-cup svg, .intro-cup img {
+        width: 60px;
+        height: 60px;
     }
 
     .intro-steam {
@@ -2396,9 +2397,9 @@ footer a {
         gap: 1.25rem;
     }
 
-    .intro-cup svg {
-        width: 70px;
-        height: 70px;
+    .intro-cup svg, .intro-cup img {
+        width: 80px;
+        height: 80px;
     }
 
     .intro-steam span:nth-child(1) {
