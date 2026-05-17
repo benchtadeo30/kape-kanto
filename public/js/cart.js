@@ -177,8 +177,20 @@ function renderCartItems() {
 function updateQuantityByIndex(index, change) {
     const cart = getCart();
     if (cart[index]) {
-        cart[index].quantity += change;
-        if (cart[index].quantity <= 0) cart.splice(index, 1);
+        const item = cart[index];
+        
+        // Sum total quantity in cart of the same menu item ID
+        const totalOfSameId = cart
+            .filter(c => c.id === item.id)
+            .reduce((sum, c) => sum + c.quantity, 0);
+
+        if (change > 0 && item.stock !== undefined && totalOfSameId + change > item.stock) {
+            KapeKanto.toast(`Only ${item.stock} items are available in stock.`, 'warning');
+            return;
+        }
+
+        item.quantity += change;
+        if (item.quantity <= 0) cart.splice(index, 1);
         saveCart(cart);
         renderCartItems();
     }

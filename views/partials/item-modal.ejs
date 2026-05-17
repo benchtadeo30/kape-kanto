@@ -119,15 +119,59 @@
 
     function changeQty(amt) {
         const input = document.getElementById('modalQty');
-        let val = parseInt(input.value) + amt;
+        let val = parseInt(input.value) || 1;
+        val += amt;
         if (val < 1) val = 1;
+        if (currentItem && val > currentItem.stock) {
+            val = currentItem.stock;
+            KapeKanto.toast(`Only ${currentItem.stock} items left in stock.`, 'warning');
+        }
         input.value = val;
     }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const qtyInput = document.getElementById('modalQty');
+        if (qtyInput) {
+            qtyInput.addEventListener('input', function() {
+                let val = parseInt(this.value);
+                if (isNaN(val) || val < 1) {
+                    this.value = 1;
+                    return;
+                }
+                if (currentItem && val > currentItem.stock) {
+                    this.value = currentItem.stock;
+                    KapeKanto.toast(`Only ${currentItem.stock} items left in stock.`, 'warning');
+                }
+            });
+            qtyInput.addEventListener('keydown', function(e) {
+                if (e.key === '-' || e.key === 'e' || e.key === '+') {
+                    e.preventDefault();
+                }
+            });
+        }
+    });
 
     document.getElementById('modalAddBtn').addEventListener('click', () => {
         if (!currentItem) return;
 
-        const qty = parseInt(document.getElementById('modalQty').value);
+        const qty = parseInt(document.getElementById('modalQty').value) || 1;
+        
+        // Calculate total quantity of this menu item already in the cart
+        const cart = KapeKanto.getCart();
+        const totalInCart = cart
+            .filter(item => item.id === currentItem.id)
+            .reduce((sum, item) => sum + item.quantity, 0);
+
+        if (totalInCart + qty > currentItem.stock) {
+            const allowedQuantity = currentItem.stock - totalInCart;
+            if (allowedQuantity <= 0) {
+                KapeKanto.toast(`You already have all available stock (${currentItem.stock}) of ${currentItem.name} in your cart.`, 'warning');
+            } else {
+                KapeKanto.toast(`Cannot add ${qty}. You can only add up to ${allowedQuantity} more of this item to match the available stock.`, 'warning');
+            }
+            return; // Stop addition
+        }
+
         const customizations = {};
         
         document.querySelectorAll('#modalOptions .option-group').forEach(group => {
@@ -149,8 +193,6 @@
             }
         });
 
-        // Add to cart
-        const cart = KapeKanto.getCart();
         const existing = cart.find(item => 
             item.id === currentItem.id && 
             JSON.stringify(item.customizations) === JSON.stringify(customizations)
@@ -158,6 +200,7 @@
 
         if (existing) {
             existing.quantity += qty;
+            existing.stock = currentItem.stock; // Keep stock snapshot updated
         } else {
             cart.push({
                 id: currentItem.id,
@@ -166,7 +209,8 @@
                 price: finalUnitPrice,
                 image: imgUrl,
                 quantity: qty,
-                customizations: customizations
+                customizations: customizations,
+                stock: currentItem.stock // Store stock snapshot for cart-side validation
             });
         }
 
