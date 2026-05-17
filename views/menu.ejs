@@ -75,6 +75,13 @@
                         @media (max-width: 600px) {
                             .menu-filter-bar { flex-direction: column; align-items: stretch; }
                         }
+                        
+                        .detail-qty-control input[disabled],
+                        .detail-qty-control button[disabled] {
+                            opacity: 0.5;
+                            cursor: not-allowed;
+                            background: #f0e6df !important;
+                        }
                     </style>
                 </div>
 
@@ -559,7 +566,7 @@
                 const card = document.createElement('div');
                 card.className = `menu-item-card${!isAvailable ? ' unavailable' : ''}`;
                 card.style.animationDelay = `${idx * 0.05}s`;
-                card.onclick = () => isAvailable && openDetailView(item.id);
+                card.onclick = () => openDetailView(item.id);
                 card.innerHTML = `
                 <div class="mic-image-wrap">
                     <img src="${escapeHtml(imgUrl)}" alt="${escapeHtml(item.name)}" class="mic-image" loading="lazy" onerror="this.onerror=null;this.src='${escapeHtml(fallbackImg)}'">
@@ -614,6 +621,17 @@
 
             const badge = document.getElementById('detailBadge');
             const isAvailable = currentDetailItem.is_available === 1 && currentDetailItem.stock > 0;
+            
+            // Disable quantity controls if out of stock
+            const qtyInput = document.getElementById('detailQty');
+            const qtyBtns = document.querySelectorAll('.detail-qty-control .qty-btn');
+            if (isAvailable) {
+                qtyInput.removeAttribute('disabled');
+                qtyBtns.forEach(btn => btn.removeAttribute('disabled'));
+            } else {
+                qtyInput.setAttribute('disabled', 'true');
+                qtyBtns.forEach(btn => btn.setAttribute('disabled', 'true'));
+            }
             
             let badgeHtml = '';
             if (currentDetailItem.stock <= 0) {
@@ -710,6 +728,7 @@
                         : adj < 0
                             ? `<span class="choice-extra neg">-&#8369;${Math.abs(adj).toFixed(2)}</span>`
                             : `<span class="choice-extra free">Free</span>`;
+                    const isOutOfStock = currentDetailItem && (currentDetailItem.stock <= 0 || currentDetailItem.is_available === 0);
                     return `
                             <label class="choice-option-label" for="co_${choice.id}">
                                 <input
@@ -720,9 +739,9 @@
                                     data-name="${choice.name}"
                                     data-price="${adj}"
                                     onchange="onChoiceChange()"
-                                    ${(!userIsLoggedIn || !userIsVerified) ? 'disabled' : ''}
+                                    ${(!userIsLoggedIn || !userIsVerified || isOutOfStock) ? 'disabled' : ''}
                                 >
-                                <span class="choice-radio-custom" style="${(!userIsLoggedIn || !userIsVerified) ? 'opacity: 0.5; cursor: not-allowed;' : ''}"></span>
+                                <span class="choice-radio-custom" style="${(!userIsLoggedIn || !userIsVerified || isOutOfStock) ? 'opacity: 0.5; cursor: not-allowed;' : ''}"></span>
                                 <span class="choice-option-name">${choice.name}</span>
                                 ${priceTag}
                             </label>

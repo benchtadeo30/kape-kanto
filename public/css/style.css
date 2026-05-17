@@ -934,9 +934,8 @@ textarea.is-invalid+.invalid-feedback {
 
 .menu-item-card.unavailable {
     opacity: 0.6;
-    cursor: not-allowed;
+    cursor: pointer;
     filter: grayscale(0.6);
-    pointer-events: none;
 }
 
 .mic-oos-overlay {
