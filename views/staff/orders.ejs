@@ -40,8 +40,16 @@
     .badge-awaiting { background:#fff8e1; color:#ff8f00; border: 1px solid rgba(255,143,0,0.3); }
     .badge-awaiting i { margin-right: 4px; }
     .so-total { font-weight: 900; color: var(--primary); font-size: 1rem; }
-    .so-status-select { width: 100%; min-width: 130px; border-radius: 999px !important; padding: 0.55rem 0.75rem !important; font-size: 0.78rem; font-weight: 800; border: 1px solid #e6d8cc !important; color: var(--primary-dark); background: white; }
-    .so-actions { display: flex; justify-content: flex-end; gap: 0.45rem; flex-wrap: wrap; }
+    .so-status-select { display: none; }
+    .so-actions .kk-select-container { width: auto; min-width: 170px; }
+    .so-actions .kk-select-trigger { border-radius: 999px !important; padding: 0.55rem 1rem !important; font-size: 0.78rem !important; font-weight: 900 !important; border: 1px solid #e6d8cc !important; color: var(--primary-dark) !important; background: white !important; height: auto !important; line-height: normal !important; box-shadow: none !important; transition: transform 0.2s, box-shadow 0.2s; }
+    .so-actions .kk-select-trigger:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(44,26,14,0.12) !important; }
+    .so-actions .kk-select-options { border-radius: 16px !important; border: 1px solid var(--primary) !important; box-shadow: 0 10px 30px rgba(44, 26, 14, 0.15) !important; overflow: hidden; margin-top: 4px; }
+    .so-actions .kk-select-option { padding: 8px 16px !important; font-size: 0.78rem !important; font-weight: 700 !important; gap: 8px !important; }
+    .so-actions .kk-select-option i { font-size: 0.9rem !important; width: 16px !important; }
+    .so-actions .kk-select-option:hover { padding-left: 20px !important; background: #FFF8F0 !important; color: var(--primary) !important; }
+    .so-actions .kk-select-option.selected { background: var(--primary) !important; color: white !important; }
+    .so-actions { display: flex; justify-content: flex-end; gap: 0.45rem; flex-wrap: wrap; align-items: center; }
     .so-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0.55rem 0.78rem; border-radius: 999px; border: 0; font-family: var(--font-body); font-size: 0.78rem; font-weight: 900; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
     .so-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(44,26,14,0.12); }
     .so-btn-primary { background: var(--primary); color: white; }
@@ -511,10 +519,10 @@
 
         const statusDropdownOptions = STATUS_OPTIONS
             .filter(opt => !opt.deliveryOnly || isDelivery)
-            .map(opt => `<option value="${opt.value}" ${opt.value === o.status ? 'selected' : ''}>${statusLabel(opt.value, o.order_type)}</option>`)
+            .map(opt => `<option value="${opt.value}" data-icon="${opt.icon}" ${opt.value === o.status ? 'selected' : ''}>${statusLabel(opt.value, o.order_type)}</option>`)
             .join('');
 
-        const statusSelect = `<select class="so-status-select" onchange="changeStatusFromDropdown(${o.id}, '${o.status}', this)">
+        const statusSelect = `<select class="so-status-select kk-select-modern" onchange="changeStatusFromDropdown(${o.id}, '${o.status}', this)">
             ${statusDropdownOptions}
         </select>`;
 
@@ -626,9 +634,26 @@
 
         const order = allOrders.find(o => Number(o.id) === Number(id));
 
+        const revertSelect = () => {
+            select.value = currentStatus;
+            const container = select.previousElementSibling;
+            if (container && container.classList.contains('kk-select-container')) {
+                const trigger = container.querySelector('.kk-select-trigger');
+                const option = Array.from(select.options).find(o => o.value === currentStatus);
+                if (trigger && option) {
+                    const icon = option.dataset.icon ? `<i class="fa-solid ${option.dataset.icon}"></i>` : '';
+                    trigger.innerHTML = `<span>${icon} ${option.text}</span><i class="fa-solid fa-chevron-down"></i>`;
+                    
+                    container.querySelectorAll('.kk-select-option').forEach((optDiv, idx) => {
+                        optDiv.classList.toggle('selected', select.options[idx].value === currentStatus);
+                    });
+                }
+            }
+        };
+
         if (nextStatus === 'out_for_delivery') {
             openRiderModal(id);
-            select.value = currentStatus;
+            revertSelect();
             return;
         }
 
@@ -645,7 +670,7 @@
             }
         );
 
-        select.value = currentStatus;
+        revertSelect();
     }
 
     async function deleteOrder(id) {
