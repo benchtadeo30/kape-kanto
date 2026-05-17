@@ -179,6 +179,11 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid email or password.' });
         }
 
+        // Block admin/staff from logging in via the customer login page
+        if (user.role === 'admin' || user.role === 'staff') {
+            return res.status(401).json({ error: 'Invalid email or password.' });
+        }
+
         req.session.userId = user.id;
         req.session.role = user.role;
         req.session.isVerifiedInSession = (user.role === 'admin' || user.role === 'staff');
@@ -198,6 +203,37 @@ router.post('/login', async (req, res) => {
                 }
                 return res.json({ message: 'Login successful. A security verification code has been sent to your email.', role: user.role, unverified: true, email: user.email });
             }
+            res.json({ message: 'Login successful', role: user.role });
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
+// POST /api/auth/staff-login (Admin & Staff only)
+router.post('/staff-login', async (req, res) => {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: 'Email and password are required.' });
+
+    try {
+        const identifier = email.trim();
+        const user = await db.prepare(`SELECT * FROM users WHERE LOWER(email) = LOWER(?)`).get(identifier);
+
+        if (!user || !(await bcrypt.compare(password, user.password))) {
+            return res.status(401).json({ error: 'Invalid email or password.' });
+        }
+
+        // Only allow admin and staff roles through this portal
+        if (user.role !== 'admin' && user.role !== 'staff') {
+            return res.status(401).json({ error: 'Invalid email or password.' });
+        }
+
+        req.session.userId = user.id;
+        req.session.role = user.role;
+        req.session.isVerifiedInSession = true;
+
+        req.session.save((err) => {
+            if (err) console.error('Session save error:', err);
             res.json({ message: 'Login successful', role: user.role });
         });
     } catch (error) {

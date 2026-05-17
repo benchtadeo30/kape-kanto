@@ -255,6 +255,14 @@ router.get('/payment-cancel', (req, res) => {
     res.render('payment-cancel', { title: 'Payment Cancelled', orderId: req.query.order_id });
 });
 
+// --- ADMIN & STAFF LOGIN ---
+
+router.get('/admin/login', (req, res) => {
+    if (res.locals.user && res.locals.user.role === 'admin') return res.redirect('/admin/dashboard');
+    if (res.locals.user && res.locals.user.role === 'staff') return res.redirect('/staff/dashboard');
+    res.render('admin/login', { title: 'Staff Portal - Kape Kanto Hub' });
+});
+
 // --- ADMIN PAGES ---
 
 router.get('/admin/dashboard', pageRequireRole('admin'), (req, res) => {
