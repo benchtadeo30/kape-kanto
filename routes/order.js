@@ -500,9 +500,19 @@ router.get('/my/:id', requireAuth, async (req, res) => {
         let order;
         
         if (user.role === 'admin' || user.role === 'staff') {
-            order = await db.prepare(`SELECT * FROM orders WHERE id = ?`).get(req.params.id);
+            order = await db.prepare(`
+                SELECT o.*, u.username, u.email 
+                FROM orders o
+                LEFT JOIN users u ON o.user_id = u.id
+                WHERE o.id = ?
+            `).get(req.params.id);
         } else {
-            order = await db.prepare(`SELECT * FROM orders WHERE id = ? AND user_id = ?`).get(req.params.id, req.session.userId);
+            order = await db.prepare(`
+                SELECT o.*, u.username, u.email 
+                FROM orders o
+                LEFT JOIN users u ON o.user_id = u.id
+                WHERE o.id = ? AND o.user_id = ?
+            `).get(req.params.id, req.session.userId);
         }
         
         if (!order) return res.status(404).json({ error: 'Order not found.' });
@@ -510,7 +520,7 @@ router.get('/my/:id', requireAuth, async (req, res) => {
         const items = await db.prepare(`
             SELECT oi.*, m.name, m.image 
             FROM order_items oi
-            JOIN menu_items m ON oi.menu_item_id = m.id
+            LEFT JOIN menu_items m ON oi.menu_item_id = m.id
             WHERE oi.order_id = ?
         `).all(order.id);
 
